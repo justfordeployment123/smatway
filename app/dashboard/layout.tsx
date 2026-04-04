@@ -92,9 +92,9 @@ const pageTitles: Record<string, string> = {
 
 function Sidebar({ pathname }: { pathname: string }) {
   return (
-    <aside className="hidden lg:block fixed left-0 top-0 bottom-0 w-[250px] bg-white border-r border-slate-200 overflow-auto z-30">
+    <aside className="hidden lg:block fixed left-0 top-0 bottom-0 w-[250px] bg-white border-r border-[#f0f0f0] overflow-auto z-30">
       {/* Logo */}
-      <div className="h-16 flex items-center justify-center border-b border-slate-200">
+      <div className="h-16 flex items-center justify-center border-b border-[#f0f0f0]">
         <div className="flex items-center space-x-2">
           <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-2 rounded-lg">
             <MapPinIcon />
@@ -141,7 +141,7 @@ function Sidebar({ pathname }: { pathname: string }) {
 
 function Topbar({ title }: { title: string }) {
   return (
-    <header className="bg-white border-b border-slate-200 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
+    <header className="bg-white border-b border-[#f0f0f0] px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
       <div className="flex items-center space-x-4">
         <h2 className="text-xl font-semibold text-slate-900 hidden sm:block">{title}</h2>
       </div>
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <Sidebar pathname={pathname} />
       <div className="flex-1 lg:ml-[250px] flex flex-col min-h-screen">
         <Topbar title={title} />
-        <main className="flex-1 m-4 lg:m-8">
+        <main className="flex-1 m-4 lg:m-8 mb-24 lg:mb-8">
           {children}
         </main>
       </div>
