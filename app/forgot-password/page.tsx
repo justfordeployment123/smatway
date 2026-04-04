@@ -105,13 +105,13 @@ export default function ForgotPasswordPage() {
             </div>
 
             {/* Submit */}
-            <button
-              type="submit"
+            <a
+              href="/signin"
               className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 mt-4"
             >
               <SendIcon />
               Send Reset Link
-            </button>
+            </a>
 
           </form>
 

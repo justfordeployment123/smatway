@@ -231,22 +231,20 @@ export default function SignUpPage() {
                 <button
                   type="button"
                   onClick={() => setAccountType("traveler")}
-                  className={`w-1/2 py-2.5 text-base font-medium transition-colors ${
-                    accountType === "traveler"
+                  className={`w-1/2 py-2.5 text-base font-medium transition-colors ${accountType === "traveler"
                       ? "bg-white text-emerald-600 border border-emerald-500"
                       : "bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   Traveler
                 </button>
                 <button
                   type="button"
                   onClick={() => setAccountType("transporter")}
-                  className={`w-1/2 py-2.5 text-base font-medium transition-colors border-l border-slate-300 ${
-                    accountType === "transporter"
+                  className={`w-1/2 py-2.5 text-base font-medium transition-colors border-l border-slate-300 ${accountType === "transporter"
                       ? "bg-white text-emerald-600 border border-emerald-500"
                       : "bg-white text-slate-600 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   Transporter
                 </button>
@@ -270,12 +268,12 @@ export default function SignUpPage() {
             </div>
 
             {/* Submit */}
-            <button
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all mt-4"
+            <a
+              href="/dashboard"
+              className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all mt-4 inline-flex items-center justify-center"
             >
               Create Account
-            </button>
+            </a>
 
           </form>
 

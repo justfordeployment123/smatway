@@ -134,9 +134,9 @@ function Navbar() {
           </div>
 
           <div className="flex items-center space-x-2 md:space-x-4">
-            <button className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+            <a href="/signin" className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
               Get Started
-            </button>
+            </a>
           </div>
         </div>
       </div>
@@ -422,9 +422,9 @@ export default function HowItWorksPage() {
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h2 className="text-4xl font-bold mb-6">Ready to Get Started?</h2>
             <p className="text-xl mb-8 opacity-90">Join thousands of travelers and transporters using SmatWay every day</p>
-            <button className="bg-white text-emerald-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-slate-50 transition-all shadow-lg hover:shadow-xl">
+            <a href="/signin" className="inline-block bg-white text-emerald-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-slate-50 transition-all shadow-lg hover:shadow-xl">
               Start Your Journey
-            </button>
+            </a>
           </div>
         </section>
 

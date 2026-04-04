@@ -73,19 +73,19 @@ function LogOutIcon() {
 // ─── Nav items ────────────────────────────────────────────────────────────────
 
 const navItems = [
-  { key: "/dashboard",               label: "Search Rides",   icon: <DashboardIcon /> },
-  { key: "/dashboard/my-bookings",   label: "My Bookings",    icon: <BookOpenIcon /> },
-  { key: "/dashboard/announcements", label: "Announcements",  icon: <MegaphoneIcon /> },
-  { key: "/dashboard/profile",       label: "Profile",        icon: <UserIcon /> },
-  { key: "/dashboard/settings",      label: "Settings",       icon: <SettingsIcon /> },
+  { key: "/dashboard", label: "Search Rides", icon: <DashboardIcon /> },
+  { key: "/dashboard/my-bookings", label: "My Bookings", icon: <BookOpenIcon /> },
+  { key: "/dashboard/announcements", label: "Announcements", icon: <MegaphoneIcon /> },
+  { key: "/dashboard/profile", label: "Profile", icon: <UserIcon /> },
+  { key: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
 ];
 
 const pageTitles: Record<string, string> = {
-  "/dashboard":               "Search Rides",
-  "/dashboard/my-bookings":   "My Bookings",
+  "/dashboard": "Search Rides",
+  "/dashboard/my-bookings": "My Bookings",
   "/dashboard/announcements": "Announcements",
-  "/dashboard/profile":       "Profile",
-  "/dashboard/settings":      "Settings",
+  "/dashboard/profile": "Profile",
+  "/dashboard/settings": "Settings",
 };
 
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
@@ -113,11 +113,10 @@ function Sidebar({ pathname }: { pathname: string }) {
             <li key={item.key}>
               <a
                 href={item.key}
-                className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${
-                  active
+                className={`flex items-center gap-3 px-6 py-3 text-sm font-medium transition-colors ${active
                     ? "bg-emerald-50 text-emerald-600"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`}
+                  }`}
               >
                 <span className={active ? "text-emerald-600" : "text-slate-500"}>{item.icon}</span>
                 {item.label}
@@ -129,10 +128,10 @@ function Sidebar({ pathname }: { pathname: string }) {
 
       {/* Logout */}
       <div className="absolute bottom-4 left-4 right-4">
-        <button className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
+        <a href="/" className="flex items-center gap-2 w-full px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors">
           <LogOutIcon />
           Logout
-        </button>
+        </a>
       </div>
     </aside>
   );

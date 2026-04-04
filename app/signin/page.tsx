@@ -172,18 +172,18 @@ export default function SignInPage() {
 
             {/* Forgot password */}
             <div className="flex justify-end">
-              <button type="button" className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
+              <a href="/forgot-password" className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">
                 Forgot password?
-              </button>
+              </a>
             </div>
 
             {/* Sign In button */}
-            <button
-              type="submit"
-              className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+            <a
+              href="/dashboard"
+              className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center"
             >
               Sign In
-            </button>
+            </a>
 
           </form>
 

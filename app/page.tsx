@@ -134,26 +134,26 @@ function Navbar() {
         <div className="flex justify-between items-center h-16 md:h-20">
 
           {/* Logo */}
-          <div className="flex items-center space-x-2 md:space-x-3 cursor-pointer group">
+          <a href="/" className="flex items-center space-x-2 md:space-x-3 cursor-pointer group">
             <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-600 p-2 md:p-2.5 rounded-xl shadow-lg group-hover:shadow-emerald-200 transition-all duration-300">
               <MapPinIcon className="w-5 h-5 md:w-7 md:h-7 text-white" />
             </div>
             <span className="text-xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 bg-clip-text text-transparent">
               SmatWay
             </span>
-          </div>
+          </a>
 
           {/* Nav links */}
           <div className="hidden md:flex items-center space-x-1">
-            <button className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-emerald-600 bg-emerald-50">
+            <a href="/" className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-emerald-600 bg-emerald-50">
               Home
-            </button>
-            <button className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50">
+            </a>
+            <a href="/about" className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50">
               About
-            </button>
-            <button className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50">
+            </a>
+            <a href="/how-it-works" className="px-5 py-2.5 rounded-lg font-medium transition-all duration-200 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50/50">
               How It Works
-            </button>
+            </a>
             <div className="ml-4 pl-4 border-l border-slate-200">
               <button className="flex items-center gap-1.5 px-3 py-2 text-sm text-slate-600 hover:text-emerald-600 transition-colors">
                 <GlobeIcon />
@@ -164,9 +164,9 @@ function Navbar() {
 
           {/* CTA */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <button className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+            <a href="/signin" className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
               Get Started
-            </button>
+            </a>
           </div>
 
         </div>
@@ -406,9 +406,9 @@ function CTA() {
         <p className="text-xl mb-8 opacity-90">
           Join thousands of travelers and transporters already using Smatway
         </p>
-        <button className="bg-white text-emerald-600 px-10 py-5 rounded-xl text-lg font-semibold hover:bg-slate-50 transition-all shadow-lg hover:shadow-2xl transform hover:-translate-y-1">
+        <a href="/signin" className="inline-block bg-white text-emerald-600 px-10 py-5 rounded-xl text-lg font-semibold hover:bg-slate-50 transition-all shadow-lg hover:shadow-2xl transform hover:-translate-y-1">
           Get Started Today
-        </button>
+        </a>
       </div>
     </section>
   );

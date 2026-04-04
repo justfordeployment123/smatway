@@ -112,9 +112,9 @@ function Navbar() {
 
           {/* CTA */}
           <div className="flex items-center space-x-2 md:space-x-4">
-            <button className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
+            <a href="/signin" className="hidden md:inline-flex items-center bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 text-sm">
               Get Started
-            </button>
+            </a>
           </div>
 
         </div>
@@ -254,9 +254,9 @@ export default function AboutPage() {
             <UsersIcon />
             <h2 className="text-4xl font-bold text-slate-900 mb-6">Join Our Community</h2>
             <p className="text-xl text-slate-600 mb-8">Be part of the fastest-growing transportation network</p>
-            <button className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl">
+            <a href="/signin" className="inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl">
               Get Started Today
-            </button>
+            </a>
           </div>
         </section>
 
