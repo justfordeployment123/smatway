@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python \"d:/Projects/Markhor Systems Projects/smataway/.playwright-mcp/organize.py\")"
+    ]
+  }
+}

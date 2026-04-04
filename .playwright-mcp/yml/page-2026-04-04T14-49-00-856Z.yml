@@ -1,0 +1,260 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "SmatWay" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e11]: SmatWay
+        - generic [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+          - link "About" [ref=e14] [cursor=pointer]:
+            - /url: /about
+          - link "How It Works" [ref=e15] [cursor=pointer]:
+            - /url: /how-it-works
+          - button "Language" [ref=e17]:
+            - img [ref=e18]
+            - text: Language
+        - button "Get Started" [ref=e22]
+    - generic [ref=e23]:
+      - generic [ref=e25]:
+        - heading "How It Works" [level=1] [ref=e26]
+        - paragraph [ref=e27]: Simple steps to start your journey or grow your transportation business
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - heading "For Travelers" [level=2] [ref=e31]
+          - paragraph [ref=e32]: Book your journey in five easy steps
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e36]: "1"
+            - generic [ref=e38]:
+              - img [ref=e40]
+              - generic [ref=e43]:
+                - heading "Search for Routes" [level=3] [ref=e44]
+                - paragraph [ref=e45]: Find available routes by entering your departure and destination cities
+                - list [ref=e46]:
+                  - listitem [ref=e47]:
+                    - img [ref=e48]
+                    - generic [ref=e51]: Browse routes across multiple cities
+                  - listitem [ref=e52]:
+                    - img [ref=e53]
+                    - generic [ref=e56]: View departure times and fares
+                  - listitem [ref=e57]:
+                    - img [ref=e58]
+                    - generic [ref=e61]: Check transporter ratings and reviews
+                  - listitem [ref=e62]:
+                    - img [ref=e63]
+                    - generic [ref=e66]: Filter by date and preferences
+          - generic [ref=e67]:
+            - generic [ref=e69]: "2"
+            - generic [ref=e71]:
+              - img [ref=e73]
+              - generic [ref=e77]:
+                - heading "Choose Your Ride" [level=3] [ref=e78]
+                - paragraph [ref=e79]: Select the route that best fits your schedule and budget
+                - list [ref=e80]:
+                  - listitem [ref=e81]:
+                    - img [ref=e82]
+                    - generic [ref=e85]: Compare different transporters
+                  - listitem [ref=e86]:
+                    - img [ref=e87]
+                    - generic [ref=e90]: Read passenger reviews
+                  - listitem [ref=e91]:
+                    - img [ref=e92]
+                    - generic [ref=e95]: View vehicle details and photos
+                  - listitem [ref=e96]:
+                    - img [ref=e97]
+                    - generic [ref=e100]: Check available seats
+          - generic [ref=e101]:
+            - generic [ref=e103]: "3"
+            - generic [ref=e105]:
+              - img [ref=e107]
+              - generic [ref=e109]:
+                - heading "Book & Pay Securely" [level=3] [ref=e110]
+                - paragraph [ref=e111]: Complete your booking with secure payment options
+                - list [ref=e112]:
+                  - listitem [ref=e113]:
+                    - img [ref=e114]
+                    - generic [ref=e117]: Pay securely with available payment options
+                  - listitem [ref=e118]:
+                    - img [ref=e119]
+                    - generic [ref=e122]: Receive instant booking confirmation
+                  - listitem [ref=e123]:
+                    - img [ref=e124]
+                    - generic [ref=e127]: Get booking reference number
+                  - listitem [ref=e128]:
+                    - img [ref=e129]
+                    - generic [ref=e132]: Payment protected and secure
+          - generic [ref=e133]:
+            - generic [ref=e135]: "4"
+            - generic [ref=e137]:
+              - img [ref=e139]
+              - generic [ref=e145]:
+                - heading "Get Your QR Code" [level=3] [ref=e146]
+                - paragraph [ref=e147]: Receive a unique QR code for your journey
+                - list [ref=e148]:
+                  - listitem [ref=e149]:
+                    - img [ref=e150]
+                    - generic [ref=e153]: Download your booking QR code
+                  - listitem [ref=e154]:
+                    - img [ref=e155]
+                    - generic [ref=e158]: Show code to driver at departure
+                  - listitem [ref=e159]:
+                    - img [ref=e160]
+                    - generic [ref=e163]: Track your journey in real-time
+                  - listitem [ref=e164]:
+                    - img [ref=e165]
+                    - generic [ref=e168]: Share trip details with family
+          - generic [ref=e169]:
+            - generic [ref=e171]: "5"
+            - generic [ref=e173]:
+              - img [ref=e175]
+              - generic [ref=e178]:
+                - heading "Complete Your Journey" [level=3] [ref=e179]
+                - paragraph [ref=e180]: Travel safely and rate your experience
+                - list [ref=e181]:
+                  - listitem [ref=e182]:
+                    - img [ref=e183]
+                    - generic [ref=e186]: Board using your QR code
+                  - listitem [ref=e187]:
+                    - img [ref=e188]
+                    - generic [ref=e191]: Enjoy your safe journey
+                  - listitem [ref=e192]:
+                    - img [ref=e193]
+                    - generic [ref=e196]: Track arrival time
+                  - listitem [ref=e197]:
+                    - img [ref=e198]
+                    - generic [ref=e201]: Rate and review your experience
+      - generic [ref=e203]:
+        - generic [ref=e204]:
+          - heading "For Transporters" [level=2] [ref=e205]
+          - paragraph [ref=e206]: Start earning with your vehicles today
+        - generic [ref=e207]:
+          - generic [ref=e208]:
+            - generic [ref=e210]: "1"
+            - generic [ref=e212]:
+              - img [ref=e214]
+              - generic [ref=e219]:
+                - heading "Create Your Account" [level=3] [ref=e220]
+                - paragraph [ref=e221]: Sign up as a transporter and complete verification
+                - list [ref=e222]:
+                  - listitem [ref=e223]:
+                    - img [ref=e224]
+                    - generic [ref=e227]: Provide business registration details
+                  - listitem [ref=e228]:
+                    - img [ref=e229]
+                    - generic [ref=e232]: Submit driver's license and documents
+                  - listitem [ref=e233]:
+                    - img [ref=e234]
+                    - generic [ref=e237]: Complete background verification
+                  - listitem [ref=e238]:
+                    - img [ref=e239]
+                    - generic [ref=e242]: Set up payment details
+          - generic [ref=e243]:
+            - generic [ref=e245]: "2"
+            - generic [ref=e247]:
+              - img [ref=e249]
+              - generic [ref=e253]:
+                - heading "Add Your Vehicles" [level=3] [ref=e254]
+                - paragraph [ref=e255]: Register your vehicles on the platform
+                - list [ref=e256]:
+                  - listitem [ref=e257]:
+                    - img [ref=e258]
+                    - generic [ref=e261]: Upload vehicle registration documents
+                  - listitem [ref=e262]:
+                    - img [ref=e263]
+                    - generic [ref=e266]: Add vehicle photos and details
+                  - listitem [ref=e267]:
+                    - img [ref=e268]
+                    - generic [ref=e271]: Specify seating capacity
+                  - listitem [ref=e272]:
+                    - img [ref=e273]
+                    - generic [ref=e276]: Submit insurance certificates
+          - generic [ref=e277]:
+            - generic [ref=e279]: "3"
+            - generic [ref=e281]:
+              - img [ref=e283]
+              - generic [ref=e285]:
+                - heading "Create Routes" [level=3] [ref=e286]
+                - paragraph [ref=e287]: Set up your routes and schedules
+                - list [ref=e288]:
+                  - listitem [ref=e289]:
+                    - img [ref=e290]
+                    - generic [ref=e293]: Define departure and destination cities
+                  - listitem [ref=e294]:
+                    - img [ref=e295]
+                    - generic [ref=e298]: Set departure times and dates
+                  - listitem [ref=e299]:
+                    - img [ref=e300]
+                    - generic [ref=e303]: Specify fares and pricing
+                  - listitem [ref=e304]:
+                    - img [ref=e305]
+                    - generic [ref=e308]: Add route descriptions
+          - generic [ref=e309]:
+            - generic [ref=e311]: "4"
+            - generic [ref=e313]:
+              - img [ref=e315]
+              - generic [ref=e320]:
+                - heading "Receive Bookings" [level=3] [ref=e321]
+                - paragraph [ref=e322]: Get notified when travelers book your routes
+                - list [ref=e323]:
+                  - listitem [ref=e324]:
+                    - img [ref=e325]
+                    - generic [ref=e328]: Instant booking notifications
+                  - listitem [ref=e329]:
+                    - img [ref=e330]
+                    - generic [ref=e333]: View passenger details
+                  - listitem [ref=e334]:
+                    - img [ref=e335]
+                    - generic [ref=e338]: Manage booking confirmations
+                  - listitem [ref=e339]:
+                    - img [ref=e340]
+                    - generic [ref=e343]: Track seat availability
+          - generic [ref=e344]:
+            - generic [ref=e346]: "5"
+            - generic [ref=e348]:
+              - img [ref=e350]
+              - generic [ref=e352]:
+                - heading "Get Paid" [level=3] [ref=e353]
+                - paragraph [ref=e354]: Receive payments directly to your account
+                - list [ref=e355]:
+                  - listitem [ref=e356]:
+                    - img [ref=e357]
+                    - generic [ref=e360]: Automatic payment processing
+                  - listitem [ref=e361]:
+                    - img [ref=e362]
+                    - generic [ref=e365]: Funds transferred after trip completion
+                  - listitem [ref=e366]:
+                    - img [ref=e367]
+                    - generic [ref=e370]: View transaction history
+                  - listitem [ref=e371]:
+                    - img [ref=e372]
+                    - generic [ref=e375]: Transparent fee structure
+      - generic [ref=e377]:
+        - generic [ref=e378]:
+          - heading "Safety First" [level=2] [ref=e379]
+          - paragraph [ref=e380]: Your safety is our top priority
+        - generic [ref=e381]:
+          - generic [ref=e382]:
+            - img [ref=e384]
+            - heading "Verified Transporters" [level=3] [ref=e386]
+            - paragraph [ref=e387]: All transporters go through a rigorous verification process including background checks, license verification, and vehicle inspection to ensure your safety.
+          - generic [ref=e388]:
+            - img [ref=e390]
+            - heading "Real-Time Tracking" [level=3] [ref=e395]
+            - paragraph [ref=e396]: Share your trip details with family and friends. They can track your journey in real-time for added peace of mind throughout your travel.
+          - generic [ref=e397]:
+            - img [ref=e399]
+            - heading "Secure Payments" [level=3] [ref=e402]
+            - paragraph [ref=e403]: All payments are processed through secure, encrypted channels. Your financial information is protected, and payments are held until trip completion.
+          - generic [ref=e404]:
+            - img [ref=e406]
+            - heading "24/7 Support" [level=3] [ref=e408]
+            - paragraph [ref=e409]: Our support team is available around the clock to assist you with any issues. Emergency SOS button available in the app for immediate help.
+      - generic [ref=e411]:
+        - heading "Ready to Get Started?" [level=2] [ref=e412]
+        - paragraph [ref=e413]: Join thousands of travelers and transporters using SmatWay every day
+        - button "Start Your Journey" [ref=e414]
+  - button "Open Next.js Dev Tools" [ref=e420] [cursor=pointer]:
+    - img [ref=e421]
