@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python \"d:/Projects/Markhor Systems Projects/smataway/.playwright-mcp/organize.py\")"
+      "Bash(python \"d:/Projects/Markhor Systems Projects/smataway/.playwright-mcp/organize.py\")",
+      "mcp__plugin_playwright_playwright__browser_resize"
     ]
   }
 }

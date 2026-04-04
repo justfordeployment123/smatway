@@ -1,6 +1,0 @@
-[    1690ms] [LOG] [Object, Object] @ https://smatway.com/assets/index-De9xxORt.js:1324
-[    1968ms] [LOG] [Object, Object] @ https://smatway.com/assets/index-De9xxORt.js:1324
-[    2143ms] [LOG] [Object, Object] @ https://smatway.com/assets/index-De9xxORt.js:1324
-[   78619ms] [LOG] [] @ https://smatway.com/assets/index-De9xxORt.js:1324
-[   95878ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://smatway.com/dashboard/settings:0
-[   95878ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "new-password"): (More info: https://goo.gl/9p2vKq) %o @ https://smatway.com/dashboard/settings:0
