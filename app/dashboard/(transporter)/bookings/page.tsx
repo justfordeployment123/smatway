@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DashboardTable, { TableColumn } from "@/app/dashboard/_Components/DashboardTable";
+import { ClockIcon, CheckCircleIcon, MailIcon } from "@/app/dashboard/_Components/Icons";
 
 const columns: TableColumn[] = [
     "Bookingref", "Traveler", "Route", "Departure",
@@ -45,10 +46,7 @@ export default function TransporterBookingsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
                             <div className="flex items-center space-x-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-600">
-                                    <circle cx="12" cy="12" r="10" />
-                                    <polyline points="12 6 12 12 16 14" />
-                                </svg>
+                                <ClockIcon className="w-8 h-8 text-amber-600" />
                                 <div>
                                     <div className="text-2xl font-bold text-slate-900">0</div>
                                     <div className="text-sm text-slate-600">Pending Confirmation</div>
@@ -58,10 +56,7 @@ export default function TransporterBookingsPage() {
 
                         <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
                             <div className="flex items-center space-x-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600">
-                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                                    <path d="m9 11 3 3L22 4" />
-                                </svg>
+                                <CheckCircleIcon className="w-8 h-8 text-emerald-600" />
                                 <div>
                                     <div className="text-2xl font-bold text-slate-900">0</div>
                                     <div className="text-sm text-slate-600">Confirmed</div>
@@ -71,10 +66,7 @@ export default function TransporterBookingsPage() {
 
                         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                             <div className="flex items-center space-x-3">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600">
-                                    <rect width="20" height="16" x="2" y="4" rx="2" />
-                                    <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-                                </svg>
+                                <MailIcon className="w-8 h-8 text-blue-600" />
                                 <div>
                                     <div className="text-2xl font-bold text-slate-900">0</div>
                                     <div className="text-sm text-slate-600">Total Bookings</div>

@@ -1,44 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-function LockIcon() {
-  return (
-    <svg className="w-6 h-6 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function BellIcon() {
-  return (
-    <svg className="w-6 h-6 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-      <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-    </svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-      <line x1="2" x2="22" y1="2" y2="22" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
+import { LockIcon, BellIcon, EyeIcon, EyeOffIcon } from "@/app/dashboard/_Components/Icons";
 
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
@@ -83,7 +46,7 @@ export default function SettingsPage() {
       {/* Change Password */}
       <div className="bg-white rounded-lg border border-[#f0f0f0] p-6 mb-6">
         <div className="flex items-center space-x-3 mb-6">
-          <LockIcon />
+          <LockIcon className="w-6 h-6 text-emerald-600" />
           <h2 className="text-xl font-bold text-slate-900">Change Password</h2>
         </div>
 
@@ -98,7 +61,7 @@ export default function SettingsPage() {
               className="flex-1 outline-none text-slate-900 text-sm bg-transparent"
             />
             <button type="button" onClick={() => setShowNew(!showNew)}>
-              {showNew ? <EyeIcon /> : <EyeOffIcon />}
+              {showNew ? <EyeIcon className="w-4 h-4 text-slate-400" /> : <EyeOffIcon className="w-4 h-4 text-slate-400" />}
             </button>
           </div>
         </div>
@@ -114,12 +77,12 @@ export default function SettingsPage() {
               className="flex-1 outline-none text-slate-900 text-sm bg-transparent"
             />
             <button type="button" onClick={() => setShowConfirm(!showConfirm)}>
-              {showConfirm ? <EyeIcon /> : <EyeOffIcon />}
+              {showConfirm ? <EyeIcon className="w-4 h-4 text-slate-400" /> : <EyeOffIcon className="w-4 h-4 text-slate-400" />}
             </button>
           </div>
         </div>
 
-        <button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg border-0 shadow transition-all">
+        <button className="bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg border-0 shadow transition-all">
           Update Password
         </button>
       </div>
@@ -127,7 +90,7 @@ export default function SettingsPage() {
       {/* Notifications */}
       <div className="bg-white rounded-lg border border-[#f0f0f0] p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <BellIcon />
+          <BellIcon className="w-6 h-6 text-emerald-600" />
           <h2 className="text-xl font-bold text-slate-900">Notifications</h2>
         </div>
 

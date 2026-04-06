@@ -1,4 +1,5 @@
 import DashboardTable from "@/app/dashboard/_Components/DashboardTable";
+import { PlusIcon } from "@/app/dashboard/_Components/Icons";
 
 const columns = ["Vehicle", "Route", "Stops", "Departure", "Arrival", "Price", "Seats Available", "Status", "Actions"];
 
@@ -15,9 +16,7 @@ export default function TransporterRoutesPage() {
           disabled
           className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed w-full sm:w-auto justify-center"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 12h14" /><path d="M12 5v14" />
-          </svg>
+          <PlusIcon className="w-4 h-4" />
           Add Route
         </button>
       </div>

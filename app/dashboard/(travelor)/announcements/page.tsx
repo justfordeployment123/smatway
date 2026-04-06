@@ -17,7 +17,7 @@ export default function AnnouncementsPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 p-6">
       <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+        <h1 className="text-4xl font-bold bg-linear-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
           Announcements
         </h1>
         <p className="text-slate-600 text-lg">Stay updated with important information</p>

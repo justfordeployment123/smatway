@@ -121,7 +121,7 @@ export default function SearchRidesPage() {
               <button
                 type="button"
                 onClick={() => setSearched(true)}
-                className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-12 py-2 rounded-lg border-0 text-base transition-all"
+                className="bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-12 py-2 rounded-lg border-0 text-base transition-all"
               >
                 Search Routes
               </button>

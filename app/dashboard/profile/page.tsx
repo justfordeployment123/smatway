@@ -1,39 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
-function UserIcon({ className = "w-4 h-4 text-slate-400" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
-    </svg>
-  );
-}
-
-function PhoneIcon({ className = "w-4 h-4 text-slate-400" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-    </svg>
-  );
-}
-
-function MailIcon() {
-  return (
-    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
-    </svg>
-  );
-}
-
-function CameraIcon() {
-  return (
-    <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" />
-      <circle cx="12" cy="13" r="3" />
-    </svg>
-  );
-}
+import { UserIcon, PhoneIcon, MailIcon, CameraIcon } from "@/app/dashboard/_Components/Icons";
 
 const travelerData = {
   initial: "J",
@@ -90,7 +58,7 @@ export default function ProfilePage() {
         <div className="flex items-center space-x-6 mb-8">
           <div className="relative">
             <div
-              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold"
+              className="rounded-full bg-linear-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold"
               style={{ width: 100, height: 100, fontSize: 18 }}
             >
               {data.initial}
@@ -99,7 +67,7 @@ export default function ProfilePage() {
               title="Change profile picture"
               className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 transition-colors"
             >
-              <CameraIcon />
+              <CameraIcon className="w-3 h-3" />
             </button>
           </div>
           <div>
@@ -119,7 +87,7 @@ export default function ProfilePage() {
               <span className="text-red-500 mr-1">*</span>Full Name
             </label>
             <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-              <UserIcon />
+              <UserIcon className="w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={fullName}
@@ -134,7 +102,7 @@ export default function ProfilePage() {
               <span className="text-red-500 mr-1">*</span>Phone Number
             </label>
             <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
-              <PhoneIcon />
+              <PhoneIcon className="w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={phone}
@@ -149,14 +117,14 @@ export default function ProfilePage() {
         {/* Email (readonly) */}
         <div className="bg-slate-50 p-4 rounded-lg mb-4">
           <div className="flex items-center space-x-2 text-slate-600 mb-2">
-            <MailIcon />
+            <MailIcon className="w-4 h-4" />
             <span className="text-sm font-medium">Email</span>
           </div>
           <p className="text-slate-900">{data.email}</p>
           <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
         </div>
 
-        <button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg border-0 shadow transition-all">
+        <button className="bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg border-0 shadow transition-all">
           Update Profile
         </button>
       </div>
