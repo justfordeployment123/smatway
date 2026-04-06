@@ -81,7 +81,7 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
 
       {/* Change Password */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+      <div className="bg-white rounded-lg border border-[#f0f0f0] p-6 mb-6">
         <div className="flex items-center space-x-3 mb-6">
           <LockIcon />
           <h2 className="text-xl font-bold text-slate-900">Change Password</h2>
@@ -125,7 +125,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Notifications */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6">
+      <div className="bg-white rounded-lg border border-[#f0f0f0] p-6">
         <div className="flex items-center space-x-3 mb-6">
           <BellIcon />
           <h2 className="text-xl font-bold text-slate-900">Notifications</h2>
@@ -143,9 +143,9 @@ export default function SettingsPage() {
 
           {/* Divider with centered text */}
           <div className="flex items-center gap-4 my-2">
-            <div className="flex-1 border-t border-slate-200" />
+            <div className="flex-1 border-t border-[#f0f0f0]" />
             <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Notification Types</span>
-            <div className="flex-1 border-t border-slate-200" />
+            <div className="flex-1 border-t border-[#f0f0f0]" />
           </div>
 
           {/* Notification type rows */}

@@ -230,8 +230,8 @@ function Sidebar({
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
 function Topbar({ title, role }: { title: string; role: "traveler" | "transporter" }) {
-  const initial = role === "transporter" ? "J" : "M";
-  const name = role === "transporter" ? "John Doe" : "M Hamza";
+  const initial ="J" ;
+  const name = "John Doe" ;
 
   return (
     <header className="bg-white border-b border-[#f0f0f0] px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">

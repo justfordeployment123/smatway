@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 function UserIcon({ className = "w-4 h-4 text-slate-400" }: { className?: string }) {
   return (
@@ -35,29 +35,65 @@ function CameraIcon() {
   );
 }
 
-export default function ProfilePage() {
-  const [fullName, setFullName] = useState("M Hamza");
-  const [phone, setPhone] = useState("+91 12 12345678");
+const travelerData = {
+  initial: "J",
+  fullName: "John Doe",
+  phone: "+91 12 12345678",
+  email: "john.doe@example.com",
+  role: "Traveler",
+  roleTag: "text-emerald-700 bg-emerald-50 border border-emerald-300",
+  emergencyContacts: [
+    { name: "John Doe Friend", relation: "family", phone: "+92 12 12345678", status: "Pending", statusTag: "text-amber-700 bg-amber-50 border border-amber-300" },
+    { name: "John Doe Family", relation: "friend", phone: "+92 12 12345678", status: "Verified", statusTag: "text-emerald-700 bg-emerald-50 border border-emerald-300" },
+  ],
+};
 
-  const emergencyContacts = [
-    { name: "M Hamza", relation: "family", phone: "+92 12 12345678", status: "Pending", statusColor: "text-amber-600 bg-amber-50 border border-amber-300" },
-    { name: "M Hamza", relation: "friend", phone: "+92 12 12345678", status: "Verified", statusColor: "text-emerald-600 bg-emerald-50 border border-emerald-300" },
-  ];
+const transporterData = {
+  initial: "J",
+  fullName: "John Doe",
+  phone: "+91 12 12345678",
+  email: "john.doe@example.com",
+  role: "Transporter",
+  roleTag: "text-blue-700 bg-blue-50 border border-blue-300",
+  emergencyContacts: [
+    { name: "John Doe Friend", relation: "family", phone: "+92 12 12345678", status: "Verified", statusTag: "text-emerald-700 bg-emerald-50 border border-emerald-300" },
+    { name: "John Doe Family", relation: "friend", phone: "+92 12 12345678", status: "Verified", statusTag: "text-emerald-700 bg-emerald-50 border border-emerald-300" },
+  ],
+};
+
+export default function ProfilePage() {
+  const [role, setRole] = useState<"traveler" | "transporter">("traveler");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("smatway-dev-role") as "traveler" | "transporter" | null;
+    if (saved) setRole(saved);
+  }, []);
+
+  const data = role === "transporter" ? transporterData : travelerData;
+  const [fullName, setFullName] = useState(data.fullName);
+  const [phone, setPhone] = useState(data.phone);
+
+  // Sync form fields when role changes
+  useEffect(() => {
+    const d = role === "transporter" ? transporterData : travelerData;
+    setFullName(d.fullName);
+    setPhone(d.phone);
+  }, [role]);
 
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-bold text-slate-900 mb-6">My Profile</h1>
 
       {/* Profile card */}
-      <div className="bg-white rounded-lg border border-slate-200 p-6 mb-6">
+      <div className="bg-white rounded-lg border border-[#f0f0f0] p-6 mb-6">
         {/* Avatar + name */}
         <div className="flex items-center space-x-6 mb-8">
           <div className="relative">
             <div
-              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold"
-              style={{ width: 100, height: 100, fontSize: 36 }}
+              className="rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 flex items-center justify-center text-white font-semibold"
+              style={{ width: 100, height: 100, fontSize: 18 }}
             >
-              M
+              {data.initial}
             </div>
             <button
               title="Change profile picture"
@@ -67,18 +103,17 @@ export default function ProfilePage() {
             </button>
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">M Hamza</h2>
-            <span className="inline-block mt-2 px-2 py-0.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-300 rounded">
-              Traveler
+            <h2 className="text-2xl font-bold text-slate-900">{data.fullName}</h2>
+            <span className={`inline-block mt-2 px-2 py-0.5 text-xs font-medium rounded ${data.roleTag}`}>
+              {data.role}
             </span>
           </div>
         </div>
 
-        <hr className="border-slate-200 mb-6" />
+        <hr className="border-[#f0f0f0] mb-6" />
 
         {/* Form */}
         <div className="grid md:grid-cols-2 gap-4 mb-4">
-          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               <span className="text-red-500 mr-1">*</span>Full Name
@@ -94,7 +129,6 @@ export default function ProfilePage() {
               />
             </div>
           </div>
-          {/* Phone */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1.5">
               <span className="text-red-500 mr-1">*</span>Phone Number
@@ -118,7 +152,7 @@ export default function ProfilePage() {
             <MailIcon />
             <span className="text-sm font-medium">Email</span>
           </div>
-          <p className="text-slate-900">anybody.add2@gmail.com</p>
+          <p className="text-slate-900">{data.email}</p>
           <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
         </div>
 
@@ -128,12 +162,12 @@ export default function ProfilePage() {
       </div>
 
       {/* Emergency Contacts */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200">
+      <div className="bg-white rounded-lg border border-[#f0f0f0] overflow-hidden">
+        <div className="px-6 py-4 border-b border-[#f0f0f0]">
           <h2 className="text-base font-semibold text-slate-900">Emergency Contacts</h2>
         </div>
         <div className="p-6 space-y-4">
-          {emergencyContacts.map((contact, i) => (
+          {data.emergencyContacts.map((contact, i) => (
             <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
               <div>
                 <div className="flex items-center space-x-2 mb-1">
@@ -148,7 +182,7 @@ export default function ProfilePage() {
                   <span className="text-sm">{contact.phone}</span>
                 </div>
               </div>
-              <span className={`px-2 py-0.5 text-xs font-medium rounded ${contact.statusColor}`}>
+              <span className={`px-2 py-0.5 text-xs font-medium rounded ${contact.statusTag}`}>
                 {contact.status}
               </span>
             </div>

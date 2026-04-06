@@ -8,7 +8,7 @@ export default function TransporterDashboardPage() {
 
       {/* Stat Cards — 4 cols on lg, 2 on sm */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border border-slate-200 p-6">
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-lg border border-[#f0f0f0] p-6">
           <div className="text-sm text-slate-600 mb-3">Total Vehicles</div>
           <div className="flex items-center gap-2" style={{ color: "rgb(5, 150, 105)" }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -19,7 +19,7 @@ export default function TransporterDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-slate-200 p-6">
+        <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-[#f0f0f0] p-6">
           <div className="text-sm text-slate-600 mb-3">Active Routes</div>
           <div className="flex items-center gap-2" style={{ color: "rgb(37, 99, 235)" }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -29,7 +29,7 @@ export default function TransporterDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-slate-200 p-6">
+        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-[#f0f0f0] p-6">
           <div className="text-sm text-slate-600 mb-3">Total Bookings</div>
           <div className="flex items-center gap-2" style={{ color: "rgb(147, 51, 234)" }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +40,7 @@ export default function TransporterDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-slate-200 p-6">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg border border-[#f0f0f0] p-6">
           <div className="text-sm text-slate-600 mb-3">Total Revenue (All Currencies)</div>
           <div className="flex items-center gap-2" style={{ color: "rgb(217, 119, 6)" }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,9 +52,9 @@ export default function TransporterDashboardPage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg border border-slate-200 h-full">
-          <div className="px-6 py-4 border-b border-slate-200 font-semibold text-slate-900 text-base">
+      <div className="mt-6">
+        <div className="bg-white rounded-lg border border-[#f0f0f0]">
+          <div className="px-6 py-4 border-b border-[#f0f0f0] font-semibold text-slate-900 text-base">
             Quick Actions
           </div>
           <div className="p-6 space-y-3">
