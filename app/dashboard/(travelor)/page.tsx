@@ -35,108 +35,126 @@ export default function SearchRidesPage() {
   const [searched, setSearched] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div>
+      {/* Header */}
+      <div className="mb-6">
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">
+          Available Rides
+        </h1>
+        <p className="text-sm text-slate-400">Search for routes</p>
+      </div>
 
-        {/* Heading */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Available Rides</h1>
-              <p className="text-slate-600">Search for Routes</p>
-            </div>
+      {/* Search form */}
+      <div className="bg-white rounded-xl border border-slate-100 p-6 mb-6">
+        <h3 className="text-sm font-semibold text-zinc-900 mb-4">
+          Search Routes
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+              Departure Country
+            </label>
+            <input
+              type="text"
+              placeholder="Enter departure country"
+              value={depCountry}
+              onChange={(e) => setDepCountry(e.target.value)}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full transition-all"
+            />
           </div>
-        </div>
-
-        {/* Search card */}
-        <div className="bg-white rounded-lg border border-[#f0f0f0] mb-6">
-          <div className="p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-900">Search Routes</h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Departure Country</label>
-                <input
-                  type="text"
-                  placeholder="Enter departure country"
-                  value={depCountry}
-                  onChange={(e) => setDepCountry(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Departure City</label>
-                <input
-                  type="text"
-                  placeholder="Enter departure city"
-                  value={depCity}
-                  onChange={(e) => setDepCity(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Destination Country</label>
-                <input
-                  type="text"
-                  placeholder="Enter destination country"
-                  value={destCountry}
-                  onChange={(e) => setDestCountry(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Destination City</label>
-                <input
-                  type="text"
-                  placeholder="Enter destination city"
-                  value={destCity}
-                  onChange={(e) => setDestCity(e.target.value)}
-                  className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Transport Type</label>
-                <div className="relative">
-                  <select
-                    value={transportType}
-                    onChange={(e) => setTransportType(e.target.value)}
-                    className="w-full appearance-none rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 pr-8"
-                  >
-                    {transportTypes.map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
-                  </select>
-                  <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-                    <svg viewBox="64 64 896 896" width="12" height="12" fill="currentColor" className="text-slate-400">
-                      <path d="M884 256h-75c-5.1 0-9.9 2.5-12.9 6.6L512 654.2 227.9 262.6c-3-4.1-7.8-6.6-12.9-6.6h-75c-6.5 0-10.3 7.4-6.5 12.7l352.6 486.1c12.8 17.6 39 17.6 51.7 0l352.6-486.1c3.9-5.3.1-12.7-6.4-12.7z" />
-                    </svg>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-center pt-2">
-              <button
-                type="button"
-                onClick={() => setSearched(true)}
-                className="bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-12 py-2 rounded-lg border-0 text-base transition-all"
+          <div>
+            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+              Departure City
+            </label>
+            <input
+              type="text"
+              placeholder="Enter departure city"
+              value={depCity}
+              onChange={(e) => setDepCity(e.target.value)}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full transition-all"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+              Destination Country
+            </label>
+            <input
+              type="text"
+              placeholder="Enter destination country"
+              value={destCountry}
+              onChange={(e) => setDestCountry(e.target.value)}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full transition-all"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+              Destination City
+            </label>
+            <input
+              type="text"
+              placeholder="Enter destination city"
+              value={destCity}
+              onChange={(e) => setDestCity(e.target.value)}
+              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full transition-all"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+              Transport Type
+            </label>
+            <div className="relative">
+              <select
+                value={transportType}
+                onChange={(e) => setTransportType(e.target.value)}
+                className="appearance-none rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 w-full transition-all pr-10"
               >
-                Search Routes
-              </button>
+                {transportTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                <svg
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-slate-400"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Empty state */}
-        <div className="text-center py-12 text-slate-600">
-          <div className="flex flex-col items-center gap-3">
-            <AntEmptyIllustration />
-            <p>Enter search criteria above and click &apos;Search Routes&apos; to find available rides</p>
-          </div>
+        <div className="flex justify-center pt-4">
+          <button
+            type="button"
+            onClick={() => setSearched(true)}
+            className="bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-8 py-2.5 rounded-xl active:scale-[0.98] transition-all text-sm"
+          >
+            Search Routes
+          </button>
         </div>
+      </div>
 
+      {/* Empty state */}
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <AntEmptyIllustration />
+        <p className="text-sm font-medium text-zinc-900 mt-4">
+          No rides to display
+        </p>
+        <p className="text-sm text-slate-400 max-w-xs mt-1">
+          Enter search criteria above and click &apos;Search Routes&apos; to
+          find available rides
+        </p>
       </div>
     </div>
   );

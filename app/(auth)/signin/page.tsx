@@ -4,7 +4,7 @@ import { useState } from "react";
 
 function ArrowLeftIcon() {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
     </svg>
   );
@@ -49,51 +49,81 @@ export default function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full animate-fade-in-up">
 
-      <a href="/" className="flex items-center space-x-2 text-slate-600 hover:text-emerald-600 mb-8 transition-colors">
+      <a href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
       </a>
 
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Welcome Back!</h1>
-        <p className="text-slate-600">Sign in to your Smatway account</p>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Welcome back</h1>
+        <p className="text-slate-500">Sign in to your SmatWay account</p>
       </div>
 
-      <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
-        <div>
-          <label htmlFor="email" className="block text-slate-700 font-medium mb-2">Email</label>
-          <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all bg-white">
-            <MailIcon />
-            <input id="email" type="text" placeholder="you@example.com" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
+      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+        <div className="animate-fade-in-up [animation-delay:100ms]">
+          <label htmlFor="email" className="text-sm font-medium text-zinc-900 mb-1.5 block">Email</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <MailIcon />
+            </span>
+            <input
+              id="email"
+              type="text"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
           </div>
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-slate-700 font-medium mb-2">Password</label>
-          <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all bg-white">
-            <LockIcon />
-            <input id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="ml-2 focus:outline-none">
+        <div className="animate-fade-in-up [animation-delay:200ms]">
+          <div className="flex items-center justify-between mb-1.5">
+            <label htmlFor="password" className="text-sm font-medium text-zinc-900 block">Password</label>
+            <a href="/forgot-password" className="text-sm text-slate-400 hover:text-emerald-600 transition-colors">Forgot password?</a>
+          </div>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <LockIcon />
+            </span>
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
               {showPassword ? <EyeIcon /> : <EyeOffIcon />}
             </button>
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <a href="/forgot-password" className="text-emerald-600 hover:text-emerald-700 text-sm font-medium">Forgot password?</a>
+        <div className="animate-fade-in-up [animation-delay:300ms] pt-1">
+          <a
+            href="/dashboard"
+            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm"
+          >
+            Sign In
+          </a>
         </div>
-
-        <a href="/dashboard" className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all inline-flex items-center justify-center">
-          Sign In
-        </a>
       </form>
 
-      <div className="mt-6 text-center">
-        <span className="text-slate-600">Don&apos;t have an account? </span>
-        <a href="/signup" className="text-emerald-600 hover:text-emerald-700 font-semibold">Sign Up</a>
+      <div className="border-t border-slate-100 my-6" />
+
+      <div className="text-center animate-fade-in-up [animation-delay:400ms]">
+        <p className="text-sm text-slate-500">
+          Don&apos;t have an account?{" "}
+          <a href="/signup" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign Up</a>
+        </p>
       </div>
 
+      <p className="text-center text-xs text-slate-400 mt-8 animate-fade-in-up [animation-delay:500ms]">
+        Join 50,000+ travelers already using SmatWay
+      </p>
     </div>
   );
 }

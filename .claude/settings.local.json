@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s https://raw.githubusercontent.com/Leonxlnx/taste-skill/main/README.md)",
+      "Bash(curl -s https://raw.githubusercontent.com/Leonxlnx/taste-skill/master/README.md)",
+      "Bash(curl -s \"https://api.github.com/repos/Leonxlnx/taste-skill/contents/\")",
+      "Bash(python3 -c \"import json,sys; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)]\")",
+      "Bash(curl -s \"https://api.github.com/repos/Leonxlnx/taste-skill/contents/skills\")",
+      "Bash(curl:*)"
+    ]
+  }
+}

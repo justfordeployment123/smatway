@@ -4,7 +4,7 @@ import { useState } from "react";
 
 function ArrowLeftIcon() {
   return (
-    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m12 19-7-7 7-7" /><path d="M19 12H5" />
     </svg>
   );
@@ -68,11 +68,11 @@ function EyeIcon() {
   );
 }
 
-function InputField({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
+function ChevronDownIcon() {
   return (
-    <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all bg-white">
-      {icon}{children}
-    </div>
+    <svg className="w-4 h-4 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 
@@ -82,44 +82,78 @@ export default function SignUpPage() {
   const [accountType, setAccountType] = useState<"traveler" | "transporter">("traveler");
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full animate-fade-in-up">
 
-      <a href="/" className="flex items-center space-x-2 text-slate-600 hover:text-emerald-600 mb-8 transition-colors">
+      <a href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
       </a>
 
       <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-2">Create Account</h1>
-        <p className="text-slate-600">Join SmatWay and start your journey today</p>
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Create your account</h1>
+        <p className="text-slate-500">Join SmatWay and start your journey today</p>
       </div>
 
-      <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
-        <div>
-          <label htmlFor="fullName" className="block text-slate-700 font-medium mb-2">Full Name</label>
-          <InputField icon={<UserIcon />}>
-            <input id="fullName" type="text" placeholder="John Doe" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-          </InputField>
+      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+        {/* Full Name */}
+        <div className="animate-fade-in-up [animation-delay:100ms]">
+          <label htmlFor="fullName" className="text-sm font-medium text-zinc-900 mb-1.5 block">Full Name</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <UserIcon />
+            </span>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Your full name"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="email" className="block text-slate-700 font-medium mb-2">Email</label>
-          <InputField icon={<MailIcon />}>
-            <input id="email" type="text" placeholder="john@example.com" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-          </InputField>
+        {/* Email */}
+        <div className="animate-fade-in-up [animation-delay:150ms]">
+          <label htmlFor="email" className="text-sm font-medium text-zinc-900 mb-1.5 block">Email</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <MailIcon />
+            </span>
+            <input
+              id="email"
+              type="text"
+              placeholder="you@example.com"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="phoneNumber" className="block text-slate-700 font-medium mb-2">Phone Number</label>
-          <InputField icon={<PhoneIcon />}>
-            <input id="phoneNumber" type="text" placeholder="+254 712 345 678" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-          </InputField>
+        {/* Phone Number */}
+        <div className="animate-fade-in-up [animation-delay:200ms]">
+          <label htmlFor="phoneNumber" className="text-sm font-medium text-zinc-900 mb-1.5 block">Phone Number</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <PhoneIcon />
+            </span>
+            <input
+              id="phoneNumber"
+              type="text"
+              placeholder="+254 712 345 678"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="country" className="block text-slate-700 font-medium mb-2">Country</label>
-          <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-emerald-500 focus-within:ring-1 focus-within:ring-emerald-500 transition-all bg-white">
-            <select id="country" className="flex-1 outline-none text-slate-400 text-base bg-transparent appearance-none cursor-pointer">
-              <option value="">Select your country</option>
+        {/* Country */}
+        <div className="animate-fade-in-up [animation-delay:250ms]">
+          <label htmlFor="country" className="text-sm font-medium text-zinc-900 mb-1.5 block">Country</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <GlobeIcon />
+            </span>
+            <select
+              id="country"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-10 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
+            >
+              <option value="" className="text-slate-400">Select your country</option>
               <option value="KE">Kenya</option>
               <option value="UG">Uganda</option>
               <option value="TZ">Tanzania</option>
@@ -131,62 +165,124 @@ export default function SignUpPage() {
               <option value="US">United States</option>
               <option value="GB">United Kingdom</option>
             </select>
-            <GlobeIcon />
+            <span className="absolute right-3">
+              <ChevronDownIcon />
+            </span>
           </div>
         </div>
 
-        <div>
-          <label htmlFor="password" className="block text-slate-700 font-medium mb-2">Password</label>
-          <InputField icon={<LockIcon />}>
-            <input id="password" type={showPassword ? "text" : "password"} placeholder="Create a password" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="ml-2 focus:outline-none">
+        {/* Password */}
+        <div className="animate-fade-in-up [animation-delay:300ms]">
+          <label htmlFor="password" className="text-sm font-medium text-zinc-900 mb-1.5 block">Password</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <LockIcon />
+            </span>
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Create a password"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 focus:outline-none"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
               {showPassword ? <EyeIcon /> : <EyeOffIcon />}
             </button>
-          </InputField>
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="confirmPassword" className="block text-slate-700 font-medium mb-2">Confirm Password</label>
-          <InputField icon={<LockIcon />}>
-            <input id="confirmPassword" type={showConfirm ? "text" : "password"} placeholder="Confirm your password" className="flex-1 ml-2 outline-none text-slate-900 placeholder-slate-400 text-base bg-transparent" />
-            <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="ml-2 focus:outline-none">
+        {/* Confirm Password */}
+        <div className="animate-fade-in-up [animation-delay:350ms]">
+          <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-900 mb-1.5 block">Confirm Password</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 pointer-events-none">
+              <LockIcon />
+            </span>
+            <input
+              id="confirmPassword"
+              type={showConfirm ? "text" : "password"}
+              placeholder="Confirm your password"
+              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm(!showConfirm)}
+              className="absolute right-3 focus:outline-none"
+              aria-label={showConfirm ? "Hide password" : "Show password"}
+            >
               {showConfirm ? <EyeIcon /> : <EyeOffIcon />}
             </button>
-          </InputField>
+          </div>
         </div>
 
-        <div>
-          <label className="block text-slate-700 font-medium mb-2">Account Type</label>
-          <div className="flex w-full border border-slate-300 rounded-lg overflow-hidden">
-            <button type="button" onClick={() => setAccountType("traveler")} className={`w-1/2 py-2.5 text-base font-medium transition-colors ${accountType === "traveler" ? "bg-white text-emerald-600 border border-emerald-500" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+        {/* Account Type */}
+        <div className="animate-fade-in-up [animation-delay:400ms]">
+          <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Account Type</label>
+          <div className="flex w-full rounded-xl border border-slate-200 overflow-hidden bg-white">
+            <button
+              type="button"
+              onClick={() => setAccountType("traveler")}
+              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 ${
+                accountType === "traveler"
+                  ? "bg-zinc-900 text-white"
+                  : "text-slate-500 hover:bg-slate-50"
+              }`}
+            >
               Traveler
             </button>
-            <button type="button" onClick={() => setAccountType("transporter")} className={`w-1/2 py-2.5 text-base font-medium transition-colors border-l border-slate-300 ${accountType === "transporter" ? "bg-white text-emerald-600 border border-emerald-500" : "bg-white text-slate-600 hover:bg-slate-50"}`}>
+            <button
+              type="button"
+              onClick={() => setAccountType("transporter")}
+              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 border-l border-slate-200 ${
+                accountType === "transporter"
+                  ? "bg-zinc-900 text-white"
+                  : "text-slate-500 hover:bg-slate-50"
+              }`}
+            >
               Transporter
             </button>
           </div>
         </div>
 
-        <div className="flex items-start gap-2">
-          <input type="checkbox" id="terms" className="mt-1 cursor-pointer" />
-          <label htmlFor="terms" className="text-sm text-gray-700">
+        {/* Terms */}
+        <div className="flex items-start gap-2.5 animate-fade-in-up [animation-delay:450ms]">
+          <input type="checkbox" id="terms" className="mt-0.5 cursor-pointer accent-emerald-600 w-4 h-4" />
+          <label htmlFor="terms" className="text-sm text-slate-500 leading-snug">
             I have read and agree to the{" "}
-            <a href="https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline hover:text-blue-800">
+            <a
+              href="https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors underline underline-offset-2"
+            >
               Terms of Use &amp; Conditions
             </a>
           </label>
         </div>
 
-        <a href="/dashboard" className="w-full h-12 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-base font-semibold rounded-lg shadow-md hover:shadow-lg transition-all mt-4 inline-flex items-center justify-center">
-          Create Account
-        </a>
+        {/* Submit */}
+        <div className="animate-fade-in-up [animation-delay:500ms] pt-1">
+          <a
+            href="/dashboard"
+            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm"
+          >
+            Create Account
+          </a>
+        </div>
       </form>
 
-      <div className="mt-6 text-center">
-        <span className="text-slate-600">Already have an account? </span>
-        <a href="/signin" className="text-emerald-600 hover:text-emerald-700 font-semibold">Sign In</a>
-      </div>
+      <div className="border-t border-slate-100 my-6" />
 
+      <div className="text-center animate-fade-in-up [animation-delay:550ms]">
+        <p className="text-sm text-slate-500">
+          Already have an account?{" "}
+          <a href="/signin" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign In</a>
+        </p>
+      </div>
     </div>
   );
 }
