@@ -558,49 +558,76 @@ function Testimonials() {
   return (
     <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
       <div className="absolute inset-0 grain" />
+
       <motion.div
         className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)",
+        }}
         animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
         transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
+
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.015]"
-        style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }}
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, #fff 1px, transparent 1px)",
+          backgroundSize: "40px 40px",
+        }}
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="mb-16 max-w-2xl">
-          <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">What people say</p>
+          <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">
+            What people say
+          </p>
           <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">
             Trusted by thousands
           </h2>
         </Reveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* ✅ Updated grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
           {testimonials.map((t, i) => (
             <Reveal key={t.name} delay={i * 0.12}>
+              {/* ✅ Updated card */}
               <motion.div
-                className="group relative bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10 hover:bg-white/[0.07] hover:border-white/[0.1] transition-all duration-300"
+                className="group relative h-full flex flex-col bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10 hover:bg-white/[0.07] hover:border-white/[0.1] transition-all duration-300"
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.3 }}
               >
                 <QuoteIcon className="w-10 h-10 text-white mb-6" />
-                <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500">&ldquo;{t.text}&rdquo;</p>
+
+                {/* ✅ flex-grow added */}
+                <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500 flex-grow">
+                  &ldquo;{t.text}&rdquo;
+                </p>
+
                 <div className="h-px bg-linear-to-r from-white/10 via-white/5 to-transparent mb-6" />
+
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
                       {t.avatar}
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white">{t.name}</div>
-                      <div className="text-xs text-zinc-500 font-medium">{t.role}</div>
+                      <div className="text-sm font-bold text-white">
+                        {t.name}
+                      </div>
+                      <div className="text-xs text-zinc-500 font-medium">
+                        {t.role}
+                      </div>
                     </div>
                   </div>
+
                   <div className="flex gap-0.5">
                     {Array.from({ length: t.rating }).map((_, j) => (
-                      <StarIcon key={j} className="w-3.5 h-3.5 text-amber-400" />
+                      <StarIcon
+                        key={j}
+                        className="w-3.5 h-3.5 text-amber-400"
+                      />
                     ))}
                   </div>
                 </div>
@@ -619,62 +646,96 @@ function Feedback() {
   return (
     <section className="py-24 lg:py-32 bg-[#fafaf8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-6 items-stretch">
-          <Reveal delay={0}>
+
+        <div className="grid md:grid-cols-2 gap-6 auto-rows-fr">
+
+          {/* ================= SATISFIED ================= */}
+          <Reveal>
             <motion.div
-              className="relative bg-zinc-950 rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[340px] overflow-hidden group"
-              whileHover={{ boxShadow: "0 24px_60px_-12px rgba(0,0,0,0.25)" }}
-              transition={{ duration: 0.4 }}
+              className="group relative h-full rounded-3xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-transparent to-transparent hover:from-emerald-400/60 transition-all duration-500"
+              whileHover={{ y: -6 }}
             >
-              <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700" />
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-3xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
-                  <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+              {/* inner card */}
+              <div className="relative h-full flex flex-col justify-between rounded-3xl bg-zinc-950/90 backdrop-blur-xl p-10 lg:p-12 overflow-hidden">
+
+                {/* glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700">
+                  <div className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full" />
+                </div>
+
+                {/* icon */}
+                <div className="relative z-10 w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center mb-8 group-hover:scale-110 transition duration-500">
+                  <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M7 10v12" />
+                    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
                   </svg>
                 </div>
-              </div>
-              <div className="relative z-10">
-                <h3 className="font-[var(--font-display)] text-3xl text-white mb-4">Satisfied?</h3>
-                <p className="text-zinc-400 text-[15px] leading-relaxed mb-8 max-w-[36ch]">
-                  Share your experience. A recommendation goes further than any advertisement.
-                </p>
+
+                {/* content */}
+                <div className="flex-grow">
+                  <h3 className="text-3xl font-semibold text-white mb-4 tracking-tight">
+                    Satisfied?
+                  </h3>
+                  <p className="text-zinc-400 leading-relaxed mb-8 max-w-[36ch]">
+                    Share your experience. A recommendation goes further than any advertisement.
+                  </p>
+                </div>
+
+                {/* CTA */}
                 <Link
                   href="/signin"
-                  className="group/btn inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-[0.97]"
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/30"
                 >
                   Share your story
-                  <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                  <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
             </motion.div>
           </Reveal>
 
+          {/* ================= NOT SATISFIED ================= */}
           <Reveal delay={0.1}>
             <motion.div
-              className="relative bg-white rounded-3xl p-10 lg:p-12 border border-slate-200/70 flex flex-col justify-between min-h-[340px] group"
-              whileHover={{ y: -4, boxShadow: "0 20px_60px_-12px rgba(0,0,0,0.08)" }}
-              transition={{ duration: 0.3 }}
+              className="group relative h-full rounded-3xl p-[1px] bg-gradient-to-br from-red-400/30 via-transparent to-transparent hover:from-red-400/60 transition-all duration-500"
+              whileHover={{ y: -6 }}
             >
-              <div className="absolute top-8 right-8 w-1 h-20 bg-linear-to-b from-red-400/50 to-transparent rounded-full" />
-              <div>
-                <div className="w-14 h-14 rounded-3xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:bg-red-100 group-hover:border-red-200 transition-colors duration-500">
-                  <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+              {/* inner */}
+              <div className="relative h-full flex flex-col justify-between rounded-3xl bg-white p-10 lg:p-12 overflow-hidden">
+
+                {/* soft hover glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700">
+                  <div className="absolute -top-20 -left-20 w-[280px] h-[280px] bg-red-400/10 blur-[90px] rounded-full" />
+                </div>
+
+                {/* icon */}
+                <div className="relative z-10 w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:scale-110 transition duration-500">
+                  <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M17 14V2" />
+                    <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
                   </svg>
                 </div>
-              </div>
-              <div>
-                <h3 className="font-[var(--font-display)] text-3xl text-zinc-900 mb-4">Not satisfied?</h3>
-                <p className="text-slate-500 text-[15px] leading-relaxed mb-6 max-w-[36ch]">
-                  Tell us directly. Every piece of feedback makes the platform better for everyone.
-                </p>
-                <a href="mailto:tellus@smatway.com" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline underline-offset-4 decoration-emerald-200 hover:decoration-emerald-400">
+
+                {/* content */}
+                <div className="flex-grow">
+                  <h3 className="text-3xl font-semibold text-zinc-900 mb-4 tracking-tight">
+                    Not satisfied?
+                  </h3>
+                  <p className="text-slate-500 leading-relaxed mb-8 max-w-[36ch]">
+                    Tell us directly. Every piece of feedback makes the platform better for everyone.
+                  </p>
+                </div>
+
+                {/* CTA */}
+                <a
+                  href="mailto:tellus@smatway.com"
+                  className="text-sm font-semibold text-red-500 hover:text-red-600 transition underline underline-offset-4 decoration-red-200 hover:decoration-red-400"
+                >
                   tellus@smatway.com
                 </a>
               </div>
             </motion.div>
           </Reveal>
+
         </div>
       </div>
     </section>
