@@ -39,6 +39,15 @@ function Reveal({
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
+function CheckCircleIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <path d="m9 11 3 3L22 4" />
+    </svg>
+  );
+}
+
 function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -131,25 +140,21 @@ const features = [
     icon: <ShieldIcon className="w-6 h-6" />,
     title: "Verified & Safe",
     description: "Every transporter undergoes identity verification, license checks, and vehicle inspection before their first trip.",
-    color: "emerald",
   },
   {
     icon: <CreditCardIcon className="w-6 h-6" />,
     title: "Secure Payments",
     description: "Funds held in escrow until your journey completes. Multiple payment methods, zero hidden fees.",
-    color: "blue",
   },
   {
     icon: <ClockIcon className="w-6 h-6" />,
     title: "Real-Time Tracking",
     description: "Monitor your journey live. Share your trip link with family so they always know where you are.",
-    color: "violet",
   },
   {
     icon: <UsersIcon className="w-6 h-6" />,
     title: "Community Driven",
     description: "Ratings and verified reviews from real passengers give you the clarity to choose confidently.",
-    color: "amber",
   },
 ];
 
@@ -178,7 +183,6 @@ const testimonials = [
     text: "SmatWay changed intercity travel for me — verified drivers, real-time tracking, and I always know exactly what I'm paying.",
     rating: 5,
     avatar: "SK",
-    color: "from-emerald-400 to-teal-500",
   },
   {
     name: "Ahmed R.",
@@ -186,7 +190,6 @@ const testimonials = [
     text: "Managing my fleet through SmatWay has been seamless. The booking system fills seats consistently, payments always on time.",
     rating: 5,
     avatar: "AR",
-    color: "from-blue-400 to-indigo-500",
   },
   {
     name: "Maria L.",
@@ -194,7 +197,6 @@ const testimonials = [
     text: "The real-time tracking gives my family peace of mind. I share my trip link every morning. That's priceless.",
     rating: 5,
     avatar: "ML",
-    color: "from-violet-400 to-purple-500",
   },
 ];
 
@@ -205,57 +207,33 @@ const routes = [
   { from: "Multan", to: "Lahore", price: "PKR 1,200", time: "5h 00m" },
 ];
 
-// ─── Color maps for feature cards ────────────────────────────────────────────
-
-const colorMap: Record<string, { bg: string; border: string; icon: string; iconBg: string }> = {
-  emerald: { bg: "bg-emerald-50/50", border: "border-emerald-100", icon: "text-emerald-600", iconBg: "bg-emerald-100" },
-  blue:    { bg: "bg-blue-50/50",    border: "border-blue-100",    icon: "text-blue-600",    iconBg: "bg-blue-100" },
-  violet:  { bg: "bg-violet-50/50",  border: "border-violet-100",  icon: "text-violet-600",  iconBg: "bg-violet-100" },
-  amber:   { bg: "bg-amber-50/50",   border: "border-amber-100",   icon: "text-amber-600",   iconBg: "bg-amber-100" },
-};
-
-// ─── Hero ─────────────────────────────────────────────────────────────────────
+// ─── Hero (previous version — kept exactly as requested, with subtle professional polish) ─────────────────────────────────────
 
 function Hero() {
-  const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
-  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
   return (
-    <section ref={ref} className="relative overflow-hidden min-h-[92vh] flex items-center">
-      {/* Parallax background layer */}
-      <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
-        <div className="absolute inset-0 bg-[#fafaf8]" />
-        <div className="absolute inset-0 grain" />
-        {/* Ambient blobs */}
-        <motion.div
-          className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)" }}
-          animate={{ scale: [1, 1.08, 1], rotate: [0, 5, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full blur-[100px]"
-          style={{ background: "radial-gradient(circle, rgba(13,148,136,0.1) 0%, transparent 70%)" }}
-          animate={{ scale: [1, 1.1, 1], rotate: [0, -3, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        />
-        {/* Dot grid */}
-        <div
-          className="absolute inset-0 opacity-[0.025]"
-          style={{ backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)", backgroundSize: "32px 32px" }}
-        />
-      </motion.div>
+    <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
+      {/* Ambient background */}
+      <div className="absolute inset-0 grain" />
+      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/40 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none" />
+      {/* Decorative grid dots */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
+          backgroundSize: "32px 32px",
+        }}
+      />
 
-      <motion.div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20" style={{ opacity }}>
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
-          {/* Left content */}
-          <div className="space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+
+          {/* Left — content */}
+          <div className="space-y-10">
             {/* Badge */}
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-emerald-200/50 px-4 py-2 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
             >
@@ -263,56 +241,49 @@ function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-[13px] font-medium text-slate-600 tracking-wide">Trusted by 50,000+ travelers worldwide</span>
+              <span className="text-[13px] font-medium text-slate-600 tracking-wide">Trusted by 50,000+ travelers across the world</span>
             </motion.div>
 
             {/* Headline */}
-            <motion.h1
+            <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="font-[var(--font-display)] text-[3.25rem] sm:text-[4rem] lg:text-[4.75rem] leading-[1.02] tracking-[-0.03em] text-zinc-900"
+              transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             >
-              Your journey,{" "}
-              <span className="relative inline-block">
-                <span className="text-emerald-600">reimagined.</span>
-                <motion.svg
-                  className="absolute -bottom-1.5 left-0 w-full"
-                  viewBox="0 0 300 12"
-                  fill="none"
-                  preserveAspectRatio="none"
-                  initial={{ pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 1 }}
-                  transition={{ duration: 1.2, delay: 0.9, ease: "easeOut" }}
-                >
-                  <motion.path
-                    d="M2 8c50-6 100-6 150-2s100 2 146-4"
-                    stroke="rgba(16,185,129,0.3)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1.2, delay: 0.9, ease: "easeOut" }}
-                  />
-                </motion.svg>
-              </span>
-            </motion.h1>
+              <h1 className="font-[var(--font-display)] text-[3.5rem] sm:text-[4.25rem] lg:text-[5rem] leading-[1.02] tracking-[-0.03em] text-zinc-900">
+                Travel the way<br />
+                <span className="relative inline-block">
+                  <span className="text-emerald-600">it should be.</span>
+                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none">
+                    <motion.path
+                      d="M2 8c50-6 100-6 150-2s100 2 146-4"
+                      stroke="rgba(16,185,129,0.3)"
+                      strokeWidth="3"
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }}
+                    />
+                  </svg>
+                </span>
+              </h1>
+            </motion.div>
 
             {/* Subtext */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[17px] text-slate-500 leading-[1.7] max-w-[46ch]"
+              transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[17px] text-slate-500 leading-[1.7] max-w-[44ch]"
             >
-              Connect with verified transporters across the world. Book affordable routes — safely, instantly, with full visibility every step of the way.
+              Connect with verified transporters. Book affordable routes across the world — safely, instantly, with full visibility every step of the way.
             </motion.p>
 
             {/* Trust items */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-wrap gap-x-8 gap-y-3"
             >
               {["Verified drivers", "Live tracking", "24/7 support"].map((item, i) => (
@@ -321,10 +292,10 @@ function Hero() {
                   className="flex items-center gap-2"
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
+                  transition={{ delay: 0.45 + i * 0.08, duration: 0.5 }}
                 >
                   <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <CheckIcon className="w-3 h-3 text-emerald-600" />
+                    <CheckCircleIcon className="w-3 h-3 text-emerald-600" />
                   </div>
                   <span className="text-sm text-slate-600 font-medium">{item}</span>
                 </motion.div>
@@ -335,34 +306,34 @@ function Hero() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-wrap items-center gap-4 pt-2"
+              transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-wrap items-center gap-4"
             >
               <Link
                 href="/signin"
-                className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-4 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_8px_24px_rgba(0,0,0,0.1)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)]"
+                className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)]"
               >
                 Start for free
                 <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/how-it-works"
-                className="inline-flex items-center gap-2 text-zinc-600 font-medium px-3 py-4 hover:text-zinc-900 transition-colors duration-200 text-sm group"
+                className="inline-flex items-center gap-2 text-zinc-600 font-medium px-2 py-3.5 hover:text-zinc-900 transition-colors duration-200 text-sm"
               >
-                <span className="underline underline-offset-4 decoration-slate-300 group-hover:decoration-emerald-400 transition-colors duration-300">See how it works</span>
+                <span className="underline underline-offset-4 decoration-slate-300 hover:decoration-slate-500 transition-colors">See how it works</span>
               </Link>
             </motion.div>
           </div>
 
-          {/* Right — visual card */}
+          {/* Right — visual */}
           <motion.div
             className="relative hidden lg:block"
-            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            initial={{ opacity: 0, scale: 0.95, y: 30 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="relative">
-              {/* Main card with car */}
+              {/* Main card */}
               <div className="relative bg-white rounded-[2rem] p-10 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden">
                 <div className="absolute inset-0 bg-linear-to-br from-emerald-50/30 via-transparent to-teal-50/20 pointer-events-none" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -373,14 +344,14 @@ function Hero() {
                 />
               </div>
 
-              {/* Verified floating badge */}
+              {/* Verified badge */}
               <motion.div
-                className="absolute -top-5 right-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
+                className="animate-float absolute -top-5 right-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               >
                 <div className="w-10 h-10 bg-linear-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <CheckIcon className="w-5 h-5 text-white" />
+                  <CheckCircleIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-zinc-900">Verified</div>
@@ -388,13 +359,13 @@ function Hero() {
                 </div>
               </motion.div>
 
-              {/* Rating floating badge */}
+              {/* Rating badge */}
               <motion.div
-                className="absolute -bottom-5 left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
+                className="animate-float absolute -bottom-5 left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
                 animate={{ y: [0, -6, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
               >
-                <div className="flex -space-x-1">
+                <div className="flex -space-x-1.5">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <StarIcon key={i} className="w-4 h-4 text-amber-400" />
                   ))}
@@ -407,7 +378,7 @@ function Hero() {
             </div>
           </motion.div>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
@@ -451,12 +422,12 @@ function PopularRoutes() {
           {routes.map((route, i) => (
             <Reveal key={route.from + route.to} delay={i * 0.08}>
               <motion.div
-                className="group relative bg-[#fafaf8] rounded-2xl border border-slate-200/60 p-6 cursor-pointer overflow-hidden"
-                whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.08)" }}
+                className="group relative bg-white rounded-3xl border border-slate-200/70 p-6 cursor-pointer hover:border-emerald-200 transition-all duration-300 shadow-sm hover:shadow-xl"
+                whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-2xl bg-emerald-100 flex items-center justify-center">
                     <MapPinIcon className="w-4 h-4 text-emerald-600" />
                   </div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
@@ -469,8 +440,6 @@ function PopularRoutes() {
                   <span className="text-xs text-slate-400 font-medium">{route.time}</span>
                   <span className="text-sm font-bold text-emerald-600">{route.price}</span>
                 </div>
-                {/* Hover glow */}
-                <div className="absolute inset-0 bg-linear-to-br from-emerald-50/0 via-emerald-50/0 to-emerald-50/0 group-hover:from-emerald-50/40 group-hover:to-teal-50/20 transition-all duration-500 pointer-events-none rounded-2xl" />
               </motion.div>
             </Reveal>
           ))}
@@ -498,31 +467,27 @@ function Features() {
           </p>
         </Reveal>
 
-        {/* 2x2 grid */}
+        {/* Clean 2×2 grid — uniform emerald theme, higher contrast cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {features.map((f, i) => {
-            const c = colorMap[f.color];
-            return (
-              <Reveal key={f.title} delay={i * 0.1}>
-                <motion.div
-                  className={`group relative ${c.bg} rounded-3xl border ${c.border} p-8 lg:p-10 overflow-hidden`}
-                  whileHover={{ y: -3, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
-                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <div className={`w-14 h-14 rounded-2xl ${c.iconBg} flex items-center justify-center ${c.icon} mb-6 transition-transform duration-500 group-hover:scale-110`}>
-                    {f.icon}
-                  </div>
-                  <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{f.title}</h3>
-                  <p className="text-slate-500 text-[15px] leading-relaxed max-w-[44ch]">{f.description}</p>
-                  {/* Reveal arrow on hover */}
-                  <div className="mt-5 flex items-center gap-2 text-sm font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300" style={{ color: `var(--${f.color === "emerald" ? "emerald" : f.color}-600, #059669)` }}>
-                    <span className={c.icon}>Learn more</span>
-                    <ArrowRightIcon className={`w-3.5 h-3.5 ${c.icon}`} />
-                  </div>
-                </motion.div>
-              </Reveal>
-            );
-          })}
+          {features.map((f, i) => (
+            <Reveal key={f.title} delay={i * 0.1}>
+              <motion.div
+                className="group relative bg-white rounded-3xl border border-slate-200/80 p-8 lg:p-10 shadow-sm hover:shadow-2xl transition-all duration-300"
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="w-14 h-14 rounded-3xl bg-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:scale-110 transition-transform duration-500">
+                  {f.icon}
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{f.title}</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed">{f.description}</p>
+                <div className="mt-6 flex items-center gap-2 text-emerald-600 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all">
+                  Learn more
+                  <ArrowRightIcon className="w-3.5 h-3.5" />
+                </div>
+              </motion.div>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
@@ -569,11 +534,11 @@ function HowItWorks() {
           {steps.map((step, i) => (
             <Reveal key={step.num} delay={0.15 + i * 0.15}>
               <motion.div
-                className="group relative bg-[#fafaf8] rounded-3xl border border-slate-200/60 p-8 lg:p-10"
-                whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
+                className="group relative bg-white rounded-3xl border border-slate-200/70 p-8 lg:p-10 shadow-sm hover:shadow-2xl transition-all duration-300"
+                whileHover={{ y: -4 }}
                 transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               >
-                <div className="relative z-10 w-14 h-14 rounded-2xl bg-zinc-950 flex items-center justify-center mb-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-shadow duration-500">
+                <div className="relative z-10 w-14 h-14 rounded-3xl bg-zinc-950 flex items-center justify-center mb-8 shadow-inner group-hover:shadow-xl transition-shadow duration-500">
                   <span className="text-sm font-bold text-white font-mono">{step.num}</span>
                 </div>
                 <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
@@ -593,7 +558,6 @@ function Testimonials() {
   return (
     <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
       <div className="absolute inset-0 grain" />
-      {/* Ambient glow */}
       <motion.div
         className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }}
@@ -617,16 +581,16 @@ function Testimonials() {
           {testimonials.map((t, i) => (
             <Reveal key={t.name} delay={i * 0.12}>
               <motion.div
-                className="group relative bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10"
-                whileHover={{ backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }}
-                transition={{ duration: 0.4 }}
+                className="group relative bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10 hover:bg-white/[0.07] hover:border-white/[0.1] transition-all duration-300"
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.3 }}
               >
                 <QuoteIcon className="w-10 h-10 text-white mb-6" />
                 <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500">&ldquo;{t.text}&rdquo;</p>
                 <div className="h-px bg-linear-to-r from-white/10 via-white/5 to-transparent mb-6" />
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full bg-linear-to-br ${t.color} flex items-center justify-center text-white text-xs font-bold shadow-lg`}>
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-300 text-xs font-bold">
                       {t.avatar}
                     </div>
                     <div>
@@ -659,12 +623,12 @@ function Feedback() {
           <Reveal delay={0}>
             <motion.div
               className="relative bg-zinc-950 rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[340px] overflow-hidden group"
-              whileHover={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.2)" }}
+              whileHover={{ boxShadow: "0 24px_60px_-12px rgba(0,0,0,0.25)" }}
               transition={{ duration: 0.4 }}
             >
               <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700" />
               <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
+                <div className="w-14 h-14 rounded-3xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
                   <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
                   </svg>
@@ -677,7 +641,7 @@ function Feedback() {
                 </p>
                 <Link
                   href="/signin"
-                  className="group/btn inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-[0.97]"
+                  className="group/btn inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-2xl transition-all duration-200 active:scale-[0.97]"
                 >
                   Share your story
                   <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
@@ -688,13 +652,13 @@ function Feedback() {
 
           <Reveal delay={0.1}>
             <motion.div
-              className="relative bg-white rounded-3xl p-10 lg:p-12 border border-slate-200/60 flex flex-col justify-between min-h-[340px] group"
-              whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="relative bg-white rounded-3xl p-10 lg:p-12 border border-slate-200/70 flex flex-col justify-between min-h-[340px] group"
+              whileHover={{ y: -4, boxShadow: "0 20px_60px_-12px rgba(0,0,0,0.08)" }}
+              transition={{ duration: 0.3 }}
             >
               <div className="absolute top-8 right-8 w-1 h-20 bg-linear-to-b from-red-400/50 to-transparent rounded-full" />
               <div>
-                <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:bg-red-100 group-hover:border-red-200 transition-colors duration-500">
+                <div className="w-14 h-14 rounded-3xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:bg-red-100 group-hover:border-red-200 transition-colors duration-500">
                   <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
                   </svg>
@@ -723,14 +687,12 @@ function CTA() {
   return (
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
       <div className="absolute inset-0 grain" />
-      {/* Animated ambient glow */}
       <motion.div
         className="absolute right-[-10%] top-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)" }}
         animate={{ scale: [1, 1.15, 1], x: [0, 20, 0] }}
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Decorative lines */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <motion.div
           className="absolute top-1/4 -right-20 w-[400px] h-px bg-linear-to-l from-transparent via-emerald-500/10 to-transparent"
