@@ -2,10 +2,15 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   MapPinIcon, DashboardIcon, CarIcon, MapPinIcon as RouteIcon,
   BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, BellIcon, LogOutIcon,
 } from "@/app/dashboard/_Components/Icons";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Separator } from "@/components/ui/separator";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -79,39 +84,37 @@ function Sidebar({
   const navItems = role === "transporter" ? transporterNav : travelerNav;
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[250px] bg-white border-r border-slate-100 z-30">
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[250px] bg-white border-r border-sidebar-border z-30">
       {/* Logo */}
-      <div className="h-16 flex items-center px-5 border-b border-slate-100 flex-shrink-0">
-        <div className="flex items-center gap-2.5">
-          <div className="bg-linear-to-br from-emerald-500 to-teal-600 p-2 rounded-xl">
+      <div className="h-16 flex items-center px-5">
+        <Link href="/dashboard" className="flex items-center gap-2.5">
+          <div className="bg-linear-to-br from-emerald-500 to-teal-600 p-2 rounded-xl shadow-sm">
             <MapPinIcon className="w-4 h-4 text-white" />
           </div>
           <span className="text-lg font-bold text-zinc-900 tracking-tight">SmatWay</span>
-        </div>
+        </Link>
       </div>
 
+      <Separator className="mx-4" />
+
       {/* Role switcher */}
-      <div className="mx-4 mt-4 mb-2 flex items-center rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
-        <button
-          onClick={() => onRoleSwitch("traveler")}
-          className={`flex-1 rounded-[9px] py-1.5 transition-all duration-200 ${
-            role === "traveler"
-              ? "bg-white text-zinc-900 shadow-sm font-semibold"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Traveler
-        </button>
-        <button
-          onClick={() => onRoleSwitch("transporter")}
-          className={`flex-1 rounded-[9px] py-1.5 transition-all duration-200 ${
-            role === "transporter"
-              ? "bg-white text-zinc-900 shadow-sm font-semibold"
-              : "text-slate-500 hover:text-slate-700"
-          }`}
-        >
-          Transporter
-        </button>
+      <div className="mx-4 mt-4 mb-2">
+        <Tabs value={role} onValueChange={(v) => onRoleSwitch(v as "traveler" | "transporter")}>
+          <TabsList className="w-full bg-slate-100 rounded-xl p-0.5 h-auto">
+            <TabsTrigger
+              value="traveler"
+              className="flex-1 rounded-[9px] py-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
+            >
+              Traveler
+            </TabsTrigger>
+            <TabsTrigger
+              value="transporter"
+              className="flex-1 rounded-[9px] py-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
+            >
+              Transporter
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Section label */}
@@ -125,7 +128,7 @@ function Sidebar({
           const active = pathname === item.key;
           return (
             <li key={item.key}>
-              <a
+              <Link
                 href={item.key}
                 className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${
                   active
@@ -137,7 +140,7 @@ function Sidebar({
                   {item.icon}
                 </span>
                 {item.label}
-              </a>
+              </Link>
             </li>
           );
         })}
@@ -147,14 +150,14 @@ function Sidebar({
       <div className="h-10 bg-linear-to-t from-white to-transparent pointer-events-none" />
 
       {/* Logout */}
-      <div className="px-4 pb-4 pt-1 flex-shrink-0">
-        <a
+      <div className="px-4 pb-4 pt-1 shrink-0">
+        <Link
           href="/"
           className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150"
         >
           <LogOutIcon className="w-4 h-4" />
           Sign out
-        </a>
+        </Link>
       </div>
     </aside>
   );
@@ -162,39 +165,42 @@ function Sidebar({
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-function ChevronDownIcon() {
-  return (
-    <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  );
-}
-
 function Topbar({ title, role }: { title: string; role: "traveler" | "transporter" }) {
   const initial = "A";
   const name = "Aryan Malik";
 
   return (
-    <header className="bg-white border-b border-slate-100 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
+    <header className="bg-white border-b border-sidebar-border px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
       <h2 className="text-base font-semibold text-zinc-900 tracking-tight hidden sm:block">{title}</h2>
 
       <div className="flex items-center gap-2">
         {/* Bell */}
-        <button className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors">
-          <BellIcon className="w-5 h-5 text-slate-500" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
-        </button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors">
+              <BellIcon className="w-5 h-5 text-slate-500" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Notifications</p>
+          </TooltipContent>
+        </Tooltip>
 
-        {/* Avatar */}
+        {/* Avatar + User info */}
         <div className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 pl-1 pr-3 py-1.5 rounded-xl transition-colors">
-          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-xs font-bold">
-            {initial}
-          </div>
+          <Avatar className="h-8 w-8 rounded-xl">
+            <AvatarFallback className="rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
+              {initial}
+            </AvatarFallback>
+          </Avatar>
           <div className="hidden md:block text-left">
             <p className="text-sm font-semibold text-zinc-900 leading-none mb-0.5">{name}</p>
             <p className="text-xs text-slate-400 capitalize">{role}</p>
           </div>
-          <ChevronDownIcon />
+          <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </div>
       </div>
     </header>
@@ -228,14 +234,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const title = titles[pathname] ?? "Dashboard";
 
   return (
-    <div className="min-h-[100dvh] flex bg-slate-50/50">
-      <Sidebar pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
-      <div className="flex-1 lg:ml-[250px] flex flex-col min-h-[100dvh]">
-        <Topbar title={title} role={role} />
-        <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
-          {children}
-        </main>
+    <TooltipProvider>
+      <div className="min-h-[100dvh] flex bg-slate-50/50">
+        <Sidebar pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
+        <div className="flex-1 lg:ml-[250px] flex flex-col min-h-[100dvh]">
+          <Topbar title={title} role={role} />
+          <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
