@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 
@@ -87,11 +88,10 @@ function LanguageDropdown() {
                 setSelected(lang);
                 setOpen(false);
               }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 flex items-center justify-between ${
-                selected.code === lang.code
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 flex items-center justify-between ${selected.code === lang.code
                   ? "text-emerald-600 font-semibold bg-emerald-50/50"
                   : "text-slate-600 hover:bg-slate-50 hover:text-zinc-900"
-              }`}
+                }`}
             >
               {lang.label}
               {selected.code === lang.code && (
@@ -115,34 +115,33 @@ function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 cursor-pointer group">
+          <Link href="/" className="flex items-center gap-2.5 cursor-pointer group">
             <div className="bg-linear-to-br from-emerald-500 via-emerald-600 to-teal-600 p-2 md:p-2.5 rounded-xl transition-all duration-300">
               <MapPinIcon className="w-5 h-5 md:w-6 md:h-6 text-white" />
             </div>
             <span className="text-xl md:text-2xl font-bold text-zinc-900 tracking-tight">
               SmatWay
             </span>
-          </a>
+          </Link>
 
           {/* Nav links */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const active = pathname === link.href;
               return (
-                <a
+                <Link
                   key={link.href}
                   href={link.href}
-                  className={`relative px-4 py-2 font-medium text-sm transition-colors duration-200 ${
-                    active
+                  className={`relative px-4 py-2 font-medium text-sm transition-colors duration-200 ${active
                       ? "text-emerald-600"
                       : "text-slate-500 hover:text-zinc-900"
-                  }`}
+                    }`}
                 >
                   {link.label}
                   {active && (
                     <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-emerald-600 rounded-full" />
                   )}
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -150,13 +149,13 @@ function Navbar() {
           {/* Right side: Language + CTA */}
           <div className="flex items-center gap-2">
             <LanguageDropdown />
-            <a
+            <Link
               href="/signin"
               className="hidden md:inline-flex items-center gap-2 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]"
             >
               Get Started
               <ArrowRightIcon />
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -192,14 +191,14 @@ function Footer() {
             </h4>
             <ul className="space-y-3">
               <li>
-                <a href="/about" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
+                <Link href="/about" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/how-it-works" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
+                <Link href="/how-it-works" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
                   How It Works
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

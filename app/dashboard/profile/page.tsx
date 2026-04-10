@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { UserIcon, PhoneIcon, MailIcon, CameraIcon } from "@/app/dashboard/_Components/Icons";
 
 const travelerData = {
@@ -30,23 +30,15 @@ const transporterData = {
 };
 
 export default function ProfilePage() {
-  const [role, setRole] = useState<"traveler" | "transporter">("traveler");
-
-  useEffect(() => {
+  const [role] = useState<"traveler" | "transporter">(() => {
+    if (typeof window === "undefined") return "traveler";
     const saved = localStorage.getItem("smatway-dev-role") as "traveler" | "transporter" | null;
-    if (saved) setRole(saved);
-  }, []);
+    return saved ?? "traveler";
+  });
 
   const data = role === "transporter" ? transporterData : travelerData;
   const [fullName, setFullName] = useState(data.fullName);
   const [phone, setPhone] = useState(data.phone);
-
-  // Sync form fields when role changes
-  useEffect(() => {
-    const d = role === "transporter" ? transporterData : travelerData;
-    setFullName(d.fullName);
-    setPhone(d.phone);
-  }, [role]);
 
   return (
     <div className="max-w-4xl">

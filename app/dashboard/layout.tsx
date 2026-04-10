@@ -15,39 +15,39 @@ import { Separator } from "@/components/ui/separator";
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
 const travelerNav = [
-  { key: "/dashboard",                  label: "Search Rides",     icon: <DashboardIcon /> },
-  { key: "/dashboard/my-bookings",      label: "My Bookings",      icon: <BookOpenIcon /> },
-  { key: "/dashboard/announcements",    label: "Announcements",    icon: <MegaphoneIcon /> },
-  { key: "/dashboard/profile",          label: "Profile",          icon: <UserIcon /> },
-  { key: "/dashboard/settings",         label: "Settings",         icon: <SettingsIcon /> },
+  { key: "/dashboard", label: "Search Rides", icon: <DashboardIcon /> },
+  { key: "/dashboard/my-bookings", label: "My Bookings", icon: <BookOpenIcon /> },
+  { key: "/dashboard/announcements", label: "Announcements", icon: <MegaphoneIcon /> },
+  { key: "/dashboard/profile", label: "Profile", icon: <UserIcon /> },
+  { key: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
 ];
 
 const transporterNav = [
-  { key: "/dashboard/overview",         label: "Dashboard",        icon: <DashboardIcon /> },
-  { key: "/dashboard/vehicles",         label: "My Transport",     icon: <CarIcon /> },
-  { key: "/dashboard/routes",           label: "My Routes",        icon: <RouteIcon /> },
-  { key: "/dashboard/bookings",         label: "Bookings",         icon: <BookOpenIcon /> },
-  { key: "/dashboard/t-announcements",  label: "My Announcements", icon: <MegaphoneIcon /> },
-  { key: "/dashboard/profile",          label: "Profile",          icon: <UserIcon /> },
-  { key: "/dashboard/settings",         label: "Settings",         icon: <SettingsIcon /> },
+  { key: "/dashboard/overview", label: "Dashboard", icon: <DashboardIcon /> },
+  { key: "/dashboard/vehicles", label: "My Transport", icon: <CarIcon /> },
+  { key: "/dashboard/routes", label: "My Routes", icon: <RouteIcon /> },
+  { key: "/dashboard/bookings", label: "Bookings", icon: <BookOpenIcon /> },
+  { key: "/dashboard/t-announcements", label: "My Announcements", icon: <MegaphoneIcon /> },
+  { key: "/dashboard/profile", label: "Profile", icon: <UserIcon /> },
+  { key: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
 ];
 
 const travelerTitles: Record<string, string> = {
-  "/dashboard":                 "Search Rides",
-  "/dashboard/my-bookings":     "My Bookings",
-  "/dashboard/announcements":   "Announcements",
-  "/dashboard/profile":         "Profile",
-  "/dashboard/settings":        "Settings",
+  "/dashboard": "Search Rides",
+  "/dashboard/my-bookings": "My Bookings",
+  "/dashboard/announcements": "Announcements",
+  "/dashboard/profile": "Profile",
+  "/dashboard/settings": "Settings",
 };
 
 const transporterTitles: Record<string, string> = {
-  "/dashboard/overview":        "Dashboard",
-  "/dashboard/vehicles":        "My Transport",
-  "/dashboard/routes":          "My Routes",
-  "/dashboard/bookings":        "Bookings",
+  "/dashboard/overview": "Dashboard",
+  "/dashboard/vehicles": "My Transport",
+  "/dashboard/routes": "My Routes",
+  "/dashboard/bookings": "Bookings",
   "/dashboard/t-announcements": "My Announcements",
-  "/dashboard/profile":         "Profile",
-  "/dashboard/settings":        "Settings",
+  "/dashboard/profile": "Profile",
+  "/dashboard/settings": "Settings",
 };
 
 const transporterOnlyPaths = new Set([
@@ -130,11 +130,10 @@ function Sidebar({
             <li key={item.key}>
               <Link
                 href={item.key}
-                className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${
-                  active
+                className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${active
                     ? "border-l-2 border-emerald-600 pl-[22px] bg-emerald-50/70 text-emerald-700"
                     : "border-l-2 border-transparent pl-[22px] text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
-                }`}
+                  }`}
               >
                 <span className={active ? "text-emerald-600" : "text-slate-400"}>
                   {item.icon}
@@ -176,11 +175,9 @@ function Topbar({ title, role }: { title: string; role: "traveler" | "transporte
       <div className="flex items-center gap-2">
         {/* Bell */}
         <Tooltip>
-          <TooltipTrigger asChild>
-            <button className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors">
-              <BellIcon className="w-5 h-5 text-slate-500" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
-            </button>
+          <TooltipTrigger className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors">
+            <BellIcon className="w-5 h-5 text-slate-500" />
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
           </TooltipTrigger>
           <TooltipContent>
             <p>Notifications</p>
@@ -213,20 +210,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const router = useRouter();
 
-  const [role, setRole] = useState<"traveler" | "transporter">("traveler");
-
-  useEffect(() => {
+  const [preferredRole, setPreferredRole] = useState<"traveler" | "transporter">(() => {
+    if (typeof window === "undefined") return "traveler";
     const saved = localStorage.getItem("smatway-dev-role") as "traveler" | "transporter" | null;
-    const baseRole = saved ?? "traveler";
-    setRole(roleFromPath(pathname, baseRole));
-  }, [pathname]);
+    return saved ?? "traveler";
+  });
+  const role = roleFromPath(pathname, preferredRole);
 
   useEffect(() => {
-    localStorage.setItem("smatway-dev-role", role);
-  }, [role]);
+    localStorage.setItem("smatway-dev-role", preferredRole);
+  }, [preferredRole]);
 
   function handleRoleSwitch(r: "traveler" | "transporter") {
-    setRole(r);
+    setPreferredRole(r);
     router.push(r === "transporter" ? "/dashboard/overview" : "/dashboard");
   }
 

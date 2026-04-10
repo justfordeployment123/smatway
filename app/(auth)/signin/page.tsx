@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 function ArrowLeftIcon() {
@@ -51,9 +52,9 @@ export default function SignInPage() {
   return (
     <div className="w-full animate-fade-in-up">
 
-      <a href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
-      </a>
+      </Link>
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Welcome back</h1>
@@ -79,7 +80,7 @@ export default function SignInPage() {
         <div className="animate-fade-in-up [animation-delay:200ms]">
           <div className="flex items-center justify-between mb-1.5">
             <label htmlFor="password" className="text-sm font-medium text-zinc-900 block">Password</label>
-            <a href="/forgot-password" className="text-sm text-slate-400 hover:text-emerald-600 transition-colors">Forgot password?</a>
+            <Link href="/forgot-password" className="text-sm text-slate-400 hover:text-emerald-600 transition-colors">Forgot password?</Link>
           </div>
           <div className="relative flex items-center">
             <span className="absolute left-3 pointer-events-none">
@@ -103,12 +104,12 @@ export default function SignInPage() {
         </div>
 
         <div className="animate-fade-in-up [animation-delay:300ms] pt-1">
-          <a
+          <Link
             href="/dashboard"
             className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm"
           >
             Sign In
-          </a>
+          </Link>
         </div>
       </form>
 
@@ -117,7 +118,7 @@ export default function SignInPage() {
       <div className="text-center animate-fade-in-up [animation-delay:400ms]">
         <p className="text-sm text-slate-500">
           Don&apos;t have an account?{" "}
-          <a href="/signup" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign Up</a>
+          <Link href="/signup" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign Up</Link>
         </p>
       </div>
 

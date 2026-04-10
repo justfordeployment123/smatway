@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 function ArrowLeftIcon() {
@@ -84,9 +85,9 @@ export default function SignUpPage() {
   return (
     <div className="w-full animate-fade-in-up">
 
-      <a href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
+      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
-      </a>
+      </Link>
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Create your account</h1>
@@ -226,22 +227,20 @@ export default function SignUpPage() {
             <button
               type="button"
               onClick={() => setAccountType("traveler")}
-              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 ${
-                accountType === "traveler"
+              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 ${accountType === "traveler"
                   ? "bg-zinc-900 text-white"
                   : "text-slate-500 hover:bg-slate-50"
-              }`}
+                }`}
             >
               Traveler
             </button>
             <button
               type="button"
               onClick={() => setAccountType("transporter")}
-              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 border-l border-slate-200 ${
-                accountType === "transporter"
+              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 border-l border-slate-200 ${accountType === "transporter"
                   ? "bg-zinc-900 text-white"
                   : "text-slate-500 hover:bg-slate-50"
-              }`}
+                }`}
             >
               Transporter
             </button>
@@ -266,12 +265,12 @@ export default function SignUpPage() {
 
         {/* Submit */}
         <div className="animate-fade-in-up [animation-delay:500ms] pt-1">
-          <a
+          <Link
             href="/dashboard"
             className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm"
           >
             Create Account
-          </a>
+          </Link>
         </div>
       </form>
 
@@ -280,7 +279,7 @@ export default function SignUpPage() {
       <div className="text-center animate-fade-in-up [animation-delay:550ms]">
         <p className="text-sm text-slate-500">
           Already have an account?{" "}
-          <a href="/signin" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign In</a>
+          <Link href="/signin" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign In</Link>
         </p>
       </div>
     </div>
