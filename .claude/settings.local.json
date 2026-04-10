@@ -7,7 +7,10 @@
       "Bash(python3 -c \"import json,sys; [print\\(f['name']\\) for f in json.load\\(sys.stdin\\)]\")",
       "Bash(curl -s \"https://api.github.com/repos/Leonxlnx/taste-skill/contents/skills\")",
       "Bash(curl:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(bash \"C:/Users/HP/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/stop-server.sh\" \"d:/Projects/Markhor Systems Projects/smataway/.superpowers/brainstorm/1565-1775819456\")",
+      "Bash(taskkill //f //im chrome.exe)",
+      "Bash(npm install:*)"
     ]
   }
 }

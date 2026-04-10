@@ -1,44 +1,56 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
+import { motion, useInView, useScroll, useTransform } from "motion/react";
 
-// ─── Scroll reveal hook ───────────────────────────────────────────────────────
+// ─── Reusable scroll-reveal wrapper ──────────────────────────────────────────
 
-function useReveal() {
+function Reveal({
+  children,
+  className = "",
+  delay = 0,
+  y = 40,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  delay?: number;
+  y?: number;
+}) {
   const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-60px" });
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("revealed");
-            observer.unobserve(entry.target);
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: "0px 0px -40px 0px" }
-    );
-
-    const children = el.querySelectorAll(".reveal");
-    children.forEach((child) => observer.observe(child));
-
-    return () => observer.disconnect();
-  }, []);
-
-  return ref;
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 0, y }}
+      animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y }}
+      transition={{
+        duration: 0.7,
+        delay,
+        ease: [0.16, 1, 0.3, 1],
+      }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
-function CheckCircleIcon({ className = "w-5 h-5" }: { className?: string }) {
+function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m5 12 5 5L20 7" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <path d="m9 11 3 3L22 4" />
+      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
     </svg>
   );
 }
@@ -80,14 +92,6 @@ function UsersIcon({ className = "w-6 h-6" }: { className?: string }) {
   );
 }
 
-function ArrowRightIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-    </svg>
-  );
-}
-
 function StarIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
@@ -98,8 +102,17 @@ function StarIcon({ className = "w-4 h-4" }: { className?: string }) {
 
 function QuoteIcon({ className = "w-8 h-8" }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor" opacity="0.15">
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" opacity="0.12">
       <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+    </svg>
+  );
+}
+
+function MapPinIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
     </svg>
   );
 }
@@ -109,45 +122,52 @@ function QuoteIcon({ className = "w-8 h-8" }: { className?: string }) {
 const stats = [
   { value: "50K+", label: "Active travelers" },
   { value: "12K+", label: "Verified transporters" },
-  { value: "4.9", label: "Average rating" },
+  { value: "4.9", label: "Average rating", suffix: "/5" },
   { value: "98%", label: "On-time arrivals" },
+];
+
+const features = [
+  {
+    icon: <ShieldIcon className="w-6 h-6" />,
+    title: "Verified & Safe",
+    description: "Every transporter undergoes identity verification, license checks, and vehicle inspection before their first trip.",
+    color: "emerald",
+  },
+  {
+    icon: <CreditCardIcon className="w-6 h-6" />,
+    title: "Secure Payments",
+    description: "Funds held in escrow until your journey completes. Multiple payment methods, zero hidden fees.",
+    color: "blue",
+  },
+  {
+    icon: <ClockIcon className="w-6 h-6" />,
+    title: "Real-Time Tracking",
+    description: "Monitor your journey live. Share your trip link with family so they always know where you are.",
+    color: "violet",
+  },
+  {
+    icon: <UsersIcon className="w-6 h-6" />,
+    title: "Community Driven",
+    description: "Ratings and verified reviews from real passengers give you the clarity to choose confidently.",
+    color: "amber",
+  },
 ];
 
 const steps = [
   {
     num: "01",
     title: "Create your account",
-    description: "Sign up with your phone or email in under a minute. Choose your role — traveler or transporter.",
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <line x1="19" y1="8" x2="19" y2="14" />
-        <line x1="22" y1="11" x2="16" y2="11" />
-      </svg>
-    ),
+    description: "Sign up with your phone or email in under a minute. Choose traveler or transporter.",
   },
   {
     num: "02",
     title: "Find or post routes",
-    description: "Travelers search available routes by city and date. Transporters post schedules and set fares.",
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.3-4.3" />
-      </svg>
-    ),
+    description: "Search available routes by city and date. Transporters post schedules and set fares.",
   },
   {
     num: "03",
     title: "Travel with confidence",
-    description: "Book, pay securely, and track your journey in real time. Rate your experience when you arrive.",
-    icon: (
-      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-        <path d="m9 11 3 3L22 4" />
-      </svg>
-    ),
+    description: "Book, pay securely, track in real time. Rate your experience when you arrive.",
   },
 ];
 
@@ -155,122 +175,194 @@ const testimonials = [
   {
     name: "Sarah K.",
     role: "Frequent Traveler",
-    text: "I used to stress about intercity travel. SmatWay changed that completely — verified drivers, real-time tracking, and I always know exactly what I'm paying.",
+    text: "SmatWay changed intercity travel for me — verified drivers, real-time tracking, and I always know exactly what I'm paying.",
     rating: 5,
     avatar: "SK",
+    color: "from-emerald-400 to-teal-500",
   },
   {
     name: "Ahmed R.",
     role: "Fleet Owner",
-    text: "Managing my fleet through SmatWay has been seamless. The booking system fills my seats consistently, and the payments are always on time.",
+    text: "Managing my fleet through SmatWay has been seamless. The booking system fills seats consistently, payments always on time.",
     rating: 5,
     avatar: "AR",
+    color: "from-blue-400 to-indigo-500",
   },
   {
     name: "Maria L.",
     role: "Daily Commuter",
-    text: "The real-time tracking gives my family peace of mind. I share my trip link every morning and they can follow along. That's priceless.",
+    text: "The real-time tracking gives my family peace of mind. I share my trip link every morning. That's priceless.",
     rating: 5,
     avatar: "ML",
+    color: "from-violet-400 to-purple-500",
   },
 ];
 
-// ─── Sections ──────────────────────────────────────────────────────────────────
+const routes = [
+  { from: "Lahore", to: "Islamabad", price: "PKR 1,500", time: "4h 30m" },
+  { from: "Karachi", to: "Hyderabad", price: "PKR 800", time: "2h 45m" },
+  { from: "Islamabad", to: "Peshawar", price: "PKR 600", time: "2h 15m" },
+  { from: "Multan", to: "Lahore", price: "PKR 1,200", time: "5h 00m" },
+];
+
+// ─── Color maps for feature cards ────────────────────────────────────────────
+
+const colorMap: Record<string, { bg: string; border: string; icon: string; iconBg: string }> = {
+  emerald: { bg: "bg-emerald-50/50", border: "border-emerald-100", icon: "text-emerald-600", iconBg: "bg-emerald-100" },
+  blue:    { bg: "bg-blue-50/50",    border: "border-blue-100",    icon: "text-blue-600",    iconBg: "bg-blue-100" },
+  violet:  { bg: "bg-violet-50/50",  border: "border-violet-100",  icon: "text-violet-600",  iconBg: "bg-violet-100" },
+  amber:   { bg: "bg-amber-50/50",   border: "border-amber-100",   icon: "text-amber-600",   iconBg: "bg-amber-100" },
+};
+
+// ─── Hero ─────────────────────────────────────────────────────────────────────
 
 function Hero() {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
+  const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
+
   return (
-    <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
-      {/* Ambient background */}
-      <div className="absolute inset-0 grain" />
-      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/40 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none" />
-      {/* Decorative grid dots */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)",
-          backgroundSize: "32px 32px",
-        }}
-      />
+    <section ref={ref} className="relative overflow-hidden min-h-[92vh] flex items-center">
+      {/* Parallax background layer */}
+      <motion.div className="absolute inset-0 pointer-events-none" style={{ y: bgY }}>
+        <div className="absolute inset-0 bg-[#fafaf8]" />
+        <div className="absolute inset-0 grain" />
+        {/* Ambient blobs */}
+        <motion.div
+          className="absolute top-[-10%] right-[-5%] w-[700px] h-[700px] rounded-full blur-[120px]"
+          style={{ background: "radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)" }}
+          animate={{ scale: [1, 1.08, 1], rotate: [0, 5, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full blur-[100px]"
+          style={{ background: "radial-gradient(circle, rgba(13,148,136,0.1) 0%, transparent 70%)" }}
+          animate={{ scale: [1, 1.1, 1], rotate: [0, -3, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        {/* Dot grid */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{ backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)", backgroundSize: "32px 32px" }}
+        />
+      </motion.div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-
-          {/* Left — content */}
-          <div className="space-y-10">
+      <motion.div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-20" style={{ opacity }}>
+        <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+          {/* Left content */}
+          <div className="space-y-8">
             {/* Badge */}
-            <div
-              className="animate-fade-in-up inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-emerald-200/50 px-4 py-2 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
-              style={{ animationDelay: "0ms" }}
+            <motion.div
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-emerald-200/50 px-4 py-2 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.04)]"
             >
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-[13px] font-medium text-slate-600 tracking-wide">Trusted by 50,000+ travelers across the world</span>
-            </div>
+              <span className="text-[13px] font-medium text-slate-600 tracking-wide">Trusted by 50,000+ travelers worldwide</span>
+            </motion.div>
 
             {/* Headline */}
-            <div className="animate-fade-in-up" style={{ animationDelay: "100ms" }}>
-              <h1 className="font-[var(--font-display)] text-[3.5rem] sm:text-[4.25rem] lg:text-[5rem] leading-[1.02] tracking-[-0.03em] text-zinc-900">
-                Travel the way<br />
-                <span className="relative inline-block">
-                  <span className="text-emerald-600">it should be.</span>
-                  <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none">
-                    <path d="M2 8c50-6 100-6 150-2s100 2 146-4" stroke="rgba(16,185,129,0.3)" strokeWidth="3" strokeLinecap="round" className="animate-fade-in-up" style={{ animationDelay: "800ms" }} />
-                  </svg>
-                </span>
-              </h1>
-            </div>
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="font-[var(--font-display)] text-[3.25rem] sm:text-[4rem] lg:text-[4.75rem] leading-[1.02] tracking-[-0.03em] text-zinc-900"
+            >
+              Your journey,{" "}
+              <span className="relative inline-block">
+                <span className="text-emerald-600">reimagined.</span>
+                <motion.svg
+                  className="absolute -bottom-1.5 left-0 w-full"
+                  viewBox="0 0 300 12"
+                  fill="none"
+                  preserveAspectRatio="none"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 1.2, delay: 0.9, ease: "easeOut" }}
+                >
+                  <motion.path
+                    d="M2 8c50-6 100-6 150-2s100 2 146-4"
+                    stroke="rgba(16,185,129,0.3)"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    initial={{ pathLength: 0 }}
+                    animate={{ pathLength: 1 }}
+                    transition={{ duration: 1.2, delay: 0.9, ease: "easeOut" }}
+                  />
+                </motion.svg>
+              </span>
+            </motion.h1>
 
             {/* Subtext */}
-            <p
-              className="animate-fade-in-up text-[17px] text-slate-500 leading-[1.7] max-w-[44ch]"
-              style={{ animationDelay: "200ms" }}
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[17px] text-slate-500 leading-[1.7] max-w-[46ch]"
             >
-              Connect with verified transporters. Book affordable routes across the world — safely, instantly, with full visibility every step of the way.
-            </p>
+              Connect with verified transporters across the world. Book affordable routes — safely, instantly, with full visibility every step of the way.
+            </motion.p>
 
             {/* Trust items */}
-            <div
-              className="animate-fade-in-up flex flex-wrap gap-x-8 gap-y-3"
-              style={{ animationDelay: "300ms" }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-wrap gap-x-8 gap-y-3"
             >
-              {["Verified drivers", "Live tracking", "24/7 support"].map((item) => (
-                <div key={item} className="flex items-center gap-2">
+              {["Verified drivers", "Live tracking", "24/7 support"].map((item, i) => (
+                <motion.div
+                  key={item}
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
+                >
                   <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                    <CheckCircleIcon className="w-3 h-3 text-emerald-600" />
+                    <CheckIcon className="w-3 h-3 text-emerald-600" />
                   </div>
                   <span className="text-sm text-slate-600 font-medium">{item}</span>
-                </div>
+                </motion.div>
               ))}
-            </div>
+            </motion.div>
 
             {/* CTA */}
-            <div
-              className="animate-fade-in-up flex flex-wrap items-center gap-4"
-              style={{ animationDelay: "400ms" }}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-wrap items-center gap-4 pt-2"
             >
-              <a
+              <Link
                 href="/signin"
-                className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)]"
+                className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-4 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_8px_24px_rgba(0,0,0,0.1)] hover:shadow-[0_1px_2px_rgba(0,0,0,0.1),0_12px_32px_rgba(0,0,0,0.15)]"
               >
                 Start for free
                 <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/how-it-works"
-                className="inline-flex items-center gap-2 text-zinc-600 font-medium px-2 py-3.5 hover:text-zinc-900 transition-colors duration-200 text-sm"
+                className="inline-flex items-center gap-2 text-zinc-600 font-medium px-3 py-4 hover:text-zinc-900 transition-colors duration-200 text-sm group"
               >
-                <span className="underline underline-offset-4 decoration-slate-300 hover:decoration-slate-500 transition-colors">See how it works</span>
-              </a>
-            </div>
+                <span className="underline underline-offset-4 decoration-slate-300 group-hover:decoration-emerald-400 transition-colors duration-300">See how it works</span>
+              </Link>
+            </motion.div>
           </div>
 
-          {/* Right — visual */}
-          <div className="relative hidden lg:block">
-            <div className="relative animate-scale-in" style={{ animationDelay: "300ms" }}>
-              {/* Main card */}
+          {/* Right — visual card */}
+          <motion.div
+            className="relative hidden lg:block"
+            initial={{ opacity: 0, scale: 0.92, y: 30 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="relative">
+              {/* Main card with car */}
               <div className="relative bg-white rounded-[2rem] p-10 shadow-[0_24px_80px_-12px_rgba(0,0,0,0.06)] border border-slate-200/60 overflow-hidden">
                 <div className="absolute inset-0 bg-linear-to-br from-emerald-50/30 via-transparent to-teal-50/20 pointer-events-none" />
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -281,23 +373,28 @@ function Hero() {
                 />
               </div>
 
-              {/* Verified badge */}
-              <div className="animate-float absolute -top-5 right-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3">
-                <div className="w-10 h-10 bg-linear-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0 animate-glow-pulse">
-                  <CheckCircleIcon className="w-5 h-5 text-white" />
+              {/* Verified floating badge */}
+              <motion.div
+                className="absolute -top-5 right-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <div className="w-10 h-10 bg-linear-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <CheckIcon className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <div className="text-sm font-bold text-zinc-900">Verified</div>
                   <div className="text-xs text-slate-400 font-medium">Licensed & Inspected</div>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Rating badge */}
-              <div
-                className="animate-float absolute -bottom-5 left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
-                style={{ animationDelay: "1.5s" }}
+              {/* Rating floating badge */}
+              <motion.div
+                className="absolute -bottom-5 left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.06)] border border-slate-100 px-5 py-3.5 flex items-center gap-3"
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
               >
-                <div className="flex -space-x-1.5">
+                <div className="flex -space-x-1">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <StarIcon key={i} className="w-4 h-4 text-amber-400" />
                   ))}
@@ -306,33 +403,30 @@ function Hero() {
                   <div className="text-sm font-bold text-zinc-900">4.9/5</div>
                   <div className="text-xs text-slate-400 font-medium">12K+ reviews</div>
                 </div>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 }
 
-function Stats() {
-  const ref = useReveal();
+// ─── Stats ────────────────────────────────────────────────────────────────────
 
+function Stats() {
   return (
-    <section ref={ref} className="relative bg-white border-y border-slate-200/60">
+    <section className="relative bg-white border-y border-slate-200/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-200/60">
           {stats.map((stat, i) => (
-            <div
-              key={stat.label}
-              className="reveal py-10 md:py-14 px-6 md:px-8 text-center group"
-              style={{ transitionDelay: `${i * 100}ms` }}
-            >
+            <Reveal key={stat.label} delay={i * 0.08} className="py-10 md:py-14 px-6 md:px-8 text-center group">
               <div className="font-[var(--font-display)] text-3xl md:text-4xl text-zinc-900 tracking-tight mb-1.5 group-hover:text-emerald-600 transition-colors duration-300">
                 {stat.value}
+                {stat.suffix && <span className="text-xl text-slate-400">{stat.suffix}</span>}
               </div>
               <div className="text-sm text-slate-400 font-medium">{stat.label}</div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -340,15 +434,61 @@ function Stats() {
   );
 }
 
-function Features() {
-  const ref = useReveal();
+// ─── Popular Routes ───────────────────────────────────────────────────────────
 
+function PopularRoutes() {
   return (
-    <section ref={ref} className="relative py-24 lg:py-32 bg-[#fafaf8] overflow-hidden">
+    <section className="py-20 lg:py-28 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12">
+          <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Popular routes</p>
+          <h2 className="font-[var(--font-display)] text-3xl md:text-4xl text-zinc-900 tracking-tight leading-[1.1]">
+            Where will you go next?
+          </h2>
+        </Reveal>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {routes.map((route, i) => (
+            <Reveal key={route.from + route.to} delay={i * 0.08}>
+              <motion.div
+                className="group relative bg-[#fafaf8] rounded-2xl border border-slate-200/60 p-6 cursor-pointer overflow-hidden"
+                whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.08)" }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <MapPinIcon className="w-4 h-4 text-emerald-600" />
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-zinc-900">
+                    {route.from}
+                    <svg className="w-4 h-4 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                    {route.to}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">{route.time}</span>
+                  <span className="text-sm font-bold text-emerald-600">{route.price}</span>
+                </div>
+                {/* Hover glow */}
+                <div className="absolute inset-0 bg-linear-to-br from-emerald-50/0 via-emerald-50/0 to-emerald-50/0 group-hover:from-emerald-50/40 group-hover:to-teal-50/20 transition-all duration-500 pointer-events-none rounded-2xl" />
+              </motion.div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Features ─────────────────────────────────────────────────────────────────
+
+function Features() {
+  return (
+    <section className="relative py-24 lg:py-32 bg-[#fafaf8] overflow-hidden">
       <div className="absolute inset-0 grain" />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="reveal mb-16 max-w-2xl">
+        <Reveal className="mb-16 max-w-2xl">
           <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Why SmatWay</p>
           <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-zinc-900 tracking-tight leading-[1.1] mb-5">
             Built for everyone<br />on the road
@@ -356,145 +496,90 @@ function Features() {
           <p className="text-[17px] text-slate-500 leading-relaxed">
             Whether you&apos;re heading to the next city or managing a fleet, every feature is designed around your safety and convenience.
           </p>
-        </div>
+        </Reveal>
 
-        {/* Bento grid */}
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-          {/* Featured: Verified & Safe — 4 cols */}
-          <div className="reveal md:col-span-4 group relative bg-zinc-950 text-white rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[300px] overflow-hidden card-shine" style={{ transitionDelay: "100ms" }}>
-            <div className="absolute inset-0 bg-linear-to-br from-emerald-950/20 via-transparent to-teal-950/10 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-emerald-500/10 group-hover:w-[400px] group-hover:h-[400px]" />
-            {/* Decorative line pattern */}
-            <div className="absolute top-0 right-0 w-48 h-48 pointer-events-none opacity-[0.03]">
-              {[0, 1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="absolute border-t border-white" style={{ top: `${i * 20}%`, right: 0, width: `${100 - i * 15}%` }} />
-              ))}
-            </div>
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
-                <ShieldIcon className="w-7 h-7" />
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="font-[var(--font-display)] text-2xl lg:text-3xl mb-3">Verified &amp; Safe</h3>
-              <p className="text-zinc-400 text-[15px] leading-relaxed max-w-[48ch] group-hover:text-zinc-300 transition-colors duration-500">
-                Every transporter undergoes identity verification, license checks, and vehicle inspection before their first trip. Your safety is non-negotiable.
-              </p>
-            </div>
-          </div>
-
-          {/* Secure Payments — 2 cols */}
-          <div className="reveal md:col-span-2 group bg-white rounded-3xl p-8 lg:p-9 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-[300px] hover-lift border-gradient-hover" style={{ transitionDelay: "200ms" }}>
-            <div>
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-100 group-hover:border-emerald-200 transition-colors duration-500">
-                <CreditCardIcon className="w-6 h-6" />
-              </div>
-              <div className="w-full h-px bg-linear-to-r from-slate-200/80 via-slate-200/40 to-transparent mb-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">Secure Payments</h3>
-              <p className="text-slate-500 text-[15px] leading-relaxed">
-                Funds held in escrow until arrival. Multiple methods, zero hidden fees.
-              </p>
-              <div className="mt-5 flex items-center gap-2 text-emerald-600 text-sm font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                Learn more <ArrowRightIcon className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </div>
-
-          {/* Real-Time Tracking — 2 cols */}
-          <div className="reveal md:col-span-2 group bg-white rounded-3xl p-8 lg:p-9 border border-slate-200/80 shadow-[0_1px_3px_rgba(0,0,0,0.02)] flex flex-col justify-between min-h-[300px] hover-lift border-gradient-hover" style={{ transitionDelay: "300ms" }}>
-            <div>
-              <div className="w-14 h-14 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-6 group-hover:bg-emerald-100 group-hover:border-emerald-200 transition-colors duration-500">
-                <ClockIcon className="w-6 h-6" />
-              </div>
-              <div className="w-full h-px bg-linear-to-r from-slate-200/80 via-slate-200/40 to-transparent mb-6" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">Real-Time Tracking</h3>
-              <p className="text-slate-500 text-[15px] leading-relaxed">
-                Monitor live. Share your trip link so loved ones always know where you are.
-              </p>
-              <div className="mt-5 flex items-center gap-2 text-emerald-600 text-sm font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                Learn more <ArrowRightIcon className="w-3.5 h-3.5" />
-              </div>
-            </div>
-          </div>
-
-          {/* Featured: Community Driven — 4 cols */}
-          <div className="reveal md:col-span-4 group relative bg-emerald-600 text-white rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[300px] overflow-hidden card-shine" style={{ transitionDelay: "400ms" }}>
-            <div className="absolute inset-0 bg-linear-to-br from-emerald-500/30 via-transparent to-teal-700/20 pointer-events-none" />
-            <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-white/5 rounded-full blur-[60px] pointer-events-none transition-all duration-700 group-hover:bg-white/10 group-hover:w-[350px] group-hover:h-[350px]" />
-            {/* Decorative circles */}
-            <div className="absolute bottom-6 right-6 pointer-events-none opacity-[0.06]">
-              <div className="w-32 h-32 rounded-full border border-white" />
-              <div className="absolute inset-4 rounded-full border border-white" />
-              <div className="absolute inset-8 rounded-full border border-white" />
-            </div>
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/15 border border-white/20 flex items-center justify-center mb-8 group-hover:bg-white/25 transition-colors duration-500">
-                <UsersIcon className="w-7 h-7 text-white" />
-              </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="font-[var(--font-display)] text-2xl lg:text-3xl mb-3">Community Driven</h3>
-              <p className="text-emerald-100/80 text-[15px] leading-relaxed max-w-[48ch] group-hover:text-white/90 transition-colors duration-500">
-                Ratings and verified reviews from real passengers give you the clarity to choose confidently. Every ride builds trust.
-              </p>
-            </div>
-          </div>
+        {/* 2x2 grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {features.map((f, i) => {
+            const c = colorMap[f.color];
+            return (
+              <Reveal key={f.title} delay={i * 0.1}>
+                <motion.div
+                  className={`group relative ${c.bg} rounded-3xl border ${c.border} p-8 lg:p-10 overflow-hidden`}
+                  whileHover={{ y: -3, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <div className={`w-14 h-14 rounded-2xl ${c.iconBg} flex items-center justify-center ${c.icon} mb-6 transition-transform duration-500 group-hover:scale-110`}>
+                    {f.icon}
+                  </div>
+                  <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{f.title}</h3>
+                  <p className="text-slate-500 text-[15px] leading-relaxed max-w-[44ch]">{f.description}</p>
+                  {/* Reveal arrow on hover */}
+                  <div className="mt-5 flex items-center gap-2 text-sm font-semibold opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300" style={{ color: `var(--${f.color === "emerald" ? "emerald" : f.color}-600, #059669)` }}>
+                    <span className={c.icon}>Learn more</span>
+                    <ArrowRightIcon className={`w-3.5 h-3.5 ${c.icon}`} />
+                  </div>
+                </motion.div>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-function HowItWorks() {
-  const ref = useReveal();
+// ─── How It Works ─────────────────────────────────────────────────────────────
 
+function HowItWorks() {
   return (
-    <section ref={ref} className="py-24 lg:py-32 bg-white">
+    <section className="py-24 lg:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="reveal mb-16">
+        <Reveal className="mb-16">
           <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">How it works</p>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
             <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-zinc-900 tracking-tight leading-[1.1]">
               Three steps to go
             </h2>
-            <a
+            <Link
               href="/how-it-works"
               className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors whitespace-nowrap group"
             >
               Full guide
               <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-            </a>
+            </Link>
           </div>
-        </div>
+        </Reveal>
 
-        {/* Steps — connected cards */}
+        {/* Steps */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          {/* Connecting line (desktop) */}
-          <div className="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-linear-to-r from-slate-300 via-emerald-300 to-slate-300 z-0" />
+          {/* Connecting line */}
+          <div className="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px z-0 overflow-hidden">
+            <motion.div
+              className="h-full bg-linear-to-r from-slate-300 via-emerald-300 to-slate-300"
+              initial={{ scaleX: 0 }}
+              whileInView={{ scaleX: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: "left" }}
+            />
+          </div>
 
           {steps.map((step, i) => (
-            <div
-              key={step.num}
-              className="reveal group relative bg-[#fafaf8] rounded-3xl border border-slate-200/60 p-8 lg:p-10 hover-lift border-gradient-hover"
-              style={{ transitionDelay: `${(i + 1) * 120}ms` }}
-            >
-              {/* Step number + icon */}
-              <div className="flex items-center gap-4 mb-8">
-                <div className="relative z-10 w-14 h-14 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:shadow-[0_4px_20px_rgba(0,0,0,0.25)] transition-shadow duration-500">
+            <Reveal key={step.num} delay={0.15 + i * 0.15}>
+              <motion.div
+                className="group relative bg-[#fafaf8] rounded-3xl border border-slate-200/60 p-8 lg:p-10"
+                whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="relative z-10 w-14 h-14 rounded-2xl bg-zinc-950 flex items-center justify-center mb-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)] group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-shadow duration-500">
                   <span className="text-sm font-bold text-white font-mono">{step.num}</span>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 opacity-0 -translate-x-3 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">
-                  {step.icon}
-                </div>
-              </div>
-              <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
-              <p className="text-slate-500 text-[15px] leading-relaxed">{step.description}</p>
-            </div>
+                <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed">{step.description}</p>
+              </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -502,59 +587,61 @@ function HowItWorks() {
   );
 }
 
-function Testimonials() {
-  const ref = useReveal();
+// ─── Testimonials ─────────────────────────────────────────────────────────────
 
+function Testimonials() {
   return (
-    <section ref={ref} className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
+    <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
       <div className="absolute inset-0 grain" />
-      <div className="absolute top-0 left-1/3 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none" />
-      {/* Decorative grid */}
+      {/* Ambient glow */}
+      <motion.div
+        className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }}
+        animate={{ x: [0, 30, 0], y: [0, -20, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
       <div
-        className="absolute inset-0 pointer-events-none opacity-[0.02]"
-        style={{
-          backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
+        className="absolute inset-0 pointer-events-none opacity-[0.015]"
+        style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }}
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="reveal mb-16 max-w-2xl">
+        <Reveal className="mb-16 max-w-2xl">
           <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">What people say</p>
           <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">
             Trusted by thousands
           </h2>
-        </div>
+        </Reveal>
 
-        {/* Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((t, i) => (
-            <div
-              key={t.name}
-              className="reveal group relative bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10 hover:bg-white/[0.07] hover:border-white/[0.10] transition-all duration-500"
-              style={{ transitionDelay: `${(i + 1) * 120}ms` }}
-            >
-              <QuoteIcon className="w-10 h-10 text-white mb-6" />
-              <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500">&ldquo;{t.text}&rdquo;</p>
-              <div className="h-px bg-linear-to-r from-white/10 via-white/5 to-transparent mb-6" />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xs font-bold">
-                    {t.avatar}
+            <Reveal key={t.name} delay={i * 0.12}>
+              <motion.div
+                className="group relative bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10"
+                whileHover={{ backgroundColor: "rgba(255,255,255,0.07)", borderColor: "rgba(255,255,255,0.1)" }}
+                transition={{ duration: 0.4 }}
+              >
+                <QuoteIcon className="w-10 h-10 text-white mb-6" />
+                <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500">&ldquo;{t.text}&rdquo;</p>
+                <div className="h-px bg-linear-to-r from-white/10 via-white/5 to-transparent mb-6" />
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-full bg-linear-to-br ${t.color} flex items-center justify-center text-white text-xs font-bold shadow-lg`}>
+                      {t.avatar}
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-white">{t.name}</div>
+                      <div className="text-xs text-zinc-500 font-medium">{t.role}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-bold text-white">{t.name}</div>
-                    <div className="text-xs text-zinc-500 font-medium">{t.role}</div>
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: t.rating }).map((_, j) => (
+                      <StarIcon key={j} className="w-3.5 h-3.5 text-amber-400" />
+                    ))}
                   </div>
                 </div>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: t.rating }).map((_, j) => (
-                    <StarIcon key={j} className="w-3.5 h-3.5 text-amber-400" />
-                  ))}
-                </div>
-              </div>
-            </div>
+              </motion.div>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -562,100 +649,133 @@ function Testimonials() {
   );
 }
 
-function Feedback() {
-  const ref = useReveal();
+// ─── Feedback ─────────────────────────────────────────────────────────────────
 
+function Feedback() {
   return (
-    <section ref={ref} className="py-24 lg:py-32 bg-[#fafaf8]">
+    <section className="py-24 lg:py-32 bg-[#fafaf8]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-6 items-stretch">
-          {/* Satisfied */}
-          <div className="reveal relative bg-zinc-950 rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[320px] overflow-hidden group card-shine" style={{ transitionDelay: "100ms" }}>
-            <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none transition-all duration-700 group-hover:bg-emerald-500/10" />
-            <div className="relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
-                <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
-                </svg>
+          <Reveal delay={0}>
+            <motion.div
+              className="relative bg-zinc-950 rounded-3xl p-10 lg:p-12 flex flex-col justify-between min-h-[340px] overflow-hidden group"
+              whileHover={{ boxShadow: "0 24px 60px -12px rgba(0,0,0,0.2)" }}
+              transition={{ duration: 0.4 }}
+            >
+              <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-emerald-500/5 rounded-full blur-[80px] pointer-events-none group-hover:bg-emerald-500/10 transition-all duration-700" />
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center mb-8 group-hover:bg-emerald-500/25 transition-colors duration-500">
+                  <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+                  </svg>
+                </div>
               </div>
-            </div>
-            <div className="relative z-10">
-              <h3 className="font-[var(--font-display)] text-3xl text-white mb-4">Satisfied?</h3>
-              <p className="text-zinc-400 text-[15px] leading-relaxed mb-8 max-w-[36ch]">
-                Share your experience. A recommendation goes further than any advertisement.
-              </p>
-              <a
-                href="/signin"
-                className="group/btn inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-[0.98]"
-              >
-                Share your story
-                <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
-              </a>
-            </div>
-          </div>
+              <div className="relative z-10">
+                <h3 className="font-[var(--font-display)] text-3xl text-white mb-4">Satisfied?</h3>
+                <p className="text-zinc-400 text-[15px] leading-relaxed mb-8 max-w-[36ch]">
+                  Share your experience. A recommendation goes further than any advertisement.
+                </p>
+                <Link
+                  href="/signin"
+                  className="group/btn inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold px-6 py-3 rounded-xl transition-all duration-200 active:scale-[0.97]"
+                >
+                  Share your story
+                  <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover/btn:translate-x-1" />
+                </Link>
+              </div>
+            </motion.div>
+          </Reveal>
 
-          {/* Not satisfied */}
-          <div className="reveal relative bg-white rounded-3xl p-10 lg:p-12 border border-slate-200/60 flex flex-col justify-between min-h-[320px] group hover-lift" style={{ transitionDelay: "200ms" }}>
-            <div className="absolute top-8 right-8 w-1 h-20 bg-linear-to-b from-red-400/50 to-transparent rounded-full" />
-            <div>
-              <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:bg-red-100 group-hover:border-red-200 transition-colors duration-500">
-                <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
-                </svg>
+          <Reveal delay={0.1}>
+            <motion.div
+              className="relative bg-white rounded-3xl p-10 lg:p-12 border border-slate-200/60 flex flex-col justify-between min-h-[340px] group"
+              whileHover={{ y: -4, boxShadow: "0 20px 60px -12px rgba(0,0,0,0.06)" }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="absolute top-8 right-8 w-1 h-20 bg-linear-to-b from-red-400/50 to-transparent rounded-full" />
+              <div>
+                <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:bg-red-100 group-hover:border-red-200 transition-colors duration-500">
+                  <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />
+                  </svg>
+                </div>
               </div>
-            </div>
-            <div>
-              <h3 className="font-[var(--font-display)] text-3xl text-zinc-900 mb-4">Not satisfied?</h3>
-              <p className="text-slate-500 text-[15px] leading-relaxed mb-6 max-w-[36ch]">
-                Tell us directly. Every piece of feedback makes the platform better for everyone.
-              </p>
-              <a href="mailto:tellus@smatway.com" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline underline-offset-4 decoration-emerald-200 hover:decoration-emerald-400">
-                tellus@smatway.com
-              </a>
-            </div>
-          </div>
+              <div>
+                <h3 className="font-[var(--font-display)] text-3xl text-zinc-900 mb-4">Not satisfied?</h3>
+                <p className="text-slate-500 text-[15px] leading-relaxed mb-6 max-w-[36ch]">
+                  Tell us directly. Every piece of feedback makes the platform better for everyone.
+                </p>
+                <a href="mailto:tellus@smatway.com" className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors underline underline-offset-4 decoration-emerald-200 hover:decoration-emerald-400">
+                  tellus@smatway.com
+                </a>
+              </div>
+            </motion.div>
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
+
+// ─── CTA ──────────────────────────────────────────────────────────────────────
 
 function CTA() {
   return (
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
       <div className="absolute inset-0 grain" />
-      <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-600/8 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute left-1/4 bottom-0 w-[400px] h-[400px] bg-teal-600/5 rounded-full blur-[100px] pointer-events-none" />
+      {/* Animated ambient glow */}
+      <motion.div
+        className="absolute right-[-10%] top-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)" }}
+        animate={{ scale: [1, 1.15, 1], x: [0, 20, 0] }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+      />
       {/* Decorative lines */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 -right-20 w-[400px] h-px bg-linear-to-l from-transparent via-emerald-500/10 to-transparent" />
-        <div className="absolute top-2/3 -right-10 w-[300px] h-px bg-linear-to-l from-transparent via-emerald-500/5 to-transparent" />
+        <motion.div
+          className="absolute top-1/4 -right-20 w-[400px] h-px bg-linear-to-l from-transparent via-emerald-500/10 to-transparent"
+          animate={{ x: [0, -30, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-2/3 -right-10 w-[300px] h-px bg-linear-to-l from-transparent via-emerald-500/5 to-transparent"
+          animate={{ x: [0, -20, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl">
-          <p className="animate-fade-in-up text-emerald-400 text-sm font-semibold uppercase tracking-[0.15em] mb-6">Get started today</p>
-          <h2 className="animate-fade-in-up font-[var(--font-display)] text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] mb-6" style={{ animationDelay: "100ms" }}>
-            Ready to travel<br />smarter?
-          </h2>
-          <p className="animate-fade-in-up text-[17px] text-zinc-400 leading-relaxed mb-12 max-w-[44ch]" style={{ animationDelay: "200ms" }}>
-            Join thousands of travelers and transporters who moved away from uncertainty and chose a platform that works.
-          </p>
-          <div className="animate-fade-in-up flex flex-wrap items-center gap-4" style={{ animationDelay: "300ms" }}>
-            <a
-              href="/signin"
-              className="group inline-flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_0_24px_rgba(16,185,129,0.2)] hover:shadow-[0_0_32px_rgba(16,185,129,0.3)]"
-            >
-              Create free account
-              <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-            </a>
-            <a
-              href="/how-it-works"
-              className="inline-flex items-center gap-2 text-zinc-400 hover:text-white font-medium px-2 py-4 transition-colors duration-200 text-sm"
-            >
-              <span className="underline underline-offset-4 decoration-zinc-700 hover:decoration-zinc-500 transition-colors">Learn how it works</span>
-            </a>
-          </div>
+          <Reveal>
+            <p className="text-emerald-400 text-sm font-semibold uppercase tracking-[0.15em] mb-6">Get started today</p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <h2 className="font-[var(--font-display)] text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] mb-6">
+              Ready to travel<br />smarter?
+            </h2>
+          </Reveal>
+          <Reveal delay={0.2}>
+            <p className="text-[17px] text-zinc-400 leading-relaxed mb-12 max-w-[44ch]">
+              Join thousands of travelers and transporters who moved away from uncertainty and chose a platform that works.
+            </p>
+          </Reveal>
+          <Reveal delay={0.3}>
+            <div className="flex flex-wrap items-center gap-4">
+              <Link
+                href="/signin"
+                className="group inline-flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-[0_0_24px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]"
+              >
+                Create free account
+                <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="inline-flex items-center gap-2 text-zinc-400 hover:text-white font-medium px-2 py-4 transition-colors duration-300 text-sm group"
+              >
+                <span className="underline underline-offset-4 decoration-zinc-700 group-hover:decoration-zinc-500 transition-colors duration-300">Learn how it works</span>
+              </Link>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>
@@ -669,6 +789,7 @@ export default function Home() {
     <>
       <Hero />
       <Stats />
+      <PopularRoutes />
       <Features />
       <HowItWorks />
       <Testimonials />

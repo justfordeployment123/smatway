@@ -1,0 +1,301 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "SmatWay" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e11]: SmatWay
+        - generic [ref=e12]:
+          - link "Home" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - text: Home
+          - link "About" [ref=e15] [cursor=pointer]:
+            - /url: /about
+          - link "How It Works" [ref=e16] [cursor=pointer]:
+            - /url: /how-it-works
+        - generic [ref=e17]:
+          - button "English" [ref=e19]:
+            - img [ref=e20]
+            - generic [ref=e23]: English
+            - img [ref=e24]
+          - link "Get Started" [ref=e26] [cursor=pointer]:
+            - /url: /signin
+            - text: Get Started
+            - img [ref=e27]
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e37]: Trusted by 50,000+ travelers worldwide
+        - heading "Your journey, reimagined." [level=1] [ref=e38]:
+          - text: Your journey,
+          - generic [ref=e39]:
+            - text: reimagined.
+            - img [ref=e40]
+        - paragraph [ref=e42]: Connect with verified transporters across the world. Book affordable routes — safely, instantly, with full visibility every step of the way.
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - img [ref=e46]
+            - generic [ref=e48]: Verified drivers
+          - generic [ref=e49]:
+            - img [ref=e51]
+            - generic [ref=e53]: Live tracking
+          - generic [ref=e54]:
+            - img [ref=e56]
+            - generic [ref=e58]: 24/7 support
+        - generic [ref=e59]:
+          - link "Start for free" [ref=e60] [cursor=pointer]:
+            - /url: /signin
+            - text: Start for free
+            - img [ref=e61]
+          - link "See how it works" [ref=e63] [cursor=pointer]:
+            - /url: /how-it-works
+            - generic [ref=e64]: See how it works
+      - generic [ref=e66]:
+        - img "SmatWay vehicle" [ref=e68]
+        - generic [ref=e69]:
+          - img [ref=e71]
+          - generic [ref=e73]:
+            - generic [ref=e74]: Verified
+            - generic [ref=e75]: Licensed & Inspected
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - img [ref=e78]
+            - img [ref=e80]
+            - img [ref=e82]
+            - img [ref=e84]
+            - img [ref=e86]
+          - generic [ref=e88]:
+            - generic [ref=e89]: 4.9/5
+            - generic [ref=e90]: 12K+ reviews
+    - generic [ref=e93]:
+      - generic [ref=e94]:
+        - generic [ref=e95]: 50K+
+        - generic [ref=e96]: Active travelers
+      - generic [ref=e97]:
+        - generic [ref=e98]: 12K+
+        - generic [ref=e99]: Verified transporters
+      - generic [ref=e100]:
+        - generic [ref=e101]: 4.9/5
+        - generic [ref=e102]: Average rating
+      - generic [ref=e103]:
+        - generic [ref=e104]: 98%
+        - generic [ref=e105]: On-time arrivals
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - paragraph [ref=e109]: Popular routes
+        - heading "Where will you go next?" [level=2] [ref=e110]
+      - generic [ref=e111]:
+        - generic [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img [ref=e116]
+            - generic [ref=e119]:
+              - text: Lahore
+              - img [ref=e120]
+              - text: Islamabad
+          - generic [ref=e122]:
+            - generic [ref=e123]: 4h 30m
+            - generic [ref=e124]: PKR 1,500
+        - generic [ref=e126] [cursor=pointer]:
+          - generic [ref=e127]:
+            - img [ref=e129]
+            - generic [ref=e132]:
+              - text: Karachi
+              - img [ref=e133]
+              - text: Hyderabad
+          - generic [ref=e135]:
+            - generic [ref=e136]: 2h 45m
+            - generic [ref=e137]: PKR 800
+        - generic [ref=e139] [cursor=pointer]:
+          - generic [ref=e140]:
+            - img [ref=e142]
+            - generic [ref=e145]:
+              - text: Islamabad
+              - img [ref=e146]
+              - text: Peshawar
+          - generic [ref=e148]:
+            - generic [ref=e149]: 2h 15m
+            - generic [ref=e150]: PKR 600
+        - generic [ref=e152] [cursor=pointer]:
+          - generic [ref=e153]:
+            - img [ref=e155]
+            - generic [ref=e158]:
+              - text: Multan
+              - img [ref=e159]
+              - text: Lahore
+          - generic [ref=e161]:
+            - generic [ref=e162]: 5h 00m
+            - generic [ref=e163]: PKR 1,200
+    - generic [ref=e166]:
+      - generic [ref=e167]:
+        - paragraph [ref=e168]: Why SmatWay
+        - heading "Built for everyone on the road" [level=2] [ref=e169]:
+          - text: Built for everyone
+          - text: on the road
+        - paragraph [ref=e170]: Whether you're heading to the next city or managing a fleet, every feature is designed around your safety and convenience.
+      - generic [ref=e171]:
+        - generic [ref=e173]:
+          - img [ref=e175]
+          - heading "Verified & Safe" [level=3] [ref=e177]
+          - paragraph [ref=e178]: Every transporter undergoes identity verification, license checks, and vehicle inspection before their first trip.
+          - generic [ref=e179]:
+            - generic [ref=e180]: Learn more
+            - img [ref=e181]
+        - generic [ref=e184]:
+          - img [ref=e186]
+          - heading "Secure Payments" [level=3] [ref=e188]
+          - paragraph [ref=e189]: Funds held in escrow until your journey completes. Multiple payment methods, zero hidden fees.
+          - generic [ref=e190]:
+            - generic [ref=e191]: Learn more
+            - img [ref=e192]
+        - generic [ref=e195]:
+          - img [ref=e197]
+          - heading "Real-Time Tracking" [level=3] [ref=e200]
+          - paragraph [ref=e201]: Monitor your journey live. Share your trip link with family so they always know where you are.
+          - generic [ref=e202]:
+            - generic [ref=e203]: Learn more
+            - img [ref=e204]
+        - generic [ref=e207]:
+          - img [ref=e209]
+          - heading "Community Driven" [level=3] [ref=e214]
+          - paragraph [ref=e215]: Ratings and verified reviews from real passengers give you the clarity to choose confidently.
+          - generic [ref=e216]:
+            - generic [ref=e217]: Learn more
+            - img [ref=e218]
+    - generic [ref=e221]:
+      - generic [ref=e222]:
+        - paragraph [ref=e223]: How it works
+        - generic [ref=e224]:
+          - heading "Three steps to go" [level=2] [ref=e225]
+          - link "Full guide" [ref=e226] [cursor=pointer]:
+            - /url: /how-it-works
+            - text: Full guide
+            - img [ref=e227]
+      - generic [ref=e229]:
+        - generic [ref=e232]:
+          - generic [ref=e234]: "01"
+          - heading "Create your account" [level=3] [ref=e235]
+          - paragraph [ref=e236]: Sign up with your phone or email in under a minute. Choose traveler or transporter.
+        - generic [ref=e238]:
+          - generic [ref=e240]: "02"
+          - heading "Find or post routes" [level=3] [ref=e241]
+          - paragraph [ref=e242]: Search available routes by city and date. Transporters post schedules and set fares.
+        - generic [ref=e244]:
+          - generic [ref=e246]: "03"
+          - heading "Travel with confidence" [level=3] [ref=e247]
+          - paragraph [ref=e248]: Book, pay securely, track in real time. Rate your experience when you arrive.
+    - generic [ref=e251]:
+      - generic [ref=e252]:
+        - paragraph [ref=e253]: What people say
+        - heading "Trusted by thousands" [level=2] [ref=e254]
+      - generic [ref=e255]:
+        - generic [ref=e257]:
+          - img [ref=e258]
+          - paragraph [ref=e260]: “SmatWay changed intercity travel for me — verified drivers, real-time tracking, and I always know exactly what I'm paying.”
+          - generic [ref=e262]:
+            - generic [ref=e263]:
+              - generic [ref=e264]: SK
+              - generic [ref=e265]:
+                - generic [ref=e266]: Sarah K.
+                - generic [ref=e267]: Frequent Traveler
+            - generic [ref=e268]:
+              - img [ref=e269]
+              - img [ref=e271]
+              - img [ref=e273]
+              - img [ref=e275]
+              - img [ref=e277]
+        - generic [ref=e280]:
+          - img [ref=e281]
+          - paragraph [ref=e283]: “Managing my fleet through SmatWay has been seamless. The booking system fills seats consistently, payments always on time.”
+          - generic [ref=e285]:
+            - generic [ref=e286]:
+              - generic [ref=e287]: AR
+              - generic [ref=e288]:
+                - generic [ref=e289]: Ahmed R.
+                - generic [ref=e290]: Fleet Owner
+            - generic [ref=e291]:
+              - img [ref=e292]
+              - img [ref=e294]
+              - img [ref=e296]
+              - img [ref=e298]
+              - img [ref=e300]
+        - generic [ref=e303]:
+          - img [ref=e304]
+          - paragraph [ref=e306]: “The real-time tracking gives my family peace of mind. I share my trip link every morning. That's priceless.”
+          - generic [ref=e308]:
+            - generic [ref=e309]:
+              - generic [ref=e310]: ML
+              - generic [ref=e311]:
+                - generic [ref=e312]: Maria L.
+                - generic [ref=e313]: Daily Commuter
+            - generic [ref=e314]:
+              - img [ref=e315]
+              - img [ref=e317]
+              - img [ref=e319]
+              - img [ref=e321]
+              - img [ref=e323]
+    - generic [ref=e327]:
+      - generic [ref=e329]:
+        - img [ref=e332]
+        - generic [ref=e334]:
+          - heading "Satisfied?" [level=3] [ref=e335]
+          - paragraph [ref=e336]: Share your experience. A recommendation goes further than any advertisement.
+          - link "Share your story" [ref=e337] [cursor=pointer]:
+            - /url: /signin
+            - text: Share your story
+            - img [ref=e338]
+      - generic [ref=e341]:
+        - img [ref=e345]
+        - generic [ref=e347]:
+          - heading "Not satisfied?" [level=3] [ref=e348]
+          - paragraph [ref=e349]: Tell us directly. Every piece of feedback makes the platform better for everyone.
+          - link "tellus@smatway.com" [ref=e350] [cursor=pointer]:
+            - /url: mailto:tellus@smatway.com
+    - generic [ref=e354]:
+      - paragraph [ref=e356]: Get started today
+      - heading "Ready to travel smarter?" [level=2] [ref=e358]:
+        - text: Ready to travel
+        - text: smarter?
+      - paragraph [ref=e360]: Join thousands of travelers and transporters who moved away from uncertainty and chose a platform that works.
+      - generic [ref=e362]:
+        - link "Create free account" [ref=e363] [cursor=pointer]:
+          - /url: /signin
+          - text: Create free account
+          - img [ref=e364]
+        - link "Learn how it works" [ref=e366] [cursor=pointer]:
+          - /url: /how-it-works
+          - generic [ref=e367]: Learn how it works
+    - contentinfo [ref=e368]:
+      - generic [ref=e370]:
+        - generic [ref=e371]:
+          - generic [ref=e372]:
+            - generic [ref=e373]:
+              - img [ref=e375]
+              - generic [ref=e378]: SmatWay
+            - paragraph [ref=e379]: Connecting travelers and transporters across the World. Safe, reliable, affordable.
+          - generic [ref=e380]:
+            - heading "Company" [level=4] [ref=e381]
+            - list [ref=e382]:
+              - listitem [ref=e383]:
+                - link "About Us" [ref=e384] [cursor=pointer]:
+                  - /url: /about
+              - listitem [ref=e385]:
+                - link "How It Works" [ref=e386] [cursor=pointer]:
+                  - /url: /how-it-works
+          - generic [ref=e387]:
+            - heading "Legal" [level=4] [ref=e388]
+            - list [ref=e389]:
+              - listitem [ref=e390]:
+                - link "Privacy Policy" [ref=e391] [cursor=pointer]:
+                  - /url: https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf
+              - listitem [ref=e392]:
+                - link "Terms of Service" [ref=e393] [cursor=pointer]:
+                  - /url: https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf
+          - generic [ref=e394]:
+            - heading "Get in Touch" [level=4] [ref=e395]
+            - paragraph [ref=e396]:
+              - text: Questions or feedback?
+              - link "tellus@smatway.com" [ref=e397] [cursor=pointer]:
+                - /url: mailto:tellus@smatway.com
+        - paragraph [ref=e400]: © 2026 SmatWay. All rights reserved.
+  - button "Open Next.js Dev Tools" [ref=e406] [cursor=pointer]:
+    - img [ref=e407]
