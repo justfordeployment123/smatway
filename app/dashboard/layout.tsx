@@ -131,8 +131,8 @@ function Sidebar({
               <Link
                 href={item.key}
                 className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${active
-                    ? "border-l-2 border-emerald-600 pl-[22px] bg-emerald-50/70 text-emerald-700"
-                    : "border-l-2 border-transparent pl-[22px] text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
+                  ? "border-l-2 border-emerald-600 pl-[22px] bg-emerald-50/70 text-emerald-700"
+                  : "border-l-2 border-transparent pl-[22px] text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
                   }`}
               >
                 <span className={active ? "text-emerald-600" : "text-slate-400"}>
@@ -175,7 +175,7 @@ function Topbar({ title, role }: { title: string; role: "traveler" | "transporte
       <div className="flex items-center gap-2">
         {/* Bell */}
         <Tooltip>
-          <TooltipTrigger className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors">
+          <TooltipTrigger className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
             <BellIcon className="w-5 h-5 text-slate-500" />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
           </TooltipTrigger>
@@ -201,6 +201,60 @@ function Topbar({ title, role }: { title: string; role: "traveler" | "transporte
         </div>
       </div>
     </header>
+  );
+}
+
+function MobileNav({
+  pathname,
+  role,
+  onRoleSwitch,
+}: {
+  pathname: string;
+  role: "traveler" | "transporter";
+  onRoleSwitch: (r: "traveler" | "transporter") => void;
+}) {
+  const navItems = role === "transporter" ? transporterNav : travelerNav;
+
+  return (
+    <div className="lg:hidden sticky top-16 z-30 border-b border-sidebar-border bg-white/95 backdrop-blur">
+      <div className="px-4 py-3 space-y-3">
+        <Tabs value={role} onValueChange={(v) => onRoleSwitch(v as "traveler" | "transporter")}>
+          <TabsList className="w-full bg-slate-100 rounded-xl p-0.5 h-auto">
+            <TabsTrigger
+              value="traveler"
+              className="flex-1 rounded-[9px] py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
+            >
+              Traveler
+            </TabsTrigger>
+            <TabsTrigger
+              value="transporter"
+              className="flex-1 rounded-[9px] py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
+            >
+              Transporter
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+          {navItems.map((item) => {
+            const active = pathname === item.key;
+
+            return (
+              <Link
+                key={item.key}
+                href={item.key}
+                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${active
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-zinc-900"
+                  }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -235,6 +289,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <Sidebar pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
         <div className="flex-1 lg:ml-[250px] flex flex-col min-h-[100dvh]">
           <Topbar title={title} role={role} />
+          <MobileNav pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
           <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
             {children}
           </main>

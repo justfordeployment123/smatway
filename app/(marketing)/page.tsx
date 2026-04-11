@@ -291,6 +291,7 @@ function Hero() {
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [fallbackImageError, setFallbackImageError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const mediaUnavailable = !videoLoaded && fallbackImageError;
 
   useEffect(() => {
     if (!videoLoaded) {
@@ -354,7 +355,7 @@ function Hero() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex flex-wrap gap-x-8 gap-y-3">
               {["Verified drivers", "Live tracking", "24/7 support"].map((item, i) => (
                 <motion.div key={item} className="flex items-center gap-2" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 + i * 0.08, duration: 0.5 }}>
-                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                  <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                     <CheckCircleIcon className="w-3 h-3 text-emerald-600" />
                   </div>
                   <span className="text-sm text-slate-600 font-medium">{item}</span>
@@ -378,7 +379,9 @@ function Hero() {
             transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             <div className="relative">
               <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-12px_rgba(0,0,0,0.1)] border border-slate-200/60">
-                <div className="aspect-[4/3] relative bg-gradient-to-br from-slate-50 to-emerald-50/40">
+                <div
+                  className={`relative bg-gradient-to-br from-slate-50 to-emerald-50/40 ${mediaUnavailable ? "min-h-[220px]" : "aspect-[4/3]"}`}
+                >
                   {/* Your uploaded car-in-motion video */}
                   <video
                     ref={videoRef}
@@ -393,22 +396,25 @@ function Hero() {
                     onPlaying={() => setVideoLoaded(true)}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
                   >
-                    <source src="/car.mp4" type="video/mp4" />
+                    <source src="/car1.mp4" type="video/mp4" />
                   </video>
                   {/* Fallback: your car.png while video loads */}
                   {!videoLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/40">
-                      <div className={`relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/80 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] transition-all duration-700 ${fallbackImageError ? "w-[72%] max-w-[320px] h-[58%] min-h-[180px]" : "w-full max-w-[92%] min-h-[72%]"}`}>
-                        {fallbackImageError && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />}
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src="/car.png"
-                          alt="SmatWay vehicle"
-                          className={`relative z-10 w-full h-full object-contain transition-opacity duration-500 ${fallbackImageError ? "opacity-0" : "opacity-100"}`}
-                          onLoad={() => setFallbackImageError(false)}
-                          onError={() => setFallbackImageError(true)}
-                        />
-                      </div>
+                    <div className="absolute inset-0 flex items-center justify-center p-6">
+                      {fallbackImageError ? (
+                        <div className="w-full h-full min-h-[180px] rounded-2xl border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />
+                      ) : (
+                        <div >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/car.png"
+                            alt="SmatWay vehicle"
+                            className="w-full h-full object-contain"
+                            onLoad={() => setFallbackImageError(false)}
+                            onError={() => setFallbackImageError(true)}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
@@ -470,21 +476,26 @@ function Hero() {
                 </div>
               </motion.div>
 
-              <motion.div className="absolute top-1/2 -translate-y-1/2 -left-4 bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-2.5 flex items-center gap-2 z-20"
-                animate={{ y: ["-50%", "calc(-50% - 4px)", "-50%"] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}>
-                <div className="flex -space-x-2">
-                  {["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop&q=60",
-                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&q=60",
-                    "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&q=60"
-                  ].map((src, i) => (
-                    <SmartImage key={i} src={src} fallbackSrc="https://picsum.photos/seed/smatway-avatar-fallback/64/64" alt="Active traveler" className="w-7 h-7 rounded-full border-2 border-white object-cover" />
-                  ))}
-                </div>
-                <div className="text-xs">
-                  <div className="font-bold text-zinc-900">+2.4K</div>
-                  <div className="text-slate-400">this week</div>
-                </div>
-              </motion.div>
+              <div className="absolute top-1/2 -translate-y-1/2 -left-4 z-20">
+                <motion.div
+                  className="bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-2.5 flex items-center gap-2 will-change-transform"
+                  animate={{ y: [0, -8, 0] }}
+                  transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+                >
+                  <div className="flex -space-x-2">
+                    {["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop&q=60",
+                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&q=60",
+                      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&q=60"
+                    ].map((src, i) => (
+                      <SmartImage key={i} src={src} fallbackSrc="https://picsum.photos/seed/smatway-avatar-fallback/64/64" alt="Active traveler" className="w-7 h-7 rounded-full border-2 border-white object-cover" />
+                    ))}
+                  </div>
+                  <div className="text-xs">
+                    <div className="font-bold text-zinc-900">+2.4K</div>
+                    <div className="text-slate-400">this week</div>
+                  </div>
+                </motion.div>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -508,7 +519,7 @@ function Stats() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/[0.06]">
           {stats.map((stat, i) => (
-            <Reveal key={stat.label} delay={i * 0.08} className="py-10 md:py-14 px-6 md:px-8 text-center group">
+            <Reveal key={stat.label} delay={i * 0.08} className="group cursor-pointer py-10 md:py-14 px-6 md:px-8 text-center rounded-2xl transition-all duration-300 hover:bg-white/[0.03] hover:-translate-y-1">
               <div className="mb-2 inline-flex items-center justify-center text-emerald-400">{stat.icon}</div>
               <div className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight mb-1.5 group-hover:text-emerald-400 transition-colors duration-300">
                 {stat.value}{stat.suffix && <span className="text-xl text-zinc-500">{stat.suffix}</span>}
@@ -726,11 +737,11 @@ function AppPreview() {
             </Reveal>
             <Reveal delay={0.25}>
               <div className="flex items-center gap-4 pt-4">
-                <Link href="#" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-colors">
+                <Link href="/signup" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
                   <div className="text-left"><div className="text-[9px] leading-none opacity-70">Download on the</div><div className="text-sm font-semibold leading-tight">App Store</div></div>
                 </Link>
-                <Link href="#" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-colors">
+                <Link href="/signin" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.7 13.5l2-1.5-2-1.5 1.998-1.992zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" /></svg>
                   <div className="text-left"><div className="text-[9px] leading-none opacity-70">Get it on</div><div className="text-sm font-semibold leading-tight">Google Play</div></div>
                 </Link>
