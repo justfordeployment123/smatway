@@ -313,7 +313,7 @@ function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
       <div className="absolute inset-0 grain" />
-      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/40 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/80 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none" />
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
@@ -397,21 +397,19 @@ function Hero() {
                   </video>
                   {/* Fallback: your car.png while video loads */}
                   {!videoLoaded && (
-                    <>
-                    // <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/40">
-                        {/* <div className={`relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/80 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] transition-all duration-700 ${fallbackImageError ? "w-[72%] max-w-[320px] h-[58%] min-h-[180px]" : "w-full max-w-[92%] min-h-[72%]"}`}> */}
-                          {fallbackImageError && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />}
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src="/car.png"
-                            alt="SmatWay vehicle"
-                            className={`relative z-10 w-full h-full object-contain transition-opacity duration-500 ${fallbackImageError ? "opacity-0" : "opacity-100"}`}
-                            onLoad={() => setFallbackImageError(false)}
-                            onError={() => setFallbackImageError(true)}
-                          />
-                        {/* </div> */}
-                   </div>
-                    </>
+                    <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/40">
+                      <div className={`relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/80 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] transition-all duration-700 ${fallbackImageError ? "w-[72%] max-w-[320px] h-[58%] min-h-[180px]" : "w-full max-w-[92%] min-h-[72%]"}`}>
+                        {fallbackImageError && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/car.png"
+                          alt="SmatWay vehicle"
+                          className={`relative z-10 w-full h-full object-contain transition-opacity duration-500 ${fallbackImageError ? "opacity-0" : "opacity-100"}`}
+                          onLoad={() => setFallbackImageError(false)}
+                          onError={() => setFallbackImageError(true)}
+                        />
+                      </div>
+                    </div>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
 
@@ -499,16 +497,23 @@ function Hero() {
 
 function Stats() {
   return (
-    <section className="relative bg-white border-y border-slate-200/60">
+    <section className="relative bg-zinc-950 border-y border-white/[0.06] overflow-hidden">
+      <div className="absolute inset-0 grain" />
+      <motion.div className="absolute -top-20 left-[10%] w-[350px] h-[350px] rounded-full pointer-events-none opacity-40 blur-[100px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.5) 0%, transparent 70%)" }}
+        animate={{ x: [0, 40, 0], scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} />
+      <motion.div className="absolute -bottom-16 right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none opacity-30 blur-[90px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.5) 0%, transparent 70%)" }}
+        animate={{ x: [0, -30, 0], scale: [1.1, 0.9, 1.1] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-200/60">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/[0.06]">
           {stats.map((stat, i) => (
             <Reveal key={stat.label} delay={i * 0.08} className="py-10 md:py-14 px-6 md:px-8 text-center group">
-              <div className="mb-2 inline-flex items-center justify-center text-emerald-600">{stat.icon}</div>
-              <div className="font-[var(--font-display)] text-3xl md:text-4xl text-zinc-900 tracking-tight mb-1.5 group-hover:text-emerald-600 transition-colors duration-300">
-                {stat.value}{stat.suffix && <span className="text-xl text-slate-400">{stat.suffix}</span>}
+              <div className="mb-2 inline-flex items-center justify-center text-emerald-400">{stat.icon}</div>
+              <div className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight mb-1.5 group-hover:text-emerald-400 transition-colors duration-300">
+                {stat.value}{stat.suffix && <span className="text-xl text-zinc-500">{stat.suffix}</span>}
               </div>
-              <div className="text-sm text-slate-400 font-medium">{stat.label}</div>
+              <div className="text-sm text-zinc-400 font-medium">{stat.label}</div>
             </Reveal>
           ))}
         </div>
@@ -521,16 +526,21 @@ function Stats() {
 
 function PopularRoutes() {
   return (
-    <section className="py-20 lg:py-28 bg-white">
+    <section className="relative py-20 lg:py-28 bg-zinc-950 overflow-hidden">
+      <div className="absolute inset-0 grain" />
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, #fff 2px, transparent 2px)", backgroundSize: "32px 32px" }} />
+      <div className="mesh-1 absolute -top-32 right-[10%] w-[600px] h-[600px] rounded-full pointer-events-none opacity-30 blur-[100px]" style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
+      <div className="mesh-2 absolute -bottom-24 -left-20 w-[500px] h-[500px] rounded-full pointer-events-none opacity-25 blur-[90px]" style={{ background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)" }} />
+      <div className="mesh-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none opacity-10 blur-[80px]" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="mb-12">
-          <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Popular routes</p>
-          <h2 className="font-[var(--font-display)] text-3xl md:text-4xl text-zinc-900 tracking-tight leading-[1.1]">Where will you go next?</h2>
+          <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">Popular routes</p>
+          <h2 className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight leading-[1.1]">Where will you go next?</h2>
         </Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {routes.map((route, i) => (
             <Reveal key={route.from + route.to} delay={i * 0.08}>
-              <motion.div className="group relative bg-white rounded-3xl border border-slate-200/70 overflow-hidden cursor-pointer hover:border-emerald-200 transition-all duration-300 shadow-sm hover:shadow-xl"
+              <motion.div className="group relative bg-white/5 backdrop-blur-sm rounded-3xl border border-white/8 overflow-hidden cursor-pointer hover:border-emerald-400/30 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5"
                 whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
                 <div className="relative h-36 overflow-hidden">
                   <SmartImage src={route.image} fallbackSrc="https://picsum.photos/seed/smatway-route-fallback/800/500" alt={`${route.from} to ${route.to}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
@@ -544,12 +554,12 @@ function PopularRoutes() {
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <ClockIcon className="w-4 h-4 text-slate-400" />
-                      <span className="text-xs text-slate-400 font-medium">{route.time}</span>
+                      <ClockIcon className="w-4 h-4 text-zinc-500" />
+                      <span className="text-xs text-zinc-400 font-medium">{route.time}</span>
                     </div>
-                    <span className="text-sm font-bold text-emerald-600">{route.price}</span>
+                    <span className="text-sm font-bold text-emerald-400">{route.price}</span>
                   </div>
-                  <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-600 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     Book now <ArrowRightIcon className="w-3 h-3" />
                   </div>
                 </div>
@@ -566,8 +576,22 @@ function PopularRoutes() {
 
 function Features() {
   return (
-    <section className="relative py-24 lg:py-32 bg-[#fafaf8] overflow-hidden">
+    <section className="relative py-24 lg:py-32 bg-[#f5f7f4] overflow-hidden">
       <div className="absolute inset-0 grain" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(16,185,129,0.14),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(20,184,166,0.14),transparent_42%),radial-gradient(circle_at_55%_90%,rgba(59,130,246,0.10),transparent_40%)]" />
+      <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.08) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
+      <motion.div
+        className="absolute -top-44 -right-24 w-[760px] h-[760px] rounded-full pointer-events-none blur-[130px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.05) 42%, transparent 72%)" }}
+        animate={{ x: [0, 24, 0], y: [0, -18, 0], scale: [1, 1.08, 1] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute -bottom-28 -left-20 w-[560px] h-[560px] rounded-full pointer-events-none blur-[110px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0.04) 45%, transparent 72%)" }}
+        animate={{ x: [0, -18, 0], y: [0, 16, 0], scale: [1.06, 0.96, 1.06] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="mb-16 max-w-2xl">
           <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Why SmatWay</p>
@@ -610,7 +634,11 @@ function AppPreview() {
   const y = useTransform(scrollYProgress, [0, 1], [60, -60]);
 
   return (
-    <section ref={ref} className="relative py-24 lg:py-32 bg-white overflow-hidden">
+    <section ref={ref} className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
+      <div className="absolute inset-0 grain" />
+      <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
+      <div className="mesh-1 absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full pointer-events-none opacity-20 blur-[110px]" style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
+      <div className="mesh-3 absolute bottom-[-10%] right-[5%] w-[450px] h-[450px] rounded-full pointer-events-none opacity-15 blur-[90px]" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           <Reveal>
@@ -675,9 +703,9 @@ function AppPreview() {
 
           <div className="space-y-8">
             <Reveal>
-              <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Mobile App</p>
-              <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-zinc-900 tracking-tight leading-[1.1] mb-5">Everything in<br />your pocket</h2>
-              <p className="text-[17px] text-slate-500 leading-relaxed max-w-[44ch]">Book rides, track journeys, manage payments, and rate transporters — all from our intuitive mobile app.</p>
+              <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">Mobile App</p>
+              <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1] mb-5">Everything in<br />your pocket</h2>
+              <p className="text-[17px] text-zinc-300 leading-relaxed max-w-[44ch]">Book rides, track journeys, manage payments, and rate transporters — all from our intuitive mobile app.</p>
             </Reveal>
             <Reveal delay={0.15}>
               <div className="space-y-4">
@@ -686,11 +714,11 @@ function AppPreview() {
                   { title: "Offline Tickets", desc: "Download your booking confirmation — works even without internet." },
                   { title: "Family Sharing", desc: "Share your live trip link so loved ones can track you in real time." },
                 ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-slate-50 transition-colors duration-200">
+                  <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-white/5 transition-colors duration-200">
                     <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5"><CheckIcon className="w-5 h-5 text-emerald-600" /></div>
                     <div>
-                      <h4 className="text-sm font-bold text-zinc-900 mb-1">{item.title}</h4>
-                      <p className="text-sm text-slate-500 leading-relaxed">{item.desc}</p>
+                      <h4 className="text-sm font-bold text-white mb-1">{item.title}</h4>
+                      <p className="text-sm text-zinc-400 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -719,7 +747,19 @@ function AppPreview() {
 
 function HowItWorks() {
   return (
-    <section className="py-24 lg:py-32 bg-white">
+    <section className="relative py-24 lg:py-32 bg-[#f4f7f3] overflow-hidden">
+      <div className="absolute inset-0 grain" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(16,185,129,0.18),transparent_44%),radial-gradient(circle_at_84%_22%,rgba(20,184,166,0.14),transparent_40%),radial-gradient(circle_at_55%_88%,rgba(59,130,246,0.10),transparent_42%)]" />
+      <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.07) 1px, transparent 1px)", backgroundSize: "52px 52px" }} />
+      <motion.div className="absolute top-[8%] left-[4%] w-[320px] h-[320px] rounded-full pointer-events-none opacity-[0.18] blur-[95px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.6), transparent 70%)" }}
+        animate={{ y: [0, -36, 0], x: [0, 24, 0], scale: [1, 1.08, 1] }} transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }} />
+      <motion.div className="absolute top-[38%] right-[7%] w-[260px] h-[260px] rounded-full pointer-events-none opacity-[0.14] blur-[80px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.55), transparent 70%)" }}
+        animate={{ y: [0, 28, 0], x: [0, -20, 0], scale: [0.98, 1.08, 0.98] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1.6 }} />
+      <motion.div className="absolute bottom-[4%] left-[38%] w-[360px] h-[360px] rounded-full pointer-events-none opacity-[0.10] blur-[100px]"
+        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.45), transparent 70%)" }}
+        animate={{ scale: [1, 1.18, 1], x: [0, -26, 0], y: [0, 10, 0] }} transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.8 }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal className="mb-16">
           <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">How it works</p>
@@ -854,8 +894,44 @@ function Testimonials() {
 
 function Feedback() {
   return (
-    <section className="py-24 lg:py-32 bg-[#fafaf8]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
+      <div className="absolute inset-0 grain" />
+      <div className="absolute inset-0 bg-[linear-gradient(118deg,rgba(8,10,11,0.98)_0%,rgba(8,10,11,0.95)_34%,rgba(18,35,31,0.9)_48%,rgba(244,244,240,0.96)_56%,rgba(250,249,246,0.98)_100%)]" />
+      <div
+        className="absolute inset-0 opacity-[0.28]"
+        style={{
+          backgroundImage:
+            "radial-gradient(120% 90% at 8% 14%, rgba(16,185,129,0.24) 0%, rgba(16,185,129,0.02) 45%, transparent 70%), radial-gradient(85% 70% at 90% 84%, rgba(248,113,113,0.2) 0%, rgba(248,113,113,0.02) 52%, transparent 76%), linear-gradient(120deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 36%), linear-gradient(300deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 42%)",
+        }}
+      />
+      <div
+        className="absolute inset-0 opacity-[0.07]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(255,255,255,0.42) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.42) 1px, transparent 1px)",
+          backgroundSize: "44px 44px",
+        }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_48%,rgba(9,9,11,0.3)_100%)]" />
+      <motion.div
+        className="absolute -top-24 left-[6%] w-[520px] h-[520px] rounded-full pointer-events-none blur-[120px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.28) 0%, rgba(16,185,129,0.08) 44%, transparent 74%)" }}
+        animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute -bottom-24 right-[6%] w-[540px] h-[540px] rounded-full pointer-events-none blur-[130px]"
+        style={{ background: "radial-gradient(circle, rgba(248,113,113,0.24) 0%, rgba(248,113,113,0.06) 46%, transparent 74%)" }}
+        animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.08, 0.94, 1.08] }}
+        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+      />
+      <motion.div
+        className="absolute top-1/2 left-1/2 w-[420px] h-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none blur-[110px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.16) 0%, rgba(20,184,166,0.04) 42%, transparent 74%)" }}
+        animate={{ scale: [0.95, 1.12, 0.95], opacity: [0.5, 0.7, 0.5] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
+      />
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-2 gap-6 auto-rows-fr">
           <Reveal>
             <motion.div className="group relative h-full rounded-3xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-transparent to-transparent hover:from-emerald-400/60 transition-all duration-500" whileHover={{ y: -6 }}>
