@@ -284,11 +284,31 @@ const routes = [
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// HERO — Uses your uploaded car video (/hero-car.mp4) + car.png as fallback
+// HERO — Uses your uploaded car video (/car.mp4) + car.png as fallback
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function Hero() {
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [fallbackImageError, setFallbackImageError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (!videoLoaded) {
+      return;
+    }
+
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    const playPromise = video.play();
+    if (playPromise) {
+      playPromise.catch(() => {
+        // Autoplay can still be blocked in some browsers; the poster/fallback remains visible.
+      });
+    }
+  }, [videoLoaded]);
 
   return (
     <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
@@ -360,16 +380,38 @@ function Hero() {
               <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-12px_rgba(0,0,0,0.1)] border border-slate-200/60">
                 <div className="aspect-[4/3] relative bg-gradient-to-br from-slate-50 to-emerald-50/40">
                   {/* Your uploaded car-in-motion video */}
-                  <video autoPlay loop muted playsInline onLoadedData={() => setVideoLoaded(true)}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}>
-                    <source src="/hero-car.mp4" type="video/mp4" />
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    preload="auto"
+                    poster="/car.png"
+                    onLoadedMetadata={() => setVideoLoaded(true)}
+                    onCanPlay={() => setVideoLoaded(true)}
+                    onPlaying={() => setVideoLoaded(true)}
+                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
+                  >
+                    <source src="/car.mp4" type="video/mp4" />
                   </video>
                   {/* Fallback: your car.png while video loads */}
                   {!videoLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/40">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src="/car.png" alt="SmatWay vehicle" className="w-full h-auto drop-shadow-2xl" />
-                    </div>
+                    <>
+                    // <div className="absolute inset-0 flex items-center justify-center p-8 bg-gradient-to-br from-slate-50 to-emerald-50/40">
+                        {/* <div className={`relative overflow-hidden rounded-[2rem] border border-slate-200/70 bg-white/80 shadow-[0_20px_50px_-24px_rgba(15,23,42,0.2)] transition-all duration-700 ${fallbackImageError ? "w-[72%] max-w-[320px] h-[58%] min-h-[180px]" : "w-full max-w-[92%] min-h-[72%]"}`}> */}
+                          {fallbackImageError && <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />}
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src="/car.png"
+                            alt="SmatWay vehicle"
+                            className={`relative z-10 w-full h-full object-contain transition-opacity duration-500 ${fallbackImageError ? "opacity-0" : "opacity-100"}`}
+                            onLoad={() => setFallbackImageError(false)}
+                            onError={() => setFallbackImageError(true)}
+                          />
+                        {/* </div> */}
+                   </div>
+                    </>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
 
