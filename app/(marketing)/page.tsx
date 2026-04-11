@@ -71,9 +71,8 @@ function LazyImageContainer({
   return (
     <ImageLoadContext.Provider value={handleImageLoad}>
       <div
-        className={`relative overflow-hidden transition-all duration-300 ease-out will-change-auto ${
-          isImageLoaded ? aspectRatio : "h-auto"
-        } ${className}`}
+        className={`relative overflow-hidden transition-all duration-300 ease-out will-change-auto ${isImageLoaded ? aspectRatio : "h-auto"
+          } ${className}`}
         style={{
           contentVisibility: "auto",
         }}
