@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView, useScroll, useTransform, AnimatePresence } from "motion/react";
 
@@ -37,6 +37,53 @@ function Reveal({
   );
 }
 
+// ─── ImageLoadContext ─────────────────────────────────────────────────────────
+
+const ImageLoadContext = React.createContext<((id: string) => void) | undefined>(undefined);
+
+// ─── LazyImageContainer ───────────────────────────────────────────────────────
+// Wraps images to shrink container while image loads, expanding when ready
+
+function LazyImageContainer({
+  children,
+  aspectRatio = "aspect-[4/3]",
+  className = "",
+}: {
+  children: React.ReactNode;
+  aspectRatio?: string;
+  className?: string;
+}) {
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const imageIdRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!imageIdRef.current) {
+      imageIdRef.current = Math.random().toString(36).substring(2, 11);
+    }
+  }, []);
+
+  const handleImageLoad = (id: string) => {
+    if (id === imageIdRef.current) {
+      setIsImageLoaded(true);
+    }
+  };
+
+  return (
+    <ImageLoadContext.Provider value={handleImageLoad}>
+      <div
+        className={`relative overflow-hidden transition-all duration-300 ease-out will-change-auto ${
+          isImageLoaded ? aspectRatio : "h-auto"
+        } ${className}`}
+        style={{
+          contentVisibility: "auto",
+        }}
+      >
+        {children}
+      </div>
+    </ImageLoadContext.Provider>
+  );
+}
+
 function SmartImage({
   src,
   alt,
@@ -49,10 +96,22 @@ function SmartImage({
   fallbackSrc: string;
 }) {
   const [resolvedSrc, setResolvedSrc] = useState(src);
+  const imageIdRef = useRef<string>("");
+  const onImageLoad = React.useContext(ImageLoadContext);
+
+  useEffect(() => {
+    if (!imageIdRef.current) {
+      imageIdRef.current = Math.random().toString(36).substring(2, 11);
+    }
+  }, []);
 
   useEffect(() => {
     setResolvedSrc(src);
   }, [src]);
+
+  const handleLoad = () => {
+    onImageLoad?.(imageIdRef.current);
+  };
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -62,6 +121,8 @@ function SmartImage({
       className={className}
       loading="lazy"
       decoding="async"
+      fetchPriority="low"
+      onLoad={handleLoad}
       onError={() => {
         if (resolvedSrc !== fallbackSrc) {
           setResolvedSrc(fallbackSrc);
@@ -553,15 +614,17 @@ function PopularRoutes() {
             <Reveal key={route.from + route.to} delay={i * 0.08}>
               <motion.div className="group relative bg-white/5 backdrop-blur-sm rounded-3xl border border-white/8 overflow-hidden cursor-pointer hover:border-emerald-400/30 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5"
                 whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="relative h-36 overflow-hidden">
-                  <SmartImage src={route.image} fallbackSrc="https://picsum.photos/seed/smatway-route-fallback/800/500" alt={`${route.from} to ${route.to}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-                  <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-white text-sm font-bold drop-shadow-md">
-                    {route.from}
-                    <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                    {route.to}
+                <LazyImageContainer aspectRatio="h-36" className="rounded-t-3xl">
+                  <div className="relative w-full h-full overflow-hidden">
+                    <SmartImage src={route.image} fallbackSrc="https://picsum.photos/seed/smatway-route-fallback/800/500" alt={`${route.from} to ${route.to}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
+                    <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-white text-sm font-bold drop-shadow-md">
+                      {route.from}
+                      <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
+                      {route.to}
+                    </div>
                   </div>
-                </div>
+                </LazyImageContainer>
                 <div className="p-5">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -614,13 +677,15 @@ function Features() {
             <Reveal key={f.title} delay={i * 0.1}>
               <motion.div className="group relative bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300"
                 whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="relative h-48 overflow-hidden">
-                  <SmartImage src={f.image} fallbackSrc="https://picsum.photos/seed/smatway-feature-fallback/1000/700" alt={f.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                  <div className="absolute -bottom-5 left-8 w-14 h-14 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-500">
-                    {f.icon}
+                <LazyImageContainer aspectRatio="h-48" className="rounded-t-3xl">
+                  <div className="relative w-full h-full overflow-hidden">
+                    <SmartImage src={f.image} fallbackSrc="https://picsum.photos/seed/smatway-feature-fallback/1000/700" alt={f.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
+                    <div className="absolute -bottom-5 left-8 w-14 h-14 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-500">
+                      {f.icon}
+                    </div>
                   </div>
-                </div>
+                </LazyImageContainer>
                 <div className="p-8 pt-10 lg:p-10 lg:pt-12">
                   <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{f.title}</h3>
                   <p className="text-slate-500 text-[15px] leading-relaxed">{f.description}</p>
@@ -790,13 +855,15 @@ function HowItWorks() {
             <Reveal key={step.num} delay={0.15 + i * 0.15}>
               <motion.div className="group relative bg-white rounded-3xl border border-slate-200/70 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300"
                 whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <div className="relative h-44 overflow-hidden">
-                  <SmartImage src={step.image} fallbackSrc="https://picsum.photos/seed/smatway-step-fallback/1000/700" alt={step.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent" />
-                  <div className="absolute -bottom-4 left-8 z-10 w-12 h-12 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-lg">
-                    <span className="text-sm font-bold text-white font-mono">{step.num}</span>
+                <LazyImageContainer aspectRatio="h-44" className="rounded-t-3xl">
+                  <div className="relative w-full h-full overflow-hidden">
+                    <SmartImage src={step.image} fallbackSrc="https://picsum.photos/seed/smatway-step-fallback/1000/700" alt={step.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent" />
+                    <div className="absolute -bottom-4 left-8 z-10 w-12 h-12 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-lg">
+                      <span className="text-sm font-bold text-white font-mono">{step.num}</span>
+                    </div>
                   </div>
-                </div>
+                </LazyImageContainer>
                 <div className="p-8 pt-10">
                   <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
                   <p className="text-slate-500 text-[15px] leading-relaxed">{step.description}</p>
@@ -820,7 +887,9 @@ function SafetyBanner() {
   return (
     <section ref={ref} className="relative overflow-hidden">
       <motion.div className="absolute inset-0" style={{ y: bgY }}>
-        <SmartImage src="https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=1600&h=600&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-safety-fallback/1920/900" alt="Scenic highway at sunset" className="w-full h-full object-cover scale-110" />
+        <LazyImageContainer aspectRatio="" className="w-full h-full">
+          <SmartImage src="https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=1600&h=600&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-safety-fallback/1920/900" alt="Scenic highway at sunset" className="w-full h-full object-cover scale-110" />
+        </LazyImageContainer>
       </motion.div>
       <div className="absolute inset-0 bg-zinc-950/70 backdrop-blur-sm" />
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
@@ -989,7 +1058,9 @@ function CTA() {
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
       <div className="absolute inset-0 grain" />
       <div className="absolute inset-0">
-        <SmartImage src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&h=800&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-cta-fallback/1920/1080" alt="Open road" className="w-full h-full object-cover opacity-10" />
+        <LazyImageContainer aspectRatio="" className="w-full h-full">
+          <SmartImage src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&h=800&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-cta-fallback/1920/1080" alt="Open road" className="w-full h-full object-cover opacity-10" />
+        </LazyImageContainer>
       </div>
       <motion.div className="absolute right-[-10%] top-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
         style={{ background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)" }}
