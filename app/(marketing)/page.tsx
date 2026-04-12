@@ -456,7 +456,7 @@ function Hero() {
                     onPlaying={() => setVideoLoaded(true)}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
                   >
-                    <source src="/car1.mp4" type="video/mp4" />
+                    <source src="/car.mp4" type="video/mp4" />
                   </video>
                   {/* Fallback: your car.png while video loads */}
                   {!videoLoaded && (
