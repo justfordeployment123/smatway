@@ -117,11 +117,12 @@ export type UserRole = 'traveler' | 'transporter' | 'admin'
 {
   "name": "@smataway/types",
   "version": "0.0.1",
-  "main": "./index.ts",
   "types": "./index.ts",
   "private": true
 }
 ```
+
+Note: `main` is intentionally omitted. This package is type-only — no runtime consumers in Phase 1. Adding a `main` pointing to `.ts` source would break any non-TS consumer. Add a build step + `main: "./dist/index.js"` in Phase 2 when runtime use is needed.
 
 ### `packages/tsconfig` — `@smataway/tsconfig`
 
@@ -317,9 +318,14 @@ packages/*/node_modules
 
 ## 8. Exact Command Sequence
 
+> **Shell requirement:** All commands below use bash syntax. On Windows, run them in **Git Bash** or **WSL2** — not PowerShell or cmd. Git Bash ships with Git for Windows and is available in VS Code's integrated terminal. PowerShell equivalents are provided in the comment blocks where syntax differs.
+
 ```bash
 # ── Step 1: Create directory structure ──────────────────────────────────────
-mkdir -p apps packages/types packages/tsconfig packages/eslint-config
+# bash (Git Bash / WSL):
+mkdir -p apps/web apps/admin apps/api packages/types packages/tsconfig packages/eslint-config
+# PowerShell equivalent:
+# New-Item -ItemType Directory -Force apps/web, apps/admin, apps/api, packages/types, packages/tsconfig, packages/eslint-config
 
 # ── Step 2: Move existing web app files (git mv preserves history) ──────────
 git mv app              apps/web/app
@@ -333,6 +339,7 @@ git mv postcss.config.mjs apps/web/postcss.config.mjs
 git mv next-env.d.ts    apps/web/next-env.d.ts
 git mv components.json  apps/web/components.json
 # Note: do NOT git mv tsconfig.tsbuildinfo — it is a generated artifact
+# PowerShell equivalent for git mv: git mv works the same in PowerShell (git commands are cross-platform)
 
 # ── Step 3: Create apps/web/package.json ────────────────────────────────────
 # (written manually — derived from existing root package.json, name @smataway/web)
@@ -345,7 +352,7 @@ git mv components.json  apps/web/components.json
 
 # ── Step 6: Write shared packages ───────────────────────────────────────────
 # packages/tsconfig/{package.json, base.json, nextjs.json, nestjs.json}
-# packages/eslint-config/{package.json, index.js}
+# packages/eslint-config/{package.json, next.js, nest.js}   ← NOT index.js
 # packages/types/{package.json, index.ts}
 
 # ── Step 7: Scaffold admin (skip-install) ───────────────────────────────────
