@@ -51,3 +51,16 @@ In Coolify:
 2. Select **Nixpacks** as the build pack.
 3. Keep the default `PORT` environment variable (or set one explicitly, e.g. `3000`).
 4. Deploy.
+
+## Deploy on Coolify (Dockerfile)
+
+If Nixpacks fails on your server, deploy this repo with the included `Dockerfile`.
+
+In Coolify:
+
+1. Create or open your application.
+2. Select **Dockerfile** as the build pack (instead of Nixpacks).
+3. Keep `PORT=3000` (or set your preferred port).
+4. Deploy.
+
+This Docker build uses a multi-stage setup and runs Next.js in standalone mode.
