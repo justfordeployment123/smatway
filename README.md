@@ -34,3 +34,20 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Deploy on Coolify (Nixpacks)
+
+This repo includes a `nixpacks.toml` file so Coolify can build and run the app consistently.
+
+Build and run behavior:
+
+- Install: `npm ci`
+- Build: `npm run build`
+- Start: `npm run start -- -H 0.0.0.0 -p ${PORT:-3000}`
+
+In Coolify:
+
+1. Create a new application from this repository.
+2. Select **Nixpacks** as the build pack.
+3. Keep the default `PORT` environment variable (or set one explicitly, e.g. `3000`).
+4. Deploy.

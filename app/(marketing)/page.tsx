@@ -348,13 +348,18 @@ const routes = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function Hero() {
+  const [isClient, setIsClient] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
   const [fallbackImageError, setFallbackImageError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const mediaUnavailable = !videoLoaded && fallbackImageError;
 
   useEffect(() => {
-    if (!videoLoaded) {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !videoLoaded) {
       return;
     }
 
@@ -369,7 +374,7 @@ function Hero() {
         // Autoplay can still be blocked in some browsers; the poster/fallback remains visible.
       });
     }
-  }, [videoLoaded]);
+  }, [isClient, videoLoaded]);
 
   return (
     <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
@@ -445,15 +450,12 @@ function Hero() {
                   {/* Your uploaded car-in-motion video */}
                   <video
                     ref={videoRef}
-                    autoPlay
                     loop
                     muted
                     playsInline
                     preload="auto"
                     poster="/car.png"
-                    onLoadedMetadata={() => setVideoLoaded(true)}
-                    onCanPlay={() => setVideoLoaded(true)}
-                    onPlaying={() => setVideoLoaded(true)}
+                    onCanPlayThrough={() => setVideoLoaded(true)}
                     className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
                   >
                     <source src="/car.mp4" type="video/mp4" />
