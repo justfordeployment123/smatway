@@ -39,15 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Turborepo
-.turbo
-
-# Monorepo build outputs
-apps/*/.next
-apps/*/dist
-apps/*/.next/cache
-
-# Nested node_modules (hoisted to root by npm workspaces)
-apps/*/node_modules
-packages/*/node_modules
