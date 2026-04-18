@@ -1,5 +1,5 @@
 {
-  "extends": "@smataway/tsconfig/nextjs.json",
+  "extends": "@smatway/tsconfig/nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"]

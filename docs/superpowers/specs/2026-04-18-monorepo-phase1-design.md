@@ -1,7 +1,7 @@
 # Monorepo Migration — Phase 1 Design Spec
 
 **Date:** 2026-04-18
-**Project:** smataway
+**Project:** smatway
 **Scope:** Phase 1 — Turborepo monorepo scaffold only (no Prisma, no auth, no Docker)
 **Migration approach:** Option A — in-place restructure
 
@@ -24,15 +24,15 @@ Convert the existing single Next.js app at the repo root into a Turborepo npm-wo
 ## 2. Target Structure
 
 ```
-smataway/                          ← monorepo root (existing repo)
+smatway/                           ← monorepo root (existing repo)
 ├── apps/
 │   ├── web/                       ← existing Next.js app (moved here)
 │   ├── admin/                     ← fresh Next.js (create-next-app latest)
 │   └── api/                       ← fresh NestJS (nestjs/cli new)
 ├── packages/
-│   ├── types/                     ← @smataway/types (shared TS contracts)
-│   ├── tsconfig/                  ← @smataway/tsconfig (shared TS configs)
-│   └── eslint-config/             ← @smataway/eslint-config (shared lint rules)
+│   ├── types/                     ← @smatway/types (shared TS contracts)
+│   ├── tsconfig/                  ← @smatway/tsconfig (shared TS configs)
+│   └── eslint-config/             ← @smatway/eslint-config (shared lint rules)
 ├── turbo.json
 ├── package.json                   ← workspace root (private)
 ├── package-lock.json
@@ -65,7 +65,7 @@ The existing Next.js 16.2.2 app moved in its entirety. No code changes — only 
 Note: `tsconfig.tsbuildinfo` is a generated artifact — do not `git mv` it; it will regenerate on first build.
 
 **`apps/web/package.json`** — created from current root `package.json`:
-- name: `@smataway/web`
+- name: `@smatway/web`
 - Keep all existing dependencies unchanged
 - Scripts: `dev`, `build`, `start`, `lint`, `typecheck`
 - Add `typecheck` script explicitly: `"typecheck": "tsc --noEmit"` (not in original)
@@ -80,7 +80,7 @@ npx create-next-app@latest apps/admin \
   --import-alias "@/*"
 ```
 
-- name: `@smataway/admin`
+- name: `@smatway/admin`
 - No UI customization in Phase 1 — starter content only
 
 ### `apps/api`
@@ -93,7 +93,7 @@ npx @nestjs/cli new apps/api \
   --skip-install
 ```
 
-- name: `@smataway/api`
+- name: `@smatway/api`
 - One `GET /` endpoint returning `{ message: 'Hello World!' }` (NestJS default)
 - No modules, no Prisma, no auth in Phase 1
 
@@ -101,9 +101,9 @@ npx @nestjs/cli new apps/api \
 
 ## 4. Shared Packages
 
-All packages use the `@smataway/` npm scope.
+All packages use the `@smatway/` npm scope.
 
-### `packages/types` — `@smataway/types`
+### `packages/types` — `@smatway/types`
 
 Minimal placeholder to establish the pattern. Extended in future phases.
 
@@ -115,7 +115,7 @@ export type UserRole = 'traveler' | 'transporter' | 'admin'
 ```json
 // packages/types/package.json
 {
-  "name": "@smataway/types",
+  "name": "@smatway/types",
   "version": "0.0.1",
   "types": "./index.ts",
   "private": true
@@ -124,7 +124,7 @@ export type UserRole = 'traveler' | 'transporter' | 'admin'
 
 Note: `main` is intentionally omitted. This package is type-only — no runtime consumers in Phase 1. Adding a `main` pointing to `.ts` source would break any non-TS consumer. Add a build step + `main: "./dist/index.js"` in Phase 2 when runtime use is needed.
 
-### `packages/tsconfig` — `@smataway/tsconfig`
+### `packages/tsconfig` — `@smatway/tsconfig`
 
 Three config files:
 
@@ -186,7 +186,7 @@ Three config files:
 **`packages/tsconfig/package.json`:**
 ```json
 {
-  "name": "@smataway/tsconfig",
+  "name": "@smatway/tsconfig",
   "version": "0.0.1",
   "private": true,
   "files": ["base.json", "nextjs.json", "nestjs.json"]
@@ -198,7 +198,7 @@ Apps reference shared configs. Each app's `tsconfig.json` adds `extends` but kee
 ```json
 // apps/web/tsconfig.json — add extends, keep existing paths/@/* and plugins
 {
-  "extends": "@smataway/tsconfig/nextjs.json",
+  "extends": "@smatway/tsconfig/nextjs.json",
   "compilerOptions": {
     "paths": { "@/*": ["./*"] }
   },
@@ -206,10 +206,10 @@ Apps reference shared configs. Each app's `tsconfig.json` adds `extends` but kee
   "exclude": ["node_modules"]
 }
 // apps/api/tsconfig.json — NestJS CLI generates this; update extends only
-{ "extends": "@smataway/tsconfig/nestjs.json", ... }
+{ "extends": "@smatway/tsconfig/nestjs.json", ... }
 ```
 
-### `packages/eslint-config` — `@smataway/eslint-config`
+### `packages/eslint-config` — `@smatway/eslint-config`
 
 Two separate config files (not a single index.js), one per app type. Apps import the file they need directly:
 
@@ -225,14 +225,14 @@ module.exports = compat.extends('next/core-web-vitals')
 
 Usage in `apps/web/eslint.config.mjs`:
 ```js
-import nextConfig from '@smataway/eslint-config/next.js'
+import nextConfig from '@smatway/eslint-config/next.js'
 export default [...nextConfig]
 ```
 
 **`packages/eslint-config/package.json`:**
 ```json
 {
-  "name": "@smataway/eslint-config",
+  "name": "@smatway/eslint-config",
   "version": "0.0.1",
   "private": true,
   "exports": {
@@ -250,7 +250,7 @@ Note: In Phase 1 both apps can keep their scaffolded ESLint configs as-is. Migra
 
 ```json
 {
-  "name": "smataway",
+  "name": "smatway",
   "version": "0.0.1",
   "private": true,
   "workspaces": ["apps/*", "packages/*"],
@@ -342,7 +342,7 @@ git mv components.json  apps/web/components.json
 # PowerShell equivalent for git mv: git mv works the same in PowerShell (git commands are cross-platform)
 
 # ── Step 3: Create apps/web/package.json ────────────────────────────────────
-# (written manually — derived from existing root package.json, name @smataway/web)
+# (written manually — derived from existing root package.json, name @smatway/web)
 
 # ── Step 4: Rewrite root package.json ───────────────────────────────────────
 # (written manually — private workspace root, turbo only)
@@ -383,7 +383,7 @@ turbo run build
 - [ ] `apps/web` build output identical to pre-migration build
 - [ ] `apps/admin` starts on `npm run dev` in its own terminal
 - [ ] `apps/api` starts and `GET /` returns `{ "message": "Hello World!" }`
-- [ ] `@smataway/types`, `@smataway/tsconfig`, `@smataway/eslint-config` resolve correctly
+- [ ] `@smatway/types`, `@smatway/tsconfig`, `@smatway/eslint-config` resolve correctly
 - [ ] No root-level Next.js or NestJS source files remain (only `turbo.json`, `package.json`, `.gitignore`, docs)
 - [ ] `git log --follow apps/web/app/layout.tsx` shows pre-migration history
 

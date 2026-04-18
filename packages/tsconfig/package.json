@@ -1,5 +1,5 @@
 {
-  "name": "@smataway/tsconfig",
+  "name": "@smatway/tsconfig",
   "version": "0.0.1",
   "private": true,
   "files": ["base.json", "nextjs.json", "nestjs.json"]

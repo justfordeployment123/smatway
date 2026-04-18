@@ -1,5 +1,5 @@
 {
-  "extends": "@smataway/tsconfig/nestjs.json",
+  "extends": "@smatway/tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",

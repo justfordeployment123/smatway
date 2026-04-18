@@ -84,7 +84,7 @@ Replace the entire file with:
 
 ```json
 {
-  "name": "smataway",
+  "name": "smatway",
   "version": "0.0.1",
   "private": true,
   "workspaces": [
@@ -162,7 +162,7 @@ Expected: `valid`
 
 ```json
 {
-  "name": "@smataway/tsconfig",
+  "name": "@smatway/tsconfig",
   "version": "0.0.1",
   "private": true,
   "files": ["base.json", "nextjs.json", "nestjs.json"]
@@ -239,7 +239,7 @@ Expected: `valid`
 
 ```json
 {
-  "name": "@smataway/types",
+  "name": "@smatway/types",
   "version": "0.0.1",
   "private": true,
   "types": "./index.ts"
@@ -270,7 +270,7 @@ export type UserRole = 'traveler' | 'transporter' | 'admin'
 
 ```json
 {
-  "name": "@smataway/eslint-config",
+  "name": "@smatway/eslint-config",
   "version": "0.0.1",
   "private": true,
   "exports": {
@@ -387,7 +387,7 @@ This is derived from the original root `package.json` (which is now the workspac
 
 ```json
 {
-  "name": "@smataway/web",
+  "name": "@smatway/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -438,7 +438,7 @@ Replace the file with:
 
 ```json
 {
-  "extends": "@smataway/tsconfig/nextjs.json",
+  "extends": "@smatway/tsconfig/nextjs.json",
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"]
@@ -456,7 +456,7 @@ Replace the file with:
 }
 ```
 
-Note: `plugins` and `incremental` are now inherited from `@smataway/tsconfig/nextjs.json`. The `paths` alias `@/*` must stay here (app-specific, not shared).
+Note: `plugins` and `incremental` are now inherited from `@smatway/tsconfig/nextjs.json`. The `paths` alias `@/*` must stay here (app-specific, not shared).
 
 ---
 
@@ -485,7 +485,7 @@ When prompted for project name: it should use `apps/admin` as the directory. If 
 Open `apps/admin/package.json` and change the `name` field to:
 
 ```json
-"name": "@smataway/admin"
+"name": "@smatway/admin"
 ```
 
 Add `typecheck` script if not present:
@@ -525,7 +525,7 @@ If the CLI prompts for package manager selection, choose `npm`.
 Open `apps/api/package.json` and change the `name` field to:
 
 ```json
-"name": "@smataway/api"
+"name": "@smatway/api"
 ```
 
 - [ ] **Step 13.3: Update apps/api/tsconfig.json to use shared config**
@@ -534,7 +534,7 @@ Replace `apps/api/tsconfig.json` with:
 
 ```json
 {
-  "extends": "@smataway/tsconfig/nestjs.json",
+  "extends": "@smatway/tsconfig/nestjs.json",
   "compilerOptions": {
     "outDir": "./dist",
     "baseUrl": "./"
@@ -608,7 +608,7 @@ Expected: exactly one result — `./package-lock.json`.
 - [ ] **Step 15.3: Verify workspace packages are linked**
 
 ```bash
-ls node_modules/@smataway/
+ls node_modules/@smatway/
 ```
 
 Expected: `eslint-config  tsconfig  types` (symlinks to `packages/*`).
@@ -750,7 +750,7 @@ After merging this branch, the existing production deployment **will break** unl
 
 - [ ] **Step 19.1: Log into Coolify and open the web service**
 
-Navigate to your Coolify instance → the smataway `web` service.
+Navigate to your Coolify instance → the smatway `web` service.
 
 - [ ] **Step 19.2: Update the build source path**
 
@@ -787,7 +787,7 @@ Visit the production URL and confirm the marketing page and dashboard routes loa
 - [ ] `apps/web` build output matches pre-migration baseline (same routes)
 - [ ] `GET http://localhost:3000/` on `apps/api` returns `{"message":"Hello World!"}`
 - [ ] `apps/admin` build completes with no errors
-- [ ] `@smataway/types`, `@smataway/tsconfig`, `@smataway/eslint-config` symlinked in `node_modules/@smataway/`
+- [ ] `@smatway/types`, `@smatway/tsconfig`, `@smatway/eslint-config` symlinked in `node_modules/@smatway/`
 - [ ] No root-level `app/`, `components/`, `lib/`, `next.config.ts` remain
 - [ ] `git log --follow apps/web/app/layout.tsx` shows pre-migration history
 - [ ] Coolify build source updated to `/apps/web`
