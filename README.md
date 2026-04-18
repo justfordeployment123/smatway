@@ -64,3 +64,38 @@ In Coolify:
 4. Deploy.
 
 This Docker build uses a multi-stage setup and runs Next.js in standalone mode.
+
+## Local Infra (Postgres + Redis Only)
+
+This repo includes `docker-compose.infra.yml` to run only Postgres and Redis locally.
+
+From the repository root:
+
+```bash
+npm run infra:up
+npm run infra:logs
+npm run infra:down
+```
+
+Reset local database/cache volumes when needed:
+
+```bash
+npm run infra:reset
+```
+
+Default local API env values:
+
+- `DATABASE_URL=postgresql://smatway:smatway@localhost:5432/smatway?schema=public`
+- `REDIS_URL=redis://localhost:6379`
+
+## Coolify Deployment Layout
+
+To keep deployment flexible, host each service as an independent Coolify resource:
+
+1. `web` app
+2. `admin` app
+3. `api` app
+4. `postgres` service
+5. `redis` service
+
+Wire connections through Coolify environment variables per app (do not use `localhost` in production).

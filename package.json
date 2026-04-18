@@ -10,7 +10,11 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck"
+    "typecheck": "turbo run typecheck",
+    "infra:up": "docker compose -f docker-compose.infra.yml up -d",
+    "infra:down": "docker compose -f docker-compose.infra.yml down --remove-orphans",
+    "infra:logs": "docker compose -f docker-compose.infra.yml logs -f",
+    "infra:reset": "docker compose -f docker-compose.infra.yml down -v --remove-orphans"
   },
   "packageManager": "npm@11.11.0",
   "devDependencies": {
