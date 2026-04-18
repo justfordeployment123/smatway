@@ -11,8 +11,8 @@ export class HealthService {
 
     async getStatus(): Promise<{
         status: 'ok' | 'degraded';
-        postgres: 'up' | 'down';
-        redis: 'up' | 'down';
+        postgres: boolean;
+        redis: boolean;
         timestamp: string;
     }> {
         const [postgres, redis] = await Promise.all([
@@ -20,7 +20,7 @@ export class HealthService {
             this.checkRedis(),
         ]);
 
-        const status = postgres === 'up' && redis === 'up' ? 'ok' : 'degraded';
+        const status = postgres && redis ? 'ok' : 'degraded';
 
         return {
             status,
@@ -30,21 +30,21 @@ export class HealthService {
         };
     }
 
-    private async checkPostgres(): Promise<'up' | 'down'> {
+    private async checkPostgres(): Promise<boolean> {
         try {
             await this.prisma.$queryRaw`SELECT 1`;
-            return 'up';
+            return true;
         } catch {
-            return 'down';
+            return false;
         }
     }
 
-    private async checkRedis(): Promise<'up' | 'down'> {
+    private async checkRedis(): Promise<boolean> {
         try {
             await this.redisService.ping();
-            return 'up';
+            return true;
         } catch {
-            return 'down';
+            return false;
         }
     }
 }

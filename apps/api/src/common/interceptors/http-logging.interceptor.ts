@@ -70,7 +70,10 @@ export class HttpLoggingInterceptor implements NestInterceptor {
         const startedAt = Date.now();
         const requestMeta = getRequestMeta(request);
 
+        const line = colorize('dim', '─'.repeat(80));
+
         const requestLog = [
+            line,
             `${colorize('dim', `[${nowIso()}]`)} ${colorize('bold', colorize('cyan', '[REQUEST]'))} ${colorize('dim', requestId)}`,
             `${colorize('cyan', `${requestMeta.method} ${requestMeta.url}`)} ${colorize('dim', `from ${requestMeta.ip ?? 'unknown-ip'}`)}`,
             `${colorize('bold', colorize('cyan', 'query'))}: ${safeStringify(requestMeta.query)}`,
@@ -89,6 +92,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
                     `${colorize('dim', `[${nowIso()}]`)} ${colorize('bold', colorize('green', '[RESPONSE]'))} ${colorize('dim', requestId)}`,
                     `status: ${colorize(statusColor(status), `${status}`)}  time: ${colorize('dim', `${duration}ms`)}`,
                     `${colorize('bold', colorize('green', 'response'))}: ${safeStringify(responseBody)}`,
+                    line,
                 ].join('\n');
 
                 console.log(responseLog);
