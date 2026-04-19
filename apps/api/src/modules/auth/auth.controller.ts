@@ -13,7 +13,6 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -36,24 +35,6 @@ export class AuthController {
   async login(@Req() req: Request, @Res({ passthrough: false }) res: Response) {
     await this.authService.issueTokens(req.user as User, res);
     res.json({ user: this.authService.safeUser(req.user as User) });
-  }
-
-  @Get('google')
-  @UseGuards(GoogleAuthGuard)
-  googleAuth() {
-    // Passport redirects
-  }
-
-  @Get('google/callback')
-  @UseGuards(GoogleAuthGuard)
-  async googleCallback(@Req() req: Request, @Res({ passthrough: false }) res: Response) {
-    const profile = req.user as { providerId: string; email: string; name: string };
-    await this.authService.handleGoogleCallback(profile, res);
-    const redirectTo = (req.query['redirectTo'] as string) || process.env.WEB_URL || 'http://localhost:3000';
-    const allowed = (process.env.ALLOWED_REDIRECT_URLS ?? '').split(',').map(u => u.trim());
-    const isAllowed = allowed.some(origin => redirectTo === origin || redirectTo.startsWith(origin + '/'));
-    const safeRedirect = isAllowed ? redirectTo : (process.env.WEB_URL ?? 'http://localhost:3000') + '/dashboard';
-    res.redirect(safeRedirect);
   }
 
   @Post('refresh')

@@ -90,31 +90,6 @@ export class AuthService {
     clearAuthCookies(res);
   }
 
-  async handleGoogleCallback(
-    profile: { providerId: string; email: string; name: string },
-    res: Response,
-  ): Promise<void> {
-    let user = await this.prisma.user.findUnique({ where: { email: profile.email } });
-
-    if (!user) {
-      user = await this.prisma.user.create({
-        data: { email: profile.email, name: profile.name },
-      });
-    }
-
-    const existing = await this.prisma.authProvider.findUnique({
-      where: { provider_providerId: { provider: 'google', providerId: profile.providerId } },
-    });
-
-    if (!existing) {
-      await this.prisma.authProvider.create({
-        data: { provider: 'google', providerId: profile.providerId, userId: user.id },
-      });
-    }
-
-    await this.issueTokens(user, res);
-  }
-
   async forgotPassword(email: string): Promise<void> {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return;
