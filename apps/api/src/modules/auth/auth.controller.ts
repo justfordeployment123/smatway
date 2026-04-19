@@ -51,7 +51,8 @@ export class AuthController {
     await this.authService.handleGoogleCallback(profile, res);
     const redirectTo = (req.query['redirectTo'] as string) || process.env.WEB_URL || 'http://localhost:3000';
     const allowed = (process.env.ALLOWED_REDIRECT_URLS ?? '').split(',').map(u => u.trim());
-    const safeRedirect = allowed.includes(redirectTo) ? redirectTo : (process.env.WEB_URL ?? 'http://localhost:3000');
+    const isAllowed = allowed.some(origin => redirectTo === origin || redirectTo.startsWith(origin + '/'));
+    const safeRedirect = isAllowed ? redirectTo : (process.env.WEB_URL ?? 'http://localhost:3000') + '/dashboard';
     res.redirect(safeRedirect);
   }
 

@@ -14,7 +14,7 @@
     "api:dev": "npm run --workspace @smatway/api dev",
     "api:start": "npm run --workspace @smatway/api start",
     "api:prisma:migrate:dev": "npm run --workspace @smatway/api prisma:migrate:dev --",
-    "api:prisma:studio": "npm run --workspace @smatway/api prisma:studio --",
+    "studio": "npm run --workspace @smatway/api prisma:studio --",
     "web:dev": "npm run --workspace @smatway/web dev",
     "web:start": "npm run --workspace @smatway/web start",
     "admin:dev": "npm run --workspace @smatway/admin dev",

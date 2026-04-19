@@ -94,7 +94,7 @@ export default function SignInPage() {
       </div>
 
       <a
-        href={`${BASE_API}/auth/google?redirectTo=${encodeURIComponent(typeof window !== "undefined" ? window.location.origin : "http://localhost:3000")}`}
+        href={`${BASE_API}/auth/google?redirectTo=${encodeURIComponent((typeof window !== "undefined" ? window.location.origin : "http://localhost:3000") + "/dashboard")}`}
         className="w-full flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-zinc-900 hover:bg-slate-50 transition-all mb-5"
       >
         <GoogleIcon />

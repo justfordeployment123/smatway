@@ -3,6 +3,9 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { api, ApiError } from "@/lib/api";
+
+const BASE_API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3002";
 
 function ArrowLeftIcon() {
   return (
@@ -88,11 +91,21 @@ export default function SignUpPage() {
     email: "",
     password: "",
     confirmPassword: "",
+    phoneNumber: "",
+    country: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -116,35 +129,23 @@ export default function SignUpPage() {
       }
 
       // Submit to /auth/register
-      const response = await fetch("/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-          accountType,
-        }),
+      await api.post("/auth/register", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Registration failed");
-      }
-
-      // Redirect to dashboard or login page on success
+      // Redirect to dashboard on success
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred");
+      setError(err instanceof ApiError ? "Email already registered or invalid data" : "Registration failed");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="w-full animate-fade-in-up">
+    <div className="w-full animate-fade-in-up" suppressHydrationWarning>
 
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
@@ -205,6 +206,8 @@ export default function SignUpPage() {
               id="phoneNumber"
               type="text"
               placeholder="+254 712 345 678"
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
           </div>
@@ -219,6 +222,8 @@ export default function SignUpPage() {
             </span>
             <select
               id="country"
+              value={formData.country}
+              onChange={handleSelectChange}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-10 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
             >
               <option value="" className="text-slate-400">Select your country</option>
