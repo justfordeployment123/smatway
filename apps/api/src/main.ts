@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 
 const appEnvPath = resolve(__dirname, '..', '.env');
@@ -24,6 +25,15 @@ function resolveStartPort(defaultPort: number): number {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+  app.enableCors({
+    origin: (process.env.ALLOWED_REDIRECT_URLS ?? 'http://localhost:3000')
+      .split(',')
+      .map((u) => u.trim()),
+    credentials: true,
+  });
+
   const startPort = resolveStartPort(3002);
   let selectedPort = startPort;
 

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 function ArrowLeftIcon() {
   return (
@@ -78,9 +79,69 @@ function ChevronDownIcon() {
 }
 
 export default function SignUpPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [accountType, setAccountType] = useState<"traveler" | "transporter">("traveler");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { id, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [id]: value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      // Validate form
+      if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+        throw new Error("Please fill in all fields");
+      }
+
+      if (formData.password !== formData.confirmPassword) {
+        throw new Error("Passwords do not match");
+      }
+
+      // Submit to /auth/register
+      const response = await fetch("/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          accountType,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Registration failed");
+      }
+
+      // Redirect to dashboard or login page on success
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="w-full animate-fade-in-up">
@@ -94,18 +155,21 @@ export default function SignUpPage() {
         <p className="text-slate-500">Join SmatWay and start your journey today</p>
       </div>
 
-      <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {/* Full Name */}
         <div className="animate-fade-in-up [animation-delay:100ms]">
-          <label htmlFor="fullName" className="text-sm font-medium text-zinc-900 mb-1.5 block">Full Name</label>
+          <label htmlFor="name" className="text-sm font-medium text-zinc-900 mb-1.5 block">Full Name</label>
           <div className="relative flex items-center">
             <span className="absolute left-3 pointer-events-none">
               <UserIcon />
             </span>
             <input
-              id="fullName"
+              id="name"
               type="text"
               placeholder="Your full name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
           </div>
@@ -120,8 +184,11 @@ export default function SignUpPage() {
             </span>
             <input
               id="email"
-              type="text"
+              type="email"
               placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
           </div>
@@ -183,6 +250,9 @@ export default function SignUpPage() {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Create a password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
             <button
@@ -207,6 +277,9 @@ export default function SignUpPage() {
               id="confirmPassword"
               type={showConfirm ? "text" : "password"}
               placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
             <button
@@ -263,14 +336,22 @@ export default function SignUpPage() {
           </label>
         </div>
 
+        {/* Error Message */}
+        {error && (
+          <div className="animate-fade-in-up [animation-delay:475ms] p-3 rounded-xl bg-red-50 border border-red-200">
+            <p className="text-sm text-red-600">{error}</p>
+          </div>
+        )}
+
         {/* Submit */}
         <div className="animate-fade-in-up [animation-delay:500ms] pt-1">
-          <Link
-            href="/dashboard"
-            className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm"
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm disabled:cursor-not-allowed"
           >
-            Create Account
-          </Link>
+            {isLoading ? "Creating Account..." : "Create Account"}
+          </button>
         </div>
       </form>
 
