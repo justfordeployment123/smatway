@@ -6,6 +6,7 @@ COPY apps ./apps
 COPY packages ./packages
 RUN npm ci
 RUN npm install --no-save lightningcss-linux-x64-gnu@1.32.0
+RUN npm install --no-save @tailwindcss/oxide-linux-x64-gnu@4.2.2
 
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
