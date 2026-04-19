@@ -35,43 +35,121 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Deploy on Coolify (Nixpacks)
+## Deploy on Coolify (Separate Resources)
 
-This repo includes a `nixpacks.toml` file so Coolify can build and run the app consistently.
+This monorepo is deployed as separate Coolify apps and infrastructure resources.
 
-Build and run behavior:
+Deploy these as independent resources:
 
-- Install: `npm ci`
-- Build: `npm run build`
-- Start: `npm run start -- -H 0.0.0.0 -p ${PORT:-3000}`
+1. web (Next.js frontend)
+2. admin (Next.js admin panel)
+3. api (NestJS backend)
+4. postgres (database)
+5. redis (cache)
 
-In Coolify:
+Do not use localhost in production environment variables. Use Coolify internal hostnames or public domains as appropriate.
 
-1. Create a new application from this repository.
-2. Select **Nixpacks** as the build pack.
-3. Keep the default `PORT` environment variable (or set one explicitly, e.g. `3000`).
-4. Deploy.
+### Resource Order
 
-Example env files are provided in each app workspace:
+1. Deploy postgres and redis first.
+2. Deploy api second.
+3. Deploy web and admin after api is healthy.
 
-- `apps/api/.env.example`
-- `apps/web/.env.example`
-- `apps/admin/.env.example`
+### 1) Deploy web
 
-Use them as the starting point for Coolify variables, then replace localhost values with the URLs for your separate Coolify resources.
+Coolify settings:
 
-## Deploy on Coolify (Dockerfile)
+- Build Pack: Dockerfile
+- Base Directory: /apps/web
+- Dockerfile Location: Dockerfile
+- Port Exposes: 3000
+- Pre-deployment command: empty
+- Post-deployment command: empty
 
-If Nixpacks fails on your server, deploy this repo with the included `Dockerfile`.
+Environment variables:
 
-In Coolify:
+- NEXT_PUBLIC_API_BASE_URL=https://your-api-domain
+- NEXT_TELEMETRY_DISABLED=1
+- PORT=3000
+- NODE_ENV=production
 
-1. Create or open your application.
-2. Select **Dockerfile** as the build pack (instead of Nixpacks).
-3. Keep `PORT=3000` (or set your preferred port).
-4. Deploy.
+Buildtime and Runtime flags:
 
-This Docker build uses a multi-stage setup and runs Next.js in standalone mode.
+- NODE_ENV: Runtime only
+- PORT: Runtime only
+- NEXT_PUBLIC_API_BASE_URL: Buildtime and Runtime
+- NEXT_TELEMETRY_DISABLED: Buildtime and Runtime
+
+### 2) Deploy admin
+
+Coolify settings:
+
+- Build Pack: Dockerfile
+- Base Directory: /apps/admin
+- Dockerfile Location: Dockerfile
+- Port Exposes: 3001
+- Pre-deployment command: empty
+- Post-deployment command: empty
+
+Environment variables:
+
+- NEXT_PUBLIC_API_BASE_URL=https://your-api-domain
+- NEXT_TELEMETRY_DISABLED=1
+- PORT=3001
+- NODE_ENV=production
+
+Buildtime and Runtime flags:
+
+- NODE_ENV: Runtime only
+- PORT: Runtime only
+- NEXT_PUBLIC_API_BASE_URL: Buildtime and Runtime
+- NEXT_TELEMETRY_DISABLED: Buildtime and Runtime
+
+### 3) Deploy api
+
+Coolify settings:
+
+- Build Pack: Dockerfile
+- Base Directory: /apps/api
+- Dockerfile Location: Dockerfile
+- Port Exposes: 3002
+- Pre-deployment command: npm run prisma:migrate:deploy
+- Post-deployment command: empty
+
+Environment variables:
+
+- NODE_ENV=production
+- PORT=3002
+- DATABASE_URL=postgresql://USER:PASSWORD@POSTGRES_HOST:5432/DB_NAME?schema=public
+- REDIS_URL=redis://default:PASSWORD@REDIS_HOST:6379/0
+
+Buildtime and Runtime flags:
+
+- NODE_ENV: Runtime only
+- PORT: Runtime only
+- DATABASE_URL: Runtime only
+- REDIS_URL: Runtime only
+
+Health check:
+
+- Path: /health
+- Port: 3002
+
+### Verification Checklist
+
+After deployment:
+
+1. API responds on /health.
+2. Web loads without server errors and calls the deployed API URL.
+3. Admin loads and calls the deployed API URL.
+4. Prisma migrations run successfully in API pre-deployment logs.
+
+### Common Pitfalls
+
+1. Do not set NODE_ENV as Buildtime in Coolify. This can skip devDependencies needed for build tooling.
+2. Do not keep Laravel or unrelated commands in pre-deployment fields.
+3. Keep Dockerfile Location as Dockerfile (no leading slash when Base Directory is set).
+4. Use separate ports per service: web 3000, admin 3001, api 3002.
 
 ## Local Infra (Postgres + Redis Only)
 
@@ -104,22 +182,10 @@ Web/Admin local env values:
 - `PORT=3000` for web
 - `PORT=3001` for admin
 
-## Coolify Deployment Layout
+## Example Env Files
 
-To keep deployment flexible, host each service as an independent Coolify resource:
+Use these as reference templates for local development and Coolify variable names:
 
-1. `web` app
-2. `admin` app
-3. `api` app
-4. `postgres` service
-5. `redis` service
-
-Wire connections through Coolify environment variables per app (do not use `localhost` in production).
-
-Suggested mapping:
-
-- `api`: `DATABASE_URL`, `REDIS_URL`, `PORT`
-- `web`: `NEXT_PUBLIC_API_BASE_URL`, `PORT`
-- `admin`: `NEXT_PUBLIC_API_BASE_URL`, `PORT`
-- `postgres`: managed by the database resource itself
-- `redis`: managed by the cache resource itself
+- apps/api/.env.example
+- apps/web/.env.example
+- apps/admin/.env.example
