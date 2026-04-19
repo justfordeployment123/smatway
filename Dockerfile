@@ -5,6 +5,7 @@ COPY package.json package-lock.json ./
 COPY apps ./apps
 COPY packages ./packages
 RUN npm ci
+RUN npm install --no-save lightningcss-linux-x64-gnu@1.32.0
 
 FROM node:24-bookworm-slim AS builder
 WORKDIR /app
