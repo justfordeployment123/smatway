@@ -52,6 +52,14 @@ In Coolify:
 3. Keep the default `PORT` environment variable (or set one explicitly, e.g. `3000`).
 4. Deploy.
 
+Example env files are provided in each app workspace:
+
+- `apps/api/.env.example`
+- `apps/web/.env.example`
+- `apps/admin/.env.example`
+
+Use them as the starting point for Coolify variables, then replace localhost values with the URLs for your separate Coolify resources.
+
 ## Deploy on Coolify (Dockerfile)
 
 If Nixpacks fails on your server, deploy this repo with the included `Dockerfile`.
@@ -87,6 +95,14 @@ Default local API env values:
 
 - `DATABASE_URL=postgresql://smatway:smatway@localhost:5432/smatway?schema=public`
 - `REDIS_URL=redis://localhost:6379`
+- `PORT=3002`
+- `NODE_ENV=development`
+
+Web/Admin local env values:
+
+- `NEXT_PUBLIC_API_BASE_URL=http://localhost:3002`
+- `PORT=3000` for web
+- `PORT=3001` for admin
 
 ## Coolify Deployment Layout
 
@@ -99,3 +115,11 @@ To keep deployment flexible, host each service as an independent Coolify resourc
 5. `redis` service
 
 Wire connections through Coolify environment variables per app (do not use `localhost` in production).
+
+Suggested mapping:
+
+- `api`: `DATABASE_URL`, `REDIS_URL`, `PORT`
+- `web`: `NEXT_PUBLIC_API_BASE_URL`, `PORT`
+- `admin`: `NEXT_PUBLIC_API_BASE_URL`, `PORT`
+- `postgres`: managed by the database resource itself
+- `redis`: managed by the cache resource itself
