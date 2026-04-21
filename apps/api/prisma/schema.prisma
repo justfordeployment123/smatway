@@ -22,6 +22,7 @@ model User {
   name           String?
   phoneNumber    String?
   country        String?
+  avatarUrl      String?
   passwordHash   String?
   role           Role         @default(USER)
   accountType    AccountType?
@@ -31,6 +32,7 @@ model User {
   authProviders  AuthProvider[]
   refreshTokens  RefreshToken[]
   passwordResets PasswordResetToken[]
+  profile        UserProfile?
 }
 
 model AuthProvider {
@@ -61,4 +63,58 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model UserProfile {
+  id                      String   @id @default(uuid())
+  userId                  String   @unique
+  user                    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bio                     String?
+  dateOfBirth             DateTime?
+
+  travelerBio             String?
+  emergencyContactName    String?
+  emergencyContactPhone   String?
+
+  companyName             String?
+  licenseNumber           String?
+  licenseExpiry           DateTime?
+  vehicleType             String?
+
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  emergencyContacts       EmergencyContact[]
+  notificationPreferences NotificationPreferences?
+}
+
+model EmergencyContact {
+  id        String   @id @default(uuid())
+  profileId String
+  profile   UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  name      String
+  relation  String
+  phone     String
+  verified  Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model NotificationPreferences {
+  id                    String   @id @default(uuid())
+  profileId             String   @unique
+  profile               UserProfile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  pushEnabled           Boolean  @default(true)
+  bookingUpdates        Boolean  @default(true)
+  paymentUpdates        Boolean  @default(true)
+  routeUpdates          Boolean  @default(true)
+  vehicleUpdates        Boolean  @default(true)
+  systemAnnouncements   Boolean  @default(true)
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }

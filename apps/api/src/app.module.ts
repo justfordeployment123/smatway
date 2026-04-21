@@ -8,6 +8,7 @@ import { HttpLoggingInterceptor } from './common/interceptors/http-logging.inter
 import { DatabaseModule } from './modules/database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from './modules/auth/auth.module';
     CacheModule,
     HealthModule,
     AuthModule,
+    UsersModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

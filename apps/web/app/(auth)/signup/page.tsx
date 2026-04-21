@@ -92,8 +92,7 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
     phoneNumber: "",
-    country: "",
-    agreedToTerms: false,
+    country: "",    agreedToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

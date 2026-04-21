@@ -154,3 +154,82 @@ export const api = {
   patch: apiPatch,
   delete: apiDelete,
 };
+
+// Profile API functions
+import type {
+  ProfileResponse,
+  UserProfile,
+  ProfileData,
+  EmergencyContact,
+  NotificationPreferences,
+} from '@/types/profile.types';
+
+export async function getProfile(): Promise<ProfileResponse> {
+  return apiGet<ProfileResponse>('/users/profile');
+}
+
+export async function updateProfile(data: Partial<UserProfile & ProfileData>): Promise<any> {
+  return apiPut<any>('/users/profile', data);
+}
+
+export async function uploadAvatar(file: File): Promise<{ avatarUrl: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const url = new URL('/users/profile/upload-avatar', API_BASE_URL).toString();
+  const token = getAuthToken();
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new ApiError(error.message || 'Failed to upload avatar', response.status, error);
+  }
+
+  return response.json();
+}
+
+// Emergency contacts
+export async function addEmergencyContact(data: {
+  name: string;
+  relation: string;
+  phone: string;
+}): Promise<EmergencyContact> {
+  return apiPost<EmergencyContact>('/users/emergency-contacts', data);
+}
+
+export async function updateEmergencyContact(
+  id: string,
+  data: { name: string; relation: string; phone: string },
+): Promise<EmergencyContact> {
+  return apiPut<EmergencyContact>(`/users/emergency-contacts/${id}`, data);
+}
+
+export async function deleteEmergencyContact(id: string): Promise<{ ok: boolean }> {
+  return apiDelete<{ ok: boolean }>(`/users/emergency-contacts/${id}`);
+}
+
+// Notification preferences
+export async function getNotificationPreferences(): Promise<NotificationPreferences> {
+  return apiGet<NotificationPreferences>('/users/notification-preferences');
+}
+
+export async function updateNotificationPreferences(
+  data: Partial<NotificationPreferences>,
+): Promise<NotificationPreferences> {
+  return apiPut<NotificationPreferences>('/users/notification-preferences', data);
+}
+
+// Password
+export async function changePassword(data: {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<{ ok: boolean }> {
+  return apiPut<{ ok: boolean }>('/users/change-password', data);
+}
