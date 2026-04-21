@@ -5,40 +5,22 @@ import { createClient, type RedisClientType } from 'redis';
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
     private client: RedisClientType | null = null;
+    private readonly redisUrl = process.env.REDIS_URL;
     private readonly logger = new Logger(RedisService.name);
     private hasLoggedConnectionError = false;
 
     async onModuleInit(): Promise<void> {
-        if (!process.env.REDIS_URL) {
+        if (!this.redisUrl) {
             this.logger.warn('REDIS_URL is not set. Redis checks will be reported as down.');
             return;
         }
 
-        this.client = createClient({
-            url: process.env.REDIS_URL,
-            socket: {
-                // Avoid continuous reconnect loops when redis is unavailable.
-                reconnectStrategy: () => false,
-            },
-        });
-
-        this.client.on('error', (error) => {
-            if (!this.hasLoggedConnectionError) {
-                this.hasLoggedConnectionError = true;
-                this.logger.warn(
-                    `Redis unavailable. Health checks will report redis=false. ${error instanceof Error ? error.message : ''}`,
-                );
-            }
-        });
-
         try {
-            await this.client.connect();
-            this.hasLoggedConnectionError = false;
+            await this.ensureConnected();
         } catch (error) {
             this.logger.warn(
                 `Redis unavailable at startup. Health checks will report redis=false. ${error instanceof Error ? error.message : ''}`,
             );
-            this.client = null;
         }
     }
 
@@ -62,10 +44,42 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
 
     async ping(): Promise<string> {
-        if (!this.client) {
+        if (!this.redisUrl) {
             throw new Error('Redis is unavailable');
         }
 
+        await this.ensureConnected();
         return this.getClient().ping();
+    }
+
+    private async ensureConnected(): Promise<void> {
+        if (!this.redisUrl) {
+            throw new Error('REDIS_URL is not set');
+        }
+
+        if (!this.client) {
+            this.client = createClient({
+                url: this.redisUrl,
+                socket: {
+                    // Avoid continuous reconnect loops when redis is unavailable.
+                    reconnectStrategy: () => false,
+                },
+            });
+
+            this.client.on('error', (error) => {
+                if (!this.hasLoggedConnectionError) {
+                    this.hasLoggedConnectionError = true;
+                    this.logger.warn(
+                        `Redis unavailable. Health checks will report redis=false. ${error instanceof Error ? error.message : ''}`,
+                    );
+                }
+            });
+        }
+
+        if (!this.client.isOpen) {
+            await this.client.connect();
+        }
+
+        this.hasLoggedConnectionError = false;
     }
 }

@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { Role, User } from '@prisma/client';
+import { AccountType, Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { PrismaService } from '../database/prisma.service';
@@ -25,7 +25,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
-  ) {}
+  ) { }
 
   async validateLocalUser(email: string, password: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { email } });
@@ -34,21 +34,28 @@ export class AuthService {
     return valid ? user : null;
   }
 
-  async register(dto: RegisterDto, res: Response): Promise<{ user: Omit<User, 'passwordHash'> }> {
+  async register(dto: RegisterDto, res: Response): Promise<{ user: Omit<User, 'passwordHash'>; accessToken: string }> {
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) throw new ConflictException('Email already registered');
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
     const user = await this.prisma.user.create({
-      data: { email: dto.email, name: dto.name, passwordHash },
+      data: {
+        email: dto.email,
+        name: dto.name,
+        phoneNumber: dto.phoneNumber,
+        country: dto.country,
+        passwordHash,
+        accountType: this.normalizeAccountType(dto.accountType),
+      },
     });
 
-    await this.issueTokens(user, res);
+    const accessToken = await this.issueTokens(user, res);
     const { passwordHash: _ph, ...safeUser } = user;
-    return { user: safeUser };
+    return { user: safeUser, accessToken };
   }
 
-  async issueTokens(user: User, res: Response): Promise<void> {
+  async issueTokens(user: User, res: Response): Promise<string> {
     const accessToken = this.jwtService.sign(
       { sub: user.id, email: user.email, role: user.role } as any,
       { expiresIn: process.env.JWT_EXPIRES_IN ?? '15m' } as any,
@@ -60,6 +67,7 @@ export class AuthService {
 
     await this.prisma.refreshToken.create({ data: { tokenHash, userId: user.id, expiresAt } });
     setAuthCookies(res, accessToken, rawRefresh);
+    return accessToken;
   }
 
   async refreshTokens(rawRefreshToken: string | undefined, res: Response): Promise<void> {
@@ -126,6 +134,22 @@ export class AuthService {
     ]);
 
     clearAuthCookies(res);
+  }
+
+  private normalizeAccountType(
+    accountType?: RegisterDto['accountType'] | 'traveler' | 'transporter',
+  ): AccountType | undefined {
+    if (!accountType) {
+      return undefined;
+    }
+
+    const normalized = accountType.toString().toUpperCase();
+
+    if (normalized === 'TRAVELER' || normalized === 'TRANSPORTER') {
+      return normalized;
+    }
+
+    return undefined;
   }
 
   safeUser(user: User): Omit<User, 'passwordHash'> {

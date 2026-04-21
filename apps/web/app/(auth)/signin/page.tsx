@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
+import { clearAuthData, setAuthToken } from "@/lib/auth";
 
 function ArrowLeftIcon() {
   return (
@@ -48,29 +48,50 @@ function EyeIcon() {
 }
 
 export default function SignInPage() {
-  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  type LoginResponse = {
+    accessToken?: string;
+  };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="w-full min-h-[60vh]" aria-hidden="true" />;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      await api.post("/auth/login", { email, password });
-      router.push("/dashboard");
+      // Avoid sending stale bearer tokens from previous sessions.
+      clearAuthData();
+
+      const result = await api.post<LoginResponse>("/auth/login", { email, password });
+      if (result?.accessToken) {
+        setAuthToken(result.accessToken, 15 * 60);
+      }
+
+      await api.get("/auth/me");
+
+      window.location.assign("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? "Invalid email or password." : "Something went wrong.");
+      setError(err instanceof ApiError ? err.response?.message || "Sign-in succeeded but session validation failed. Please try again." : "Something went wrong.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="w-full animate-fade-in-up">
+    <div className="w-full animate-fade-in-up" suppressHydrationWarning>
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
       </Link>

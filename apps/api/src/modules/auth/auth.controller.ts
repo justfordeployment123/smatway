@@ -21,7 +21,7 @@ import { User } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   async register(@Body() dto: RegisterDto, @Res({ passthrough: false }) res: Response) {
@@ -33,8 +33,14 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(@Req() req: Request, @Res({ passthrough: false }) res: Response) {
-    await this.authService.issueTokens(req.user as User, res);
-    res.json({ user: this.authService.safeUser(req.user as User) });
+    const accessToken = await this.authService.issueTokens(req.user as User, res);
+    res.json({ user: this.authService.safeUser(req.user as User), accessToken });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('session')
+  session(@CurrentUser() user: User) {
+    return { user: this.authService.safeUser(user) };
   }
 
   @Post('refresh')

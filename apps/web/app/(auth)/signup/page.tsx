@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
-
-const BASE_API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3002";
+import { clearAuthData, setAuthToken } from "@/lib/auth";
 
 function ArrowLeftIcon() {
   return (
@@ -83,6 +82,7 @@ function ChevronDownIcon() {
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [accountType, setAccountType] = useState<"traveler" | "transporter">("traveler");
@@ -93,15 +93,29 @@ export default function SignUpPage() {
     confirmPassword: "",
     phoneNumber: "",
     country: "",
+    agreedToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  type RegisterResponse = {
+    accessToken?: string;
+  };
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return <div className="w-full min-h-[60vh]" aria-hidden="true" />;
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
+    const { id, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [id]: value,
+      // Handle checkbox separately from text inputs
+      [id]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -119,6 +133,9 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
+      // Avoid sending stale bearer tokens from previous sessions.
+      clearAuthData();
+
       // Validate form
       if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
         throw new Error("Please fill in all fields");
@@ -128,17 +145,30 @@ export default function SignUpPage() {
         throw new Error("Passwords do not match");
       }
 
-      // Submit to /auth/register
-      await api.post("/auth/register", {
+      // Submit to /auth/register with all collected fields
+      const result = await api.post<RegisterResponse>("/auth/register", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
+        phoneNumber: formData.phoneNumber,
+        country: formData.country,
+        accountType,
       });
 
-      // Redirect to dashboard on success
-      router.push("/dashboard");
+      if (result?.accessToken) {
+        setAuthToken(result.accessToken, 15 * 60);
+      }
+
+      await api.get("/auth/me");
+
+      window.location.assign("/dashboard");
     } catch (err) {
-      setError(err instanceof ApiError ? "Email already registered or invalid data" : "Registration failed");
+      if (err instanceof ApiError) {
+        // Display the specific message from the server if it exists
+        setError(err.response?.message || "Registration succeeded but session validation failed. Please sign in again.");
+      } else {
+        setError(err instanceof Error ? err.message : "An unexpected error occurred");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -306,8 +336,8 @@ export default function SignUpPage() {
               type="button"
               onClick={() => setAccountType("traveler")}
               className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 ${accountType === "traveler"
-                  ? "bg-zinc-900 text-white"
-                  : "text-slate-500 hover:bg-slate-50"
+                ? "bg-zinc-900 text-white"
+                : "text-slate-500 hover:bg-slate-50"
                 }`}
             >
               Traveler
@@ -316,8 +346,8 @@ export default function SignUpPage() {
               type="button"
               onClick={() => setAccountType("transporter")}
               className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 border-l border-slate-200 ${accountType === "transporter"
-                  ? "bg-zinc-900 text-white"
-                  : "text-slate-500 hover:bg-slate-50"
+                ? "bg-zinc-900 text-white"
+                : "text-slate-500 hover:bg-slate-50"
                 }`}
             >
               Transporter
@@ -327,7 +357,13 @@ export default function SignUpPage() {
 
         {/* Terms */}
         <div className="flex items-start gap-2.5 animate-fade-in-up [animation-delay:450ms]">
-          <input type="checkbox" id="terms" className="mt-0.5 cursor-pointer accent-emerald-600 w-4 h-4" />
+          <input
+            type="checkbox"
+            id="agreedToTerms"
+            checked={formData.agreedToTerms}
+            onChange={handleInputChange}
+            className="mt-0.5 cursor-pointer accent-emerald-600 w-4 h-4"
+          />
           <label htmlFor="terms" className="text-sm text-slate-500 leading-snug">
             I have read and agree to the{" "}
             <a

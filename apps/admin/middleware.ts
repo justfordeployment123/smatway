@@ -5,7 +5,7 @@ const adminRoutes = ["/dashboard"];
 const authRoutes = ["/login"];
 const publicRoutes = ["/", "/unauthorized"];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes
@@ -20,19 +20,31 @@ export function middleware(request: NextRequest) {
 
   // Check for admin role on protected routes
   if (adminRoutes.some((route) => pathname.startsWith(route))) {
-    // In a real application, you would:
-    // 1. Check session/auth token
-    // 2. Verify admin role
-    // 3. Redirect to unauthorized if not admin
+    const accessToken = request.cookies.get('access_token')?.value;
 
-    // For now, we'll just allow it to pass through
-    // In production, implement actual role checking:
-    // const token = request.cookies.get("auth-token")?.value;
-    // if (!token || !isAdminRole(token)) {
-    //   return NextResponse.redirect(new URL("/unauthorized", request.url));
-    // }
+    if (!accessToken) {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
 
-    return NextResponse.next();
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:3002';
+      const res = await fetch(`${apiBase}/auth/me`, {
+        headers: { Cookie: `access_token=${accessToken}` },
+      });
+
+      if (!res.ok) {
+        return NextResponse.redirect(new URL('/login', request.url));
+      }
+
+      const user = (await res.json()) as { role?: string };
+      if (user.role !== 'ADMIN') {
+        return NextResponse.redirect(new URL('/unauthorized', request.url));
+      }
+
+      return NextResponse.next();
+    } catch {
+      return NextResponse.redirect(new URL('/login', request.url));
+    }
   }
 
   return NextResponse.next();

@@ -3,13 +3,14 @@
  * Provides utilities for getting current user, auth token management, and session handling
  */
 
-import { apiGet } from './api';
+import { apiGet, apiPost } from './api';
 
 export type User = {
   id: string;
   email: string;
   name?: string;
-  role?: 'traveler' | 'transporter' | 'admin';
+  role?: 'USER' | 'ADMIN';
+  accountType?: 'TRAVELER' | 'TRANSPORTER';
   avatar?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -17,7 +18,7 @@ export type User = {
 
 export type AuthSession = {
   user: User;
-  token: string;
+  token?: string;
   expiresAt?: number;
 };
 
@@ -28,7 +29,7 @@ export type AuthSession = {
  */
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const user = await apiGet<User>('/users/me');
+    const user = await apiGet<User>('/auth/me');
     return user || null;
   } catch (error) {
     // User is not authenticated or API call failed
@@ -128,7 +129,7 @@ export function clearAuthData(): void {
 export async function logout(callApi: boolean = true): Promise<void> {
   if (callApi) {
     try {
-      await apiGet('/auth/logout');
+      await apiPost('/auth/logout');
     } catch (error) {
       console.debug('Logout API call failed:', error);
       // Continue with local cleanup even if API call fails

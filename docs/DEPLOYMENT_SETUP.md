@@ -54,6 +54,9 @@ DATABASE_URL=postgresql://user:pass@host:5432/smatway_db
 # Cache
 REDIS_URL=redis://host:6379
 
+# Shared auth cookie domain across subdomains
+COOKIE_DOMAIN=.smatway.com
+
 # Auth
 ALLOWED_REDIRECT_URLS=https://web.smatway.com,https://admin.smatway.com
 WEB_URL=https://web.smatway.com

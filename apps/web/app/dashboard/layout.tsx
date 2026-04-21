@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
+import { getCurrentUser, logout } from "@/lib/auth";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -84,7 +85,7 @@ function Sidebar({
   const navItems = role === "transporter" ? transporterNav : travelerNav;
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-[250px] bg-white border-r border-sidebar-border z-30">
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-62.5 bg-white border-r border-sidebar-border z-30">
       {/* Logo */}
       <div className="h-16 flex items-center px-5">
         <Link href="/dashboard" className="flex items-center gap-2.5">
@@ -96,26 +97,6 @@ function Sidebar({
       </div>
 
       <Separator className="mx-4" />
-
-      {/* Role switcher */}
-      <div className="mx-4 mt-4 mb-2">
-        <Tabs value={role} onValueChange={(v) => onRoleSwitch(v as "traveler" | "transporter")}>
-          <TabsList className="w-full bg-slate-100 rounded-xl p-0.5 h-auto">
-            <TabsTrigger
-              value="traveler"
-              className="flex-1 rounded-[9px] py-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
-            >
-              Traveler
-            </TabsTrigger>
-            <TabsTrigger
-              value="transporter"
-              className="flex-1 rounded-[9px] py-1.5 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
-            >
-              Transporter
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
 
       {/* Section label */}
       <p className="px-5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
@@ -131,8 +112,8 @@ function Sidebar({
               <Link
                 href={item.key}
                 className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${active
-                  ? "border-l-2 border-emerald-600 pl-[22px] bg-emerald-50/70 text-emerald-700"
-                  : "border-l-2 border-transparent pl-[22px] text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
+                  ? "border-l-2 border-emerald-600 pl-5.5 bg-emerald-50/70 text-emerald-700"
+                  : "border-l-2 border-transparent pl-5.5 text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
                   }`}
               >
                 <span className={active ? "text-emerald-600" : "text-slate-400"}>
@@ -150,13 +131,16 @@ function Sidebar({
 
       {/* Logout */}
       <div className="px-4 pb-4 pt-1 shrink-0">
-        <Link
-          href="/"
-          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150"
+        <button
+          onClick={async () => {
+            await logout();
+            window.location.href = "/signin";
+          }}
+          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150 cursor-pointer"
         >
           <LogOutIcon className="w-4 h-4" />
           Sign out
-        </Link>
+        </button>
       </div>
     </aside>
   );
@@ -164,9 +148,9 @@ function Sidebar({
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-function Topbar({ title, role }: { title: string; role: "traveler" | "transporter" }) {
-  const initial = "A";
-  const name = "Aryan Malik";
+function Topbar({ title, role, userName }: { title: string; role: "traveler" | "transporter"; userName?: string }) {
+  const name = userName || "User";
+  const initial = name.charAt(0).toUpperCase();
 
   return (
     <header className="bg-white border-b border-sidebar-border px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
@@ -218,23 +202,6 @@ function MobileNav({
   return (
     <div className="lg:hidden sticky top-16 z-30 border-b border-sidebar-border bg-white/95 backdrop-blur">
       <div className="px-4 py-3 space-y-3">
-        <Tabs value={role} onValueChange={(v) => onRoleSwitch(v as "traveler" | "transporter")}>
-          <TabsList className="w-full bg-slate-100 rounded-xl p-0.5 h-auto">
-            <TabsTrigger
-              value="traveler"
-              className="flex-1 rounded-[9px] py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
-            >
-              Traveler
-            </TabsTrigger>
-            <TabsTrigger
-              value="transporter"
-              className="flex-1 rounded-[9px] py-2 text-xs font-medium data-[state=active]:bg-white data-[state=active]:text-zinc-900 data-[state=active]:shadow-sm data-[state=active]:font-semibold data-[state=inactive]:text-slate-500"
-            >
-              Transporter
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
           {navItems.map((item) => {
             const active = pathname === item.key;
@@ -263,33 +230,50 @@ function MobileNav({
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-
-  const [preferredRole, setPreferredRole] = useState<"traveler" | "transporter">(() => {
-    if (typeof window === "undefined") return "traveler";
-    const saved = localStorage.getItem("smatway-dev-role") as "traveler" | "transporter" | null;
-    return saved ?? "traveler";
-  });
-  const role = roleFromPath(pathname, preferredRole);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    localStorage.setItem("smatway-dev-role", preferredRole);
-  }, [preferredRole]);
+    async function checkAuth() {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        router.push("/signin");
+        return;
+      }
 
-  function handleRoleSwitch(r: "traveler" | "transporter") {
-    setPreferredRole(r);
-    router.push(r === "transporter" ? "/dashboard/overview" : "/dashboard");
+      const userRole = (currentUser.accountType?.toLowerCase() ?? "traveler") as "traveler" | "transporter";
+      setUser({ ...currentUser, userRole });
+
+      // Enforce role-based access
+      const pathRole = roleFromPath(pathname, userRole);
+      if (pathRole !== userRole) {
+        router.push(userRole === "transporter" ? "/dashboard/overview" : "/dashboard");
+      }
+
+      setLoading(false);
+    }
+    checkAuth();
+  }, [pathname, router]);
+
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-zinc-500">Loading...</div>
+      </div>
+    );
   }
 
+  const role = user.userRole;
   const titles = role === "transporter" ? transporterTitles : travelerTitles;
   const title = titles[pathname] ?? "Dashboard";
 
   return (
     <TooltipProvider>
-      <div className="min-h-[100dvh] flex bg-slate-50/50">
-        <Sidebar pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
-        <div className="flex-1 lg:ml-[250px] flex flex-col min-h-[100dvh]">
-          <Topbar title={title} role={role} />
-          <MobileNav pathname={pathname} role={role} onRoleSwitch={handleRoleSwitch} />
+      <div className="min-h-dvh flex bg-slate-50/50">
+        <Sidebar pathname={pathname} role={role} onRoleSwitch={() => { }} />
+        <div className="flex-1 lg:ml-62.5 flex flex-col min-h-dvh">
+          <Topbar title={title} role={role} userName={user?.name} />
+          <MobileNav pathname={pathname} role={role} onRoleSwitch={() => { }} />
           <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
             {children}
           </main>

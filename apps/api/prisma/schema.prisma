@@ -11,14 +11,22 @@ enum Role {
   ADMIN
 }
 
+enum AccountType {
+  TRAVELER
+  TRANSPORTER
+}
+
 model User {
-  id             String    @id @default(uuid())
-  email          String    @unique
+  id             String       @id @default(uuid())
+  email          String       @unique
   name           String?
+  phoneNumber    String?
+  country        String?
   passwordHash   String?
-  role           Role      @default(USER)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  role           Role         @default(USER)
+  accountType    AccountType?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   authProviders  AuthProvider[]
   refreshTokens  RefreshToken[]
