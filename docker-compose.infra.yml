@@ -31,6 +31,26 @@ services:
       timeout: 5s
       retries: 5
 
+  garage:
+    image: minio/minio:latest
+    container_name: smatway-garage
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - smatway-garage-data:/data
+    command: minio server /data --console-address ":9001"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   smatway-postgres-data:
   smatway-redis-data:
+  smatway-garage-data:

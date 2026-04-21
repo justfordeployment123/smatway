@@ -73,7 +73,6 @@ export default function ProfilePage() {
         phoneNumber: phone,
         country,
         bio,
-        avatarUrl: avatarUrl || undefined,
       });
 
       setSuccess('Profile updated successfully');
@@ -164,10 +163,10 @@ export default function ProfilePage() {
                 {initial}
               </div>
             )}
-            <label className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 transition-colors cursor-pointer">
+            <label htmlFor="avatar-upload" className="absolute bottom-0 right-0 w-7 h-7 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-lg hover:bg-slate-50 transition-colors cursor-pointer">
               <CameraIcon className="w-3 h-3" />
-              <input type="file" accept="image/*" onChange={handleAvatarUpload} hidden />
             </label>
+            <input id="avatar-upload" type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900">{fullName || 'User'}</h2>

@@ -4,17 +4,17 @@ export class CreateEmergencyContactDto {
   @IsNotEmpty()
   @IsString()
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @IsNotEmpty()
   @IsString()
   @Matches(/^(family|friend|other)$/)
-  relation: string;
+  relation!: string;
 
   @IsNotEmpty()
   @IsString()
   @MaxLength(20)
-  phone: string;
+  phone!: string;
 }
 
 export class UpdateEmergencyContactDto extends CreateEmergencyContactDto {}

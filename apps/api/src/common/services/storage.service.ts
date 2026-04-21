@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
+import type Multer from 'multer';
 
 @Injectable()
 export class StorageService {
@@ -20,20 +22,32 @@ export class StorageService {
   }
 
   async uploadFile(
-    file: Express.Multer.File,
+    file: any,
     folder: string,
-  ): Promise<string> {
+  ): Promise<{ filePath: string; presignedUrl: string }> {
     const filename = `${folder}/${uuidv4()}-${file.originalname}`;
-    const command = new PutObjectCommand({
+    const putCommand = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: filename,
       Body: file.buffer,
       ContentType: file.mimetype,
     });
 
-    await this.s3Client.send(command);
+    await this.s3Client.send(putCommand);
 
-    const garageDomain = process.env.GARAGE_PUBLIC_URL || 'http://localhost:9000';
-    return `${garageDomain}/${this.bucketName}/${filename}`;
+    const presignedUrl = await this.generatePresignedUrl(filename);
+
+    return { filePath: filename, presignedUrl };
+  }
+
+  async generatePresignedUrl(filePath: string): Promise<string> {
+    const getCommand = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: filePath,
+    });
+
+    return getSignedUrl(this.s3Client, getCommand, {
+      expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
+    });
   }
 }

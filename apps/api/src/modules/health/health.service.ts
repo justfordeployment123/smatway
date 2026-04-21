@@ -1,41 +1,52 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { RedisService } from '../cache/redis.service';
+import { StorageService } from '../../common/services/storage.service';
+import { S3Client, HeadBucketCommand } from '@aws-sdk/client-s3';
 
 @Injectable()
 export class HealthService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly redisService: RedisService,
+        private readonly storageService: StorageService,
     ) { }
 
     async getStatus(): Promise<{
         status: 'ok' | 'degraded';
         postgres: boolean;
         redis: boolean;
+        garage: boolean;
         postgresError?: string;
         redisError?: string;
+        garageError?: string;
         databaseUrlConfigured: boolean;
         redisUrlConfigured: boolean;
+        garageConfigured: boolean;
         timestamp: string;
     }> {
-        const [postgresCheck, redisCheck] = await Promise.all([
+        const [postgresCheck, redisCheck, garageCheck] = await Promise.all([
             this.checkPostgres(),
             this.checkRedis(),
+            this.checkGarage(),
         ]);
 
         const postgres = postgresCheck.ok;
         const redis = redisCheck.ok;
-        const status = postgres && redis ? 'ok' : 'degraded';
+        const garage = garageCheck.ok;
+        const status = postgres && redis && garage ? 'ok' : 'degraded';
 
         return {
             status,
             postgres,
             redis,
+            garage,
             postgresError: postgresCheck.error,
             redisError: redisCheck.error,
+            garageError: garageCheck.error,
             databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
             redisUrlConfigured: Boolean(process.env.REDIS_URL),
+            garageConfigured: Boolean(process.env.GARAGE_ENDPOINT),
             timestamp: new Date().toISOString(),
         };
     }
@@ -55,6 +66,30 @@ export class HealthService {
     private async checkRedis(): Promise<{ ok: boolean; error?: string }> {
         try {
             await this.redisService.ping();
+            return { ok: true };
+        } catch (error) {
+            return {
+                ok: false,
+                error: this.sanitizeError(error),
+            };
+        }
+    }
+
+    private async checkGarage(): Promise<{ ok: boolean; error?: string }> {
+        try {
+            const s3Client = new S3Client({
+                region: 'us-east-1',
+                endpoint: process.env.GARAGE_ENDPOINT || 'http://localhost:9000',
+                credentials: {
+                    accessKeyId: process.env.GARAGE_ACCESS_KEY || 'minioadmin',
+                    secretAccessKey: process.env.GARAGE_SECRET_KEY || 'minioadmin',
+                },
+                forcePathStyle: true,
+            });
+
+            const bucketName = process.env.GARAGE_BUCKET || 'smatway';
+            const command = new HeadBucketCommand({ Bucket: bucketName });
+            await s3Client.send(command);
             return { ok: true };
         } catch (error) {
             return {

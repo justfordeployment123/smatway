@@ -2,6 +2,7 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../database/prisma.service';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
+import { StorageService } from '../../common/services/storage.service';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateEmergencyContactDto, UpdateEmergencyContactDto } from './dto/emergency-contact.dto';
 import { UpdateNotificationPreferencesDto } from './dto/notification-preferences.dto';
@@ -9,7 +10,10 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private storageService: StorageService,
+  ) {}
 
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
@@ -28,6 +32,17 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('User not found');
 
+    // Generate presigned URL if avatar exists
+    let avatarUrl = null;
+    if (user.avatarUrl) {
+      try {
+        avatarUrl = await this.storageService.generatePresignedUrl(user.avatarUrl);
+      } catch (error) {
+        // If presigned URL generation fails, return null
+        avatarUrl = null;
+      }
+    }
+
     const profile = await this.prisma.userProfile.findUnique({
       where: { userId },
       include: {
@@ -37,11 +52,18 @@ export class UsersService {
     });
 
     return {
-      user,
+      user: { ...user, avatarUrl },
       profile: profile || null,
       emergencyContacts: profile?.emergencyContacts || [],
       notificationPreferences: profile?.notificationPreferences || null,
     };
+  }
+
+  async updateProfileAvatarPath(userId: string, avatarPath: string) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: avatarPath },
+    });
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -67,6 +89,7 @@ export class UsersService {
         vehicleType: dto.vehicleType,
       },
       create: {
+        userId,
         bio: dto.bio,
         dateOfBirth: dto.dateOfBirth ? new Date(dto.dateOfBirth) : undefined,
         travelerBio: dto.travelerBio,

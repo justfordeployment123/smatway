@@ -13,6 +13,7 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import type Multer from 'multer';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '@prisma/client';
@@ -48,7 +49,7 @@ export class UsersController {
   @UseInterceptors(FileInterceptor('file'))
   async uploadAvatar(
     @CurrentUser() user: User,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: any,
   ) {
     if (!file) throw new BadRequestException('No file uploaded');
 
@@ -61,8 +62,12 @@ export class UsersController {
       throw new BadRequestException('File size must be less than 5MB');
     }
 
-    const avatarUrl = await this.storageService.uploadFile(file, `avatars/${user.id}`);
-    return { avatarUrl };
+    const { filePath, presignedUrl } = await this.storageService.uploadFile(file, `avatars/${user.id}`);
+
+    // Store file path in database, return presigned URL
+    await this.usersService.updateProfileAvatarPath(user.id, filePath);
+
+    return { avatarUrl: presignedUrl };
   }
 
   @Post('emergency-contacts')
