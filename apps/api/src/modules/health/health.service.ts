@@ -23,6 +23,7 @@ export class HealthService {
         databaseUrlConfigured: boolean;
         redisUrlConfigured: boolean;
         garageConfigured: boolean;
+        database?: { tableCount: number; tables: string[] };
         timestamp: string;
     }> {
         const [postgresCheck, redisCheck, garageCheck] = await Promise.all([
@@ -47,14 +48,21 @@ export class HealthService {
             databaseUrlConfigured: Boolean(process.env.DATABASE_URL),
             redisUrlConfigured: Boolean(process.env.REDIS_URL),
             garageConfigured: Boolean(process.env.GARAGE_ENDPOINT),
+            database: postgresCheck.ok ? postgresCheck.database : undefined,
             timestamp: new Date().toISOString(),
         };
     }
 
-    private async checkPostgres(): Promise<{ ok: boolean; error?: string }> {
+    private async checkPostgres(): Promise<{ ok: boolean; error?: string; database?: { tableCount: number; tables: string[] } }> {
         try {
             await this.prisma.$queryRaw`SELECT 1`;
-            return { ok: true };
+            const rows = await this.prisma.$queryRaw<{ tablename: string }[]>`
+                SELECT tablename FROM pg_tables
+                WHERE schemaname = 'public'
+                ORDER BY tablename
+            `;
+            const tables = rows.map(r => r.tablename);
+            return { ok: true, database: { tableCount: tables.length, tables } };
         } catch (error) {
             return {
                 ok: false,
