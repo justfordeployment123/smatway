@@ -189,3 +189,5 @@ Use these as reference templates for local development and Coolify variable name
 - apps/api/.env.example
 - apps/web/.env.example
 - apps/admin/.env.example
+
+    Garage Setup Hosted
