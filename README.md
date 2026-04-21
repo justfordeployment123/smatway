@@ -190,4 +190,11 @@ Use these as reference templates for local development and Coolify variable name
 - apps/web/.env.example
 - apps/admin/.env.example
 
-    Garage Setup Hosted
+ # Garage Setup Hosted 
+ # Postgree error Resolved 
+ ```Pre-Deployment-Command
+ npx prisma migrate resolve --rolled-back 20260421172301_add_profile_models && npx prisma db push && npx prisma migrate resolve --applied 20260421172301_add_profile_models
+ ```
+ ```
+ npm run prisma:migrate:deploy
+ ```
