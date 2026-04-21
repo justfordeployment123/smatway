@@ -118,6 +118,10 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto, res: Response): Promise<void> {
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
     const tokenHash = hashToken(dto.token);
     const record = await this.prisma.passwordResetToken.findUnique({ where: { tokenHash } });
 
@@ -125,7 +129,7 @@ export class AuthService {
       throw new BadRequestException('Invalid or expired reset token');
     }
 
-    const passwordHash = await bcrypt.hash(dto.newPassword, BCRYPT_ROUNDS);
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
 
     await this.prisma.$transaction([
       this.prisma.passwordResetToken.update({ where: { tokenHash }, data: { used: true } }),
