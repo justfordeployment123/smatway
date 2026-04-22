@@ -412,3 +412,20 @@ export async function verifyPassword(password: string): Promise<{ ok: boolean }>
 export async function disableRoutesByVehicle(vehicleId: string): Promise<any> {
   return apiDelete<any>(`/transport/vehicle/${vehicleId}`);
 }
+
+// Chat
+export async function initChat(bookingId: string): Promise<any> {
+  return apiPost<any>(`/chat/booking/${bookingId}`, {});
+}
+
+export async function getChatByBooking(bookingId: string): Promise<any> {
+  return apiGet<any>(`/chat/booking/${bookingId}`);
+}
+
+export async function getMessages(chatId: string): Promise<any[]> {
+  return apiGet<any[]>(`/chat/${chatId}/messages`);
+}
+
+export async function sendMessage(chatId: string, content: string): Promise<any> {
+  return apiPost<any>(`/chat/${chatId}/messages`, { content });
+}

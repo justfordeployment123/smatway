@@ -13,6 +13,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { getCurrentUser, logout } from "@/lib/auth";
+import { NotificationBell } from "@/components/NotificationBell";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 
@@ -160,16 +161,7 @@ function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "tr
       <h2 className="text-base font-semibold text-zinc-900 tracking-tight hidden sm:block">{title}</h2>
 
       <div className="flex items-center gap-2">
-        {/* Bell */}
-        <Tooltip>
-          <TooltipTrigger className="relative p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer">
-            <BellIcon className="w-5 h-5 text-slate-500" />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full border-2 border-white" />
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Notifications</p>
-          </TooltipContent>
-        </Tooltip>
+        <NotificationBell />
 
         {/* Avatar + User info + Dropdown */}
         <div className="relative">

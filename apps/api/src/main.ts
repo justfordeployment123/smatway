@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { config as loadEnv } from 'dotenv';
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import cookieParser from 'cookie-parser';
 
 const appEnvPath = resolve(__dirname, '..', '.env');
@@ -28,6 +29,7 @@ async function bootstrap() {
   const { AppModule } = require('./app.module') as typeof import('./app.module');
   const app = await NestFactory.create(AppModule);
 
+  app.useWebSocketAdapter(new IoAdapter(app));
   app.use(cookieParser());
   app.enableCors({
     origin: (process.env.ALLOWED_REDIRECT_URLS ?? 'http://localhost:3000')

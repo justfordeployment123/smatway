@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getTransportBookings, confirmBooking, rejectBooking, completeBooking } from "@/lib/api";
+import { getTransportBookings, confirmBooking, rejectBooking, completeBooking, initChat, getMessages, sendMessage } from "@/lib/api";
 import Link from "next/link";
 
 const statusColors: Record<string, string> = {
@@ -18,6 +18,11 @@ export default function RouteBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionInProgress, setActionInProgress] = useState<string | null>(null);
+  const [chatModal, setChatModal] = useState<{ bookingId: string; booking: any } | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     getTransportBookings(id).then(setBookings).catch(() => setError("Failed to load bookings")).finally(() => setLoading(false));
@@ -58,6 +63,32 @@ export default function RouteBookingsPage() {
       setError(e?.message || "Failed to complete booking");
     } finally {
       setActionInProgress(null);
+    }
+  }
+
+  async function openChat(booking: any) {
+    setChatModal({ bookingId: booking.id, booking });
+    try {
+      const chat = await initChat(booking.id);
+      setChatId(chat.id);
+      const msgs = await getMessages(chat.id);
+      setMessages(msgs);
+    } catch (e: any) {
+      setError(e?.message || "Failed to open chat");
+    }
+  }
+
+  async function handleSendMessage() {
+    if (!messageText.trim() || !chatId) return;
+    setSendingMessage(true);
+    try {
+      const newMsg = await sendMessage(chatId, messageText);
+      setMessages([...messages, newMsg]);
+      setMessageText("");
+    } catch (e: any) {
+      setError(e?.message || "Failed to send message");
+    } finally {
+      setSendingMessage(false);
     }
   }
 
@@ -120,18 +151,78 @@ export default function RouteBookingsPage() {
                     </div>
                   )}
                   {booking.status === "CONFIRMED" && (
-                    <button
-                      onClick={() => handleComplete(booking.id)}
-                      disabled={actionInProgress === booking.id}
-                      className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-                    >
-                      {actionInProgress === booking.id ? "..." : "Complete"}
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleComplete(booking.id)}
+                        disabled={actionInProgress === booking.id}
+                        className="bg-blue-500 hover:bg-blue-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        {actionInProgress === booking.id ? "..." : "Complete"}
+                      </button>
+                      <button
+                        onClick={() => openChat(booking)}
+                        className="bg-slate-500 hover:bg-slate-600 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Chat
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Chat Modal */}
+      {chatModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-slate-200 flex items-center justify-between">
+              <div>
+                <h2 className="font-semibold text-zinc-900">Chat with {chatModal.booking.traveler?.name}</h2>
+                <p className="text-xs text-slate-500 mt-0.5">{chatModal.booking.traveler?.phoneNumber}</p>
+              </div>
+              <button onClick={() => { setChatModal(null); setChatId(null); setMessages([]); }} className="text-2xl text-slate-400">×</button>
+            </div>
+
+            {/* Messages */}
+            <div className="p-4 h-64 overflow-y-auto space-y-2 bg-slate-50">
+              {messages.length === 0 ? (
+                <p className="text-xs text-slate-400 text-center py-8">Start the conversation</p>
+              ) : (
+                messages.map(msg => (
+                  <div key={msg.id} className={`text-xs ${msg.senderId !== chatModal.booking.travelerId ? 'text-right' : ''}`}>
+                    <p className="text-slate-500 mb-0.5">{msg.sender?.name}</p>
+                    <div className={`inline-block max-w-xs px-3 py-1.5 rounded ${msg.senderId !== chatModal.booking.travelerId ? 'bg-zinc-900 text-white' : 'bg-white border border-slate-200'}`}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Input */}
+            <div className="p-4 border-t border-slate-200 space-y-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type message..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sendingMessage || !messageText.trim()}
+                  className="bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

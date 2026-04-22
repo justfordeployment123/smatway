@@ -13,6 +13,7 @@ import { TransportModule } from './modules/transport/transport.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { VehicleModule } from './modules/vehicle/vehicle.module';
 import { ReviewModule } from './modules/review/review.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ReviewModule } from './modules/review/review.module';
     BookingModule,
     VehicleModule,
     ReviewModule,
+    ChatModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

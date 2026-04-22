@@ -72,6 +72,9 @@ model User {
   vehicles       Vehicle[]
   reviewsGiven   Review[]             @relation("TravelerReviews")
   reviewsReceived Review[]            @relation("TransporterReviews")
+  travelerChats  Chat[]               @relation("TravelerChats")
+  transporterChats Chat[]             @relation("TransporterChats")
+  messages       Message[]
 }
 
 model AuthProvider {
@@ -200,6 +203,7 @@ model Booking {
   paymentMethod PaymentMethod?
 
   review        Review?
+  chat          Chat?
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -239,4 +243,40 @@ model Review {
 
   @@index([transporterId])
   @@index([travelerId])
+}
+
+model Chat {
+  id            String    @id @default(uuid())
+  bookingId     String    @unique
+  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  travelerId    String
+  traveler      User      @relation("TravelerChats", fields: [travelerId], references: [id], onDelete: Cascade)
+
+  transporterId String
+  transporter   User      @relation("TransporterChats", fields: [transporterId], references: [id], onDelete: Cascade)
+
+  messages      Message[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([travelerId])
+  @@index([transporterId])
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  chatId    String
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  content   String
+  createdAt DateTime @default(now())
+
+  @@index([chatId])
+  @@index([senderId])
 }

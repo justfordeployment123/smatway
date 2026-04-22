@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getBooking, cancelBooking, updatePaymentMethod, createReview } from "@/lib/api";
+import { getBooking, cancelBooking, updatePaymentMethod, createReview, initChat, getChatByBooking, getMessages, sendMessage } from "@/lib/api";
 
 const paymentMethods = [
   {
@@ -52,6 +52,10 @@ export default function BookingDetailPage() {
   const [feedback, setFeedback] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
     getBooking(id).then(setBooking).catch(() => setError("Booking not found")).finally(() => setLoading(false));
@@ -94,6 +98,31 @@ export default function BookingDetailPage() {
       setError(e?.message || "Failed to submit review");
     } finally {
       setSubmittingReview(false);
+    }
+  }
+
+  async function initializeChat() {
+    try {
+      const chat = await initChat(id);
+      setChatId(chat.id);
+      const msgs = await getMessages(chat.id);
+      setMessages(msgs);
+    } catch (e: any) {
+      setError(e?.message || "Failed to initialize chat");
+    }
+  }
+
+  async function handleSendMessage() {
+    if (!messageText.trim() || !chatId) return;
+    setSendingMessage(true);
+    try {
+      const newMsg = await sendMessage(chatId, messageText);
+      setMessages([...messages, newMsg]);
+      setMessageText("");
+    } catch (e: any) {
+      setError(e?.message || "Failed to send message");
+    } finally {
+      setSendingMessage(false);
     }
   }
 
@@ -253,6 +282,67 @@ export default function BookingDetailPage() {
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
           <p className="text-sm font-semibold text-emerald-700">✓ Thank you for your feedback!</p>
           <p className="text-xs text-emerald-600 mt-1">Your review has been submitted successfully.</p>
+        </div>
+      )}
+
+      {/* Chat Section */}
+      {booking.status === "CONFIRMED" && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-zinc-900 mb-1">Contact Transporter</h3>
+          <p className="text-xs text-slate-400 mb-4">Message and share contact info</p>
+
+          {!chatId ? (
+            <button
+              onClick={initializeChat}
+              className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800 transition-colors"
+            >
+              Start Chat
+            </button>
+          ) : (
+            <div className="space-y-3">
+              {/* Contact Info */}
+              <div className="bg-slate-50 rounded-lg p-3 mb-3">
+                <p className="text-xs text-slate-600 mb-2">Transporter Contact</p>
+                <p className="text-sm font-medium text-zinc-900">{booking.transport.transporter?.name}</p>
+                <p className="text-sm text-emerald-600 font-semibold">{booking.transport.transporter?.phoneNumber}</p>
+              </div>
+
+              {/* Messages */}
+              <div className="bg-slate-50 rounded-lg p-3 h-64 overflow-y-auto space-y-2 mb-3">
+                {messages.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-8">No messages yet</p>
+                ) : (
+                  messages.map(msg => (
+                    <div key={msg.id} className={`text-xs ${msg.senderId === booking.travelerId ? 'text-right' : ''}`}>
+                      <p className="text-slate-500 mb-0.5">{msg.sender?.name}</p>
+                      <div className={`inline-block max-w-xs px-3 py-1.5 rounded ${msg.senderId === booking.travelerId ? 'bg-zinc-900 text-white' : 'bg-white border border-slate-200'}`}>
+                        {msg.content}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Message Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type message..."
+                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={sendingMessage || !messageText.trim()}
+                  className="bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-zinc-800 disabled:opacity-50"
+                >
+                  {sendingMessage ? "..." : "Send"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

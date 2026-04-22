@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { getTransportBookings, confirmBooking, rejectBooking } from "@/lib/api";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getTransportBookings, confirmBooking, rejectBooking, initChat, getMessages, sendMessage } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth";
+import { useChat } from "@/hooks/useChat";
+import io from "socket.io-client";
 import { ClockIcon, CheckCircleIcon, MailIcon } from "@/app/dashboard/_Components/Icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
@@ -13,14 +17,65 @@ const statusColors: Record<string, string> = {
 };
 
 export default function TransporterBookingsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "CANCELLED">("ALL");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [chatBookingId, setChatBookingId] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [messageText, setMessageText] = useState("");
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const socketRef = useRef<any>(null);
+  const autoOpenedRef = useRef(false);
+  const { joinChat, leaveChat, sendMessage: sendWSMessage } = useChat(currentUser?.id);
+
+  useEffect(() => {
+    if (chatId && currentUser?.id) {
+      if (!socketRef.current) {
+        socketRef.current = io(process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002', {
+          query: { userId: currentUser.id },
+          reconnection: true,
+        });
+      }
+      const socket = socketRef.current;
+
+      setTimeout(() => {
+        socket.emit('join-chat', { chatId });
+      }, 100);
+
+      const handleMessage = (message: any) => {
+        setChatMessages(prev => [...prev, message]);
+      };
+
+      socket.on('message', handleMessage);
+
+      return () => {
+        socket.off('message', handleMessage);
+      };
+    }
+  }, [chatId, currentUser?.id]);
 
   useEffect(() => {
     loadBookings();
+    getCurrentUser().then(setCurrentUser);
   }, []);
+
+  useEffect(() => {
+    const bookingIdFromQuery = searchParams.get('openChatBooking');
+    if (!bookingIdFromQuery || autoOpenedRef.current || loading) {
+      return;
+    }
+
+    autoOpenedRef.current = true;
+    openChat(bookingIdFromQuery).finally(() => {
+      router.replace('/dashboard/bookings');
+    });
+  }, [searchParams, loading]);
 
   async function loadBookings() {
     try {
@@ -30,6 +85,45 @@ export default function TransporterBookingsPage() {
       console.error("Failed to load bookings:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function openChat(bookingId: string) {
+    setChatBookingId(bookingId);
+    setChatLoading(true);
+    try {
+      const chat = await initChat(bookingId);
+      setChatId(chat.id);
+      const msgs = await getMessages(chat.id);
+      setChatMessages(msgs);
+    } catch (e) {
+      console.error("Failed to load chat", e);
+    } finally {
+      setChatLoading(false);
+    }
+  }
+
+  function closeChat() {
+    if (chatId && socketRef.current) {
+      socketRef.current.emit('leave-chat', { chatId });
+    }
+    setChatBookingId(null);
+    setChatId(null);
+    setMessageText("");
+  }
+
+  async function handleSendMessage() {
+    if (!messageText.trim() || !chatId || !currentUser?.id) return;
+    setSendingMessage(true);
+    try {
+      if (socketRef.current) {
+        socketRef.current.emit('message', { chatId, content: messageText, userId: currentUser.id });
+      }
+      setMessageText("");
+    } catch (e: any) {
+      console.error("Failed to send message", e);
+    } finally {
+      setSendingMessage(false);
     }
   }
 
@@ -201,6 +295,14 @@ export default function TransporterBookingsPage() {
                           </button>
                         </div>
                       )}
+                      {booking.status === "CONFIRMED" && (
+                        <button
+                          onClick={() => openChat(booking.id)}
+                          className="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all"
+                        >
+                          Chat
+                        </button>
+                      )}
                       {booking.status !== "PENDING" && (
                         <Link href={`/dashboard/bookings/${booking.id}`} className="text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-all">
                           Details
@@ -212,6 +314,57 @@ export default function TransporterBookingsPage() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Chat Modal */}
+      {chatBookingId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-semibold text-zinc-900">Chat</h3>
+              <button onClick={closeChat} className="text-2xl text-slate-400 hover:text-slate-600">×</button>
+            </div>
+            {chatLoading ? (
+              <div className="p-8 text-center text-slate-400">Loading...</div>
+            ) : (
+              <>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center text-sm text-slate-400 mt-8">No messages yet. Start the conversation!</div>
+                  ) : (
+                    chatMessages.map((msg: any, i: number) => (
+                      <div key={i} className={`flex ${msg.senderId === currentUser?.id ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-xs px-3 py-2 rounded-lg text-sm ${msg.senderId === currentUser?.id ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-900'}`}>
+                          <p>{msg.content}</p>
+                          <p className={`text-xs mt-1 ${msg.senderId === currentUser?.id ? 'text-emerald-100' : 'text-slate-400'}`}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="p-4 border-t border-slate-200 flex gap-2">
+                  <input
+                    type="text"
+                    value={messageText}
+                    onChange={e => setMessageText(e.target.value)}
+                    onKeyPress={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                    placeholder="Type a message..."
+                    className="flex-1 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={sendingMessage || !messageText.trim()}
+                    className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-emerald-700 disabled:opacity-50 transition-all"
+                  >
+                    {sendingMessage ? "..." : "Send"}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
     </div>
