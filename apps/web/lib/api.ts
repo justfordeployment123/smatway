@@ -305,6 +305,26 @@ export async function rejectBooking(id: string): Promise<any> {
   return apiPatch<any>(`/booking/${id}/reject`);
 }
 
+export async function completeBooking(id: string): Promise<any> {
+  return apiPatch<any>(`/booking/${id}/complete`);
+}
+
+export async function createReview(bookingId: string, rating: number, feedback?: string): Promise<any> {
+  return apiPost<any>(`/review`, { bookingId, rating, feedback });
+}
+
+export async function getTransporterStats(transporterId: string): Promise<any> {
+  return apiGet<any>(`/review/transporter/${transporterId}/stats`);
+}
+
+export async function getTransporterReviews(transporterId: string, page: number = 1, limit: number = 5): Promise<any> {
+  return apiGet<any>(`/review/transporter/${transporterId}/reviews?page=${page}&limit=${limit}`);
+}
+
+export async function getTransporterProfile(transporterId: string): Promise<any> {
+  return apiGet<any>(`/review/transporter/${transporterId}/profile`);
+}
+
 // Vehicle
 export async function createVehicle(data: {
   name: string;

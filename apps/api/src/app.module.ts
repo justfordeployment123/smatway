@@ -12,6 +12,7 @@ import { UsersModule } from './modules/users/users.module';
 import { TransportModule } from './modules/transport/transport.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { VehicleModule } from './modules/vehicle/vehicle.module';
+import { ReviewModule } from './modules/review/review.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { VehicleModule } from './modules/vehicle/vehicle.module';
     TransportModule,
     BookingModule,
     VehicleModule,
+    ReviewModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

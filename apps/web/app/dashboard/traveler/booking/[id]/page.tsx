@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getBooking, cancelBooking, updatePaymentMethod } from "@/lib/api";
+import { getBooking, cancelBooking, updatePaymentMethod, createReview } from "@/lib/api";
 
 const paymentMethods = [
   {
@@ -48,6 +48,10 @@ export default function BookingDetailPage() {
   const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
   const [savingMethod, setSavingMethod] = useState(false);
   const [error, setError] = useState("");
+  const [rating, setRating] = useState(5);
+  const [feedback, setFeedback] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
+  const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
   useEffect(() => {
     getBooking(id).then(setBooking).catch(() => setError("Booking not found")).finally(() => setLoading(false));
@@ -76,6 +80,20 @@ export default function BookingDetailPage() {
       // silent fail — selection saved locally
     } finally {
       setSavingMethod(false);
+    }
+  }
+
+  async function handleSubmitReview() {
+    setSubmittingReview(true);
+    try {
+      await createReview(id, rating, feedback || undefined);
+      setReviewSubmitted(true);
+      setFeedback("");
+      setRating(5);
+    } catch (e: any) {
+      setError(e?.message || "Failed to submit review");
+    } finally {
+      setSubmittingReview(false);
     }
   }
 
@@ -168,7 +186,7 @@ export default function BookingDetailPage() {
       )}
 
       {/* Cancel */}
-      {!isCancelled && (
+      {!isCancelled && booking.status !== "COMPLETED" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-zinc-900 mb-1">Cancel Booking</h3>
           <p className="text-xs text-slate-400 mb-3">Cancelling will release your seats back to the pool.</p>
@@ -180,6 +198,61 @@ export default function BookingDetailPage() {
           >
             {cancelling ? "Cancelling..." : "Cancel Booking"}
           </button>
+        </div>
+      )}
+
+      {/* Review Form */}
+      {booking.status === "COMPLETED" && !reviewSubmitted && (
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+          <h3 className="text-sm font-semibold text-zinc-900 mb-1">Rate Your Experience</h3>
+          <p className="text-xs text-slate-400 mb-4">Help other travelers by rating your transporter</p>
+
+          {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+
+          <div className="mb-4">
+            <label className="text-sm text-slate-600 mb-2 block">Your Rating</label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setRating(star)}
+                  className={`text-3xl transition-transform ${rating >= star ? "text-yellow-400" : "text-slate-300"} hover:scale-110`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-400 mt-2">{rating} star{rating !== 1 ? "s" : ""}</p>
+          </div>
+
+          <div className="mb-4">
+            <label className="text-sm text-slate-600 mb-2 block">Feedback (Optional)</label>
+            <textarea
+              value={feedback}
+              onChange={(e) => setFeedback(e.target.value)}
+              placeholder="Share your experience with this transporter..."
+              maxLength={500}
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-zinc-900 placeholder-slate-400 focus:outline-none focus:border-zinc-900 resize-none"
+              rows={3}
+            />
+            <p className="text-xs text-slate-400 mt-1">{feedback.length}/500</p>
+          </div>
+
+          <button
+            onClick={handleSubmitReview}
+            disabled={submittingReview}
+            className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800 transition-colors disabled:opacity-50"
+          >
+            {submittingReview ? "Submitting..." : "Submit Review"}
+          </button>
+        </div>
+      )}
+
+      {/* Review Submitted Confirmation */}
+      {booking.status === "COMPLETED" && reviewSubmitted && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
+          <p className="text-sm font-semibold text-emerald-700">✓ Thank you for your feedback!</p>
+          <p className="text-xs text-emerald-600 mt-1">Your review has been submitted successfully.</p>
         </div>
       )}
     </div>

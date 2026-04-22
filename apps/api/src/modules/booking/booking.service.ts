@@ -231,6 +231,20 @@ export class BookingService {
     return updated;
   }
 
+  async complete(id: string, transporterId: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: { transport: true },
+    });
+    if (!booking) throw new NotFoundException('Booking not found');
+    if (booking.transport.transporterId !== transporterId) throw new ForbiddenException();
+
+    return this.prisma.booking.update({
+      where: { id },
+      data: { status: BookingStatus.COMPLETED },
+    });
+  }
+
   async updatePaymentMethod(id: string, travelerId: string, paymentMethod: PaymentMethod) {
     const booking = await this.prisma.booking.findUnique({ where: { id } });
     if (!booking) throw new NotFoundException('Booking not found');

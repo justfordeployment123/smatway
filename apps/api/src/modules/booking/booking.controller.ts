@@ -57,6 +57,11 @@ export class BookingController {
     return this.bookingService.reject(id, user.id);
   }
 
+  @Patch(':id/complete')
+  complete(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.bookingService.complete(id, user.id);
+  }
+
   @Patch(':id/payment-method')
   updatePaymentMethod(
     @Param('id') id: string,

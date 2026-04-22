@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { searchTransports, createBooking } from "@/lib/api";
+import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/auth";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const transportTypes = ["All Types", "CAR", "BUS", "VAN", "MINIBUS", "TRUCK"];
 
@@ -154,6 +155,9 @@ function TransportCard({ transport }: { transport: any }) {
   const [seats, setSeats] = useState(1);
   const [booked, setBooked] = useState<any>(null);
   const [error, setError] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
+  const [profile, setProfile] = useState<any>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   async function handleBook() {
     setBooking(true);
@@ -165,6 +169,17 @@ function TransportCard({ transport }: { transport: any }) {
       setError(e?.message || "Booking failed");
     } finally {
       setBooking(false);
+    }
+  }
+
+  async function openTransporterProfile() {
+    setLoadingProfile(true);
+    try {
+      const data = await getTransporterProfile(transport.transporter.id);
+      setProfile(data);
+      setShowProfile(true);
+    } finally {
+      setLoadingProfile(false);
     }
   }
 
@@ -193,7 +208,21 @@ function TransportCard({ transport }: { transport: any }) {
               {dep.toLocaleDateString()} at {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {transport.availableSeats} seats left
             </p>
             <p className="text-xs text-slate-500">Reaches by: {maxReach.toLocaleDateString()} at {maxReach.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-            <p className="text-xs text-slate-500">{vehicle?.name} · Transporter: {transport.transporter?.name || "Unknown"}</p>
+            <p className="text-xs text-slate-500">{vehicle?.name}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <button onClick={openTransporterProfile} className="flex items-center gap-2 hover:opacity-75 transition">
+                <Avatar className="h-6 w-6 rounded">
+                  {transport.transporter?.profileImageUrl && (
+                    <img src={transport.transporter.profileImageUrl} alt={transport.transporter.name} className="h-6 w-6 rounded object-cover" />
+                  )}
+                  {!transport.transporter?.profileImageUrl && <AvatarFallback className="text-xs">{transport.transporter?.name?.charAt(0).toUpperCase() || "?"}</AvatarFallback>}
+                </Avatar>
+                <div className="text-left">
+                  <p className="text-xs font-medium text-zinc-900">{transport.transporter?.name || "Unknown"}</p>
+                  <p className="text-xs text-emerald-600 font-semibold">⭐ {transport.transporter?.averageRating || 0} ({transport.transporter?.totalCompletedRides || 0} rides)</p>
+                </div>
+              </button>
+            </div>
           </div>
           <div className="flex flex-col items-end gap-2 min-w-[140px]">
             <p className="text-lg font-bold text-zinc-900">${Number(transport.price).toFixed(2)}<span className="text-xs font-normal text-slate-400">/seat</span></p>
@@ -219,6 +248,82 @@ function TransportCard({ transport }: { transport: any }) {
           </div>
         </div>
       </div>
+
+      {/* Transporter Profile Modal */}
+      {showProfile && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {loadingProfile ? (
+              <div className="p-8 text-center">Loading...</div>
+            ) : profile ? (
+              <>
+                {/* Header */}
+                <div className="p-6 border-b border-slate-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3 flex-1">
+                      <Avatar className="h-12 w-12 rounded-lg">
+                        {profile.profileImageUrl && <img src={profile.profileImageUrl} alt={profile.name} className="h-12 w-12 rounded-lg object-cover" />}
+                        {!profile.profileImageUrl && <AvatarFallback className="rounded-lg">{profile.name?.charAt(0).toUpperCase()}</AvatarFallback>}
+                      </Avatar>
+                      <div>
+                        <h2 className="font-semibold text-zinc-900">{profile.name}</h2>
+                        <p className="text-xs text-slate-500">Member since {new Date(profile.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => setShowProfile(false)} className="text-2xl text-slate-400 hover:text-slate-600">×</button>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="p-6 border-b border-slate-200">
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-emerald-600">⭐ {profile.averageRating}</p>
+                      <p className="text-xs text-slate-600 mt-1">Rating</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{profile.totalCompletedRides}</p>
+                      <p className="text-xs text-slate-600 mt-1">Completed</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-slate-900">{profile.vehicleCount}</p>
+                      <p className="text-xs text-slate-600 mt-1">Vehicles</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reviews */}
+                {profile.reviews && profile.reviews.length > 0 && (
+                  <div className="p-6 border-b border-slate-200">
+                    <h3 className="font-semibold text-sm text-zinc-900 mb-3">Recent Feedback</h3>
+                    <div className="space-y-3">
+                      {profile.reviews.map((review: any) => (
+                        <div key={review.id} className="bg-slate-50 p-3 rounded-lg">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-xs font-medium text-zinc-900">{review.traveler?.name || "Anonymous"}</p>
+                            <p className="text-xs text-emerald-600">⭐ {review.rating}</p>
+                          </div>
+                          {review.feedback && <p className="text-xs text-slate-600 line-clamp-2">{review.feedback}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Contact */}
+                {profile.phoneNumber && (
+                  <div className="p-6">
+                    <p className="text-xs text-slate-500 mb-2">Contact</p>
+                    <p className="text-sm font-medium text-zinc-900">{profile.phoneNumber}</p>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="p-8 text-center text-red-600">Failed to load profile</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

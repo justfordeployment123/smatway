@@ -34,6 +34,7 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   CANCELLED
+  COMPLETED
 }
 
 enum PaymentStatus {
@@ -55,6 +56,7 @@ model User {
   phoneNumber    String?
   country        String?
   avatarUrl      String?
+  profileImageUrl String?      // For transporters
   passwordHash   String?
   role           Role         @default(USER)
   accountType    AccountType?
@@ -68,6 +70,8 @@ model User {
   transports     Transport[]
   bookings       Booking[]            @relation("TravelerBookings")
   vehicles       Vehicle[]
+  reviewsGiven   Review[]             @relation("TravelerReviews")
+  reviewsReceived Review[]            @relation("TransporterReviews")
 }
 
 model AuthProvider {
@@ -195,6 +199,8 @@ model Booking {
   paymentStatus PaymentStatus @default(PENDING)
   paymentMethod PaymentMethod?
 
+  review        Review?
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
@@ -213,4 +219,24 @@ model NotificationPreferences {
 
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model Review {
+  id            String   @id @default(uuid())
+  bookingId     String   @unique
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  travelerId    String
+  traveler      User     @relation("TravelerReviews", fields: [travelerId], references: [id], onDelete: Cascade)
+
+  transporterId String
+  transporter   User     @relation("TransporterReviews", fields: [transporterId], references: [id], onDelete: Cascade)
+
+  rating        Int
+  feedback      String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([transporterId])
+  @@index([travelerId])
 }

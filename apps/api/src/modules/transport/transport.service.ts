@@ -22,6 +22,28 @@ export class TransportService {
     }
   }
 
+  private async getTransporterStats(transporterId: string) {
+    const reviews = await this.prisma.review.findMany({
+      where: { transporterId },
+    });
+
+    const completedRides = await this.prisma.booking.count({
+      where: {
+        transport: { transporterId },
+        status: 'COMPLETED' as any,
+      },
+    });
+
+    const avgRating = reviews.length > 0
+      ? Math.round((reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / reviews.length) * 10) / 10
+      : 0;
+
+    return {
+      averageRating: avgRating,
+      totalCompletedRides: completedRides,
+    };
+  }
+
   async create(transporterId: string, dto: CreateTransportDto) {
     const vehicle = await this.prisma.vehicle.findUnique({ where: { id: dto.vehicleId } });
     if (!vehicle) throw new NotFoundException('Vehicle not found');
@@ -65,22 +87,30 @@ export class TransportService {
     const transports = await this.prisma.transport.findMany({
       where,
       include: {
-        transporter: { select: { id: true, name: true, phoneNumber: true } },
+        transporter: { select: { id: true, name: true, phoneNumber: true, profileImageUrl: true, avatarUrl: true } },
         vehicle: { select: { id: true, name: true, model: true, transportType: true, plateNumber: true, imageUrl: true } },
       },
       orderBy: { departureDateTime: 'asc' },
     });
 
     return Promise.all(
-      transports.map(async (transport: any) => ({
-        ...transport,
-        vehicle: transport.vehicle
-          ? {
-              ...transport.vehicle,
-              imageUrl: await this.generateImageUrl(transport.vehicle.imageUrl),
-            }
-          : null,
-      })),
+      transports.map(async (transport: any) => {
+        const stats = await this.getTransporterStats(transport.transporterId);
+        return {
+          ...transport,
+          transporter: {
+            ...transport.transporter,
+            profileImageUrl: await this.generateImageUrl(transport.transporter.profileImageUrl || transport.transporter.avatarUrl),
+            ...stats,
+          },
+          vehicle: transport.vehicle
+            ? {
+                ...transport.vehicle,
+                imageUrl: await this.generateImageUrl(transport.vehicle.imageUrl),
+              }
+            : null,
+        };
+      }),
     );
   }
 
@@ -88,14 +118,21 @@ export class TransportService {
     const transport = await this.prisma.transport.findUnique({
       where: { id },
       include: {
-        transporter: { select: { id: true, name: true, phoneNumber: true } },
+        transporter: { select: { id: true, name: true, phoneNumber: true, profileImageUrl: true, avatarUrl: true } },
         vehicle: { select: { id: true, name: true, model: true, transportType: true, plateNumber: true, imageUrl: true } },
       },
     });
     if (!transport) throw new NotFoundException('Transport not found');
 
+    const stats = await this.getTransporterStats(transport.transporterId);
+
     return {
       ...transport,
+      transporter: {
+        ...transport.transporter,
+        profileImageUrl: await this.generateImageUrl(transport.transporter.profileImageUrl),
+        ...stats,
+      },
       vehicle: transport.vehicle
         ? {
             ...transport.vehicle,
@@ -112,9 +149,12 @@ export class TransportService {
       orderBy: { createdAt: 'desc' },
     });
 
+    const stats = await this.getTransporterStats(transporterId);
+
     return Promise.all(
       transports.map(async (transport: any) => ({
         ...transport,
+        transporterStats: stats,
         vehicle: transport.vehicle
           ? {
               ...transport.vehicle,
