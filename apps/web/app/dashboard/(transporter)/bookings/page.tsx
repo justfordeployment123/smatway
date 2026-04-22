@@ -1,91 +1,219 @@
 "use client";
 
-import { useState } from "react";
-import DashboardTable, { TableColumn } from "@/app/dashboard/_Components/DashboardTable";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { getTransportBookings, confirmBooking, rejectBooking } from "@/lib/api";
 import { ClockIcon, CheckCircleIcon, MailIcon } from "@/app/dashboard/_Components/Icons";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const columns: TableColumn[] = [
-    "Bookingref", "Traveler", "Route", "Departure",
-    { label: "Seats", align: "center" },
-    "Amount", "Status", "Actions",
-];
+const statusColors: Record<string, string> = {
+  PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  CANCELLED: "bg-red-50 text-red-600 border-red-200",
+};
 
 export default function TransporterBookingsPage() {
-    const [autoConfirm, setAutoConfirm] = useState(true);
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<"ALL" | "PENDING" | "CONFIRMED" | "CANCELLED">("ALL");
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    return (
-        <div className="p-4 md:p-0 space-y-6">
-            <div className="bg-white rounded-lg border border-[#f0f0f0]">
-                <div className="p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h3 className="text-lg font-semibold text-slate-900 mb-1">Booking Settings</h3>
-                            <p className="text-sm text-slate-600">Configure how bookings are handled</p>
-                        </div>
-                        <div className="flex items-center space-x-3">
-                            <span className="text-sm font-medium text-slate-700">Auto-confirm Bookings</span>
-                            <button
-                                type="button"
-                                role="switch"
-                                aria-checked={autoConfirm}
-                                onClick={() => setAutoConfirm((prev) => !prev)}
-                                className={`relative inline-flex h-6 w-[44px] items-center rounded-full transition-colors text-white text-xs font-medium ${autoConfirm ? "bg-emerald-500" : "bg-slate-200"}`}
-                            >
-                                <span className={`absolute transition-all ${autoConfirm ? "left-1.5" : "right-1"} text-[10px] leading-none`}>
-                                    {autoConfirm ? "ON" : "OFF"}
-                                </span>
-                                <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${autoConfirm ? "translate-x-[24px]" : "translate-x-1"}`}
-                                />
-                            </button>
-                        </div>
-                    </div>
+  useEffect(() => {
+    loadBookings();
+  }, []);
 
-                    <div className="border-t border-[#f0f0f0] my-5" />
+  async function loadBookings() {
+    try {
+      const data = await getTransportBookings();
+      setBookings(data);
+    } catch (error) {
+      console.error("Failed to load bookings:", error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                        <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                            <div className="flex items-center space-x-3">
-                                <ClockIcon className="w-8 h-8 text-amber-600" />
-                                <div>
-                                    <div className="text-2xl font-bold text-slate-900">0</div>
-                                    <div className="text-sm text-slate-600">Pending Confirmation</div>
-                                </div>
-                            </div>
-                        </div>
+  async function handleConfirm(id: string) {
+    setActionLoading(id);
+    try {
+      const updated = await confirmBooking(id);
+      setBookings(bs => bs.map(b => b.id === id ? { ...b, status: updated.status } : b));
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
-                        <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
-                            <div className="flex items-center space-x-3">
-                                <CheckCircleIcon className="w-8 h-8 text-emerald-600" />
-                                <div>
-                                    <div className="text-2xl font-bold text-slate-900">0</div>
-                                    <div className="text-sm text-slate-600">Confirmed</div>
-                                </div>
-                            </div>
-                        </div>
+  async function handleReject(id: string) {
+    if (!confirm("Reject this booking?")) return;
+    setActionLoading(id);
+    try {
+      const updated = await rejectBooking(id);
+      setBookings(bs => bs.map(b => b.id === id ? { ...b, status: updated.status } : b));
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
-                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <div className="flex items-center space-x-3">
-                                <MailIcon className="w-8 h-8 text-blue-600" />
-                                <div>
-                                    <div className="text-2xl font-bold text-slate-900">0</div>
-                                    <div className="text-sm text-slate-600">Total Bookings</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  const filteredBookings = filter === "ALL"
+    ? bookings
+    : bookings.filter(b => b.status === filter);
+
+  const pendingCount = bookings.filter(b => b.status === "PENDING").length;
+  const confirmedCount = bookings.filter(b => b.status === "CONFIRMED").length;
+  const totalCount = bookings.length;
+
+  return (
+    <div className="p-4 md:p-0">
+      <div className="mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-slate-900">Bookings</h1>
+        <p className="text-sm text-slate-600">Manage your transport bookings</p>
+      </div>
+
+      {/* Stats Cards */}
+      {!loading && bookings.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center space-x-3">
+              <ClockIcon className="w-8 h-8 text-amber-600" />
+              <div>
+                <div className="text-2xl font-bold text-slate-900">{pendingCount}</div>
+                <div className="text-sm text-slate-600">Pending</div>
+              </div>
             </div>
+          </div>
 
-            <DashboardTable
-                columns={columns}
-                title="All Bookings"
-                action={
-                    <button type="button" className="px-3 py-1.5 text-sm border border-slate-300 rounded hover:bg-slate-50 transition-colors">
-                        Refresh
-                    </button>
-                }
-            />
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center space-x-3">
+              <CheckCircleIcon className="w-8 h-8 text-emerald-600" />
+              <div>
+                <div className="text-2xl font-bold text-slate-900">{confirmedCount}</div>
+                <div className="text-sm text-slate-600">Confirmed</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center space-x-3">
+              <MailIcon className="w-8 h-8 text-blue-600" />
+              <div>
+                <div className="text-2xl font-bold text-slate-900">{totalCount}</div>
+                <div className="text-sm text-slate-600">Total Bookings</div>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      )}
+
+      {/* Filters */}
+      {!loading && bookings.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-4 mb-6">
+          <div className="flex gap-2 flex-wrap">
+            {["ALL", "PENDING", "CONFIRMED", "CANCELLED"].map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f as any)}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                  filter === f
+                    ? "bg-emerald-600 text-white"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="text-sm text-slate-400 py-10 text-center">Loading bookings...</div>
+      ) : bookings.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
+          <p className="text-sm font-medium text-zinc-900 mb-1">No bookings yet</p>
+          <p className="text-sm text-slate-400">Your bookings will appear here once travelers book your routes.</p>
+        </div>
+      ) : filteredBookings.length === 0 ? (
+        <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
+          <p className="text-sm font-medium text-zinc-900 mb-1">No {filter.toLowerCase()} bookings</p>
+          <p className="text-sm text-slate-400">Try changing the filter to see other bookings.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredBookings.map(booking => {
+            const dep = new Date(booking.transport.departureDateTime);
+            const traveler = booking.user;
+            const vehicle = booking.transport.vehicle;
+            const initial = traveler?.name?.charAt(0).toUpperCase() || "U";
+
+            return (
+              <div key={booking.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <div className="p-5">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    {vehicle?.imageUrl && (
+                      <div className="hidden sm:block sm:w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+                        <img src={vehicle.imageUrl} alt={vehicle.name} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-3">
+                        <Avatar className="h-10 w-10 rounded-lg">
+                          {traveler?.avatarUrl && <AvatarImage src={traveler.avatarUrl} alt={traveler.name} />}
+                          <AvatarFallback className="rounded-lg bg-linear-to-br from-blue-500 to-cyan-600 text-white text-xs font-bold">
+                            {initial}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-semibold text-slate-900 text-sm">{traveler?.name || "Unknown"}</div>
+                          <div className="text-xs text-slate-500">{traveler?.email}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[booking.status]}`}>{booking.status}</span>
+                      </div>
+                      <h3 className="font-semibold text-zinc-900 text-sm">
+                        {booking.transport.departureCity}, {booking.transport.departureCountry} → {booking.transport.destinationCity}, {booking.transport.destinationCountry}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {dep.toLocaleDateString()} at {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {booking.seatsBooked} seat{booking.seatsBooked > 1 ? "s" : ""}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">Ref: #{booking.id.slice(0, 8).toUpperCase()}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-3 sm:min-w-[160px]">
+                      <div>
+                        <p className="text-lg font-bold text-slate-900">${Number(booking.totalPrice).toFixed(2)}</p>
+                        <p className="text-xs text-slate-500">Total</p>
+                      </div>
+                      {booking.status === "PENDING" && (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleConfirm(booking.id)}
+                            disabled={actionLoading === booking.id}
+                            className="text-xs border border-emerald-200 text-emerald-600 px-3 py-1.5 rounded-lg hover:bg-emerald-50 transition-all disabled:opacity-50 font-medium"
+                          >
+                            {actionLoading === booking.id ? "..." : "Confirm"}
+                          </button>
+                          <button
+                            onClick={() => handleReject(booking.id)}
+                            disabled={actionLoading === booking.id}
+                            className="text-xs border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all disabled:opacity-50 font-medium"
+                          >
+                            {actionLoading === booking.id ? "..." : "Reject"}
+                          </button>
+                        </div>
+                      )}
+                      {booking.status !== "PENDING" && (
+                        <Link href={`/dashboard/bookings/${booking.id}`} className="text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-all">
+                          Details
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }

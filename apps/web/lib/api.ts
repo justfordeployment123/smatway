@@ -225,6 +225,157 @@ export async function updateNotificationPreferences(
   return apiPut<NotificationPreferences>('/users/notification-preferences', data);
 }
 
+// Transport
+export async function searchTransports(params: {
+  departureCity?: string;
+  departureCountry?: string;
+  destinationCity?: string;
+  destinationCountry?: string;
+  transportType?: string;
+  date?: string;
+}): Promise<any[]> {
+  const query = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v && v !== 'All Types') query.set(k, v); });
+  return apiGet<any[]>(`/transport?${query.toString()}`);
+}
+
+export async function getTransport(id: string): Promise<any> {
+  return apiGet<any>(`/transport/${id}`);
+}
+
+export async function createTransport(data: {
+  departureCountry: string;
+  departureCity: string;
+  destinationCountry: string;
+  destinationCity: string;
+  price: number;
+  availableSeats: number;
+  departureDateTime: string;
+  maxReachDateTime: string;
+  vehicleId: string;
+}): Promise<any> {
+  return apiPost<any>('/transport', data);
+}
+
+export async function getMyRoutes(): Promise<any[]> {
+  return apiGet<any[]>('/transport/my');
+}
+
+export async function deleteTransport(id: string): Promise<any> {
+  return apiDelete<any>(`/transport/${id}`);
+}
+
+// Booking
+export async function createBooking(data: {
+  transportId: string;
+  seatsBooked: number;
+  paymentMethod?: string;
+}): Promise<any> {
+  return apiPost<any>('/booking', data);
+}
+
+export async function getMyBookings(): Promise<any[]> {
+  return apiGet<any[]>('/booking/my');
+}
+
+export async function getBooking(id: string): Promise<any> {
+  return apiGet<any>(`/booking/${id}`);
+}
+
+export async function cancelBooking(id: string): Promise<any> {
+  return apiPatch<any>(`/booking/${id}/cancel`);
+}
+
+export async function updatePaymentMethod(id: string, paymentMethod: string): Promise<any> {
+  return apiPatch<any>(`/booking/${id}/payment-method`, { paymentMethod });
+}
+
+export async function getTransportBookings(transportId?: string): Promise<any[]> {
+  if (transportId) {
+    return apiGet<any[]>(`/booking/transport/${transportId}`);
+  }
+  return apiGet<any[]>(`/booking/transporter/all`);
+}
+
+export async function confirmBooking(id: string): Promise<any> {
+  return apiPatch<any>(`/booking/${id}/confirm`);
+}
+
+export async function rejectBooking(id: string): Promise<any> {
+  return apiPatch<any>(`/booking/${id}/reject`);
+}
+
+// Vehicle
+export async function createVehicle(data: {
+  name: string;
+  model: string;
+  plateNumber: string;
+  transportType: string;
+  image?: File;
+}): Promise<any> {
+  const formData = new FormData();
+  formData.append('name', data.name);
+  formData.append('model', data.model);
+  formData.append('plateNumber', data.plateNumber);
+  formData.append('transportType', data.transportType);
+  if (data.image) formData.append('image', data.image);
+
+  const url = new URL('/vehicle', API_BASE_URL).toString();
+  const token = getAuthToken();
+
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+    headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new ApiError(error.message || 'Failed to create vehicle', response.status, error);
+  }
+
+  return response.json();
+}
+
+export async function getMyVehicles(): Promise<any[]> {
+  return apiGet<any[]>('/vehicle/my');
+}
+
+export async function getVehicle(id: string): Promise<any> {
+  return apiGet<any>(`/vehicle/${id}`);
+}
+
+export async function updateVehicle(id: string, data: FormData): Promise<any> {
+  const url = new URL(`/vehicle/${id}`, process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3002').toString();
+  const token = getAuthToken();
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers,
+    credentials: 'include',
+    body: data,
+  });
+
+  const resData = await response.json();
+  if (!response.ok) {
+    throw new ApiError(
+      resData.message || `API Error: ${response.status}`,
+      response.status,
+      resData,
+    );
+  }
+  return resData;
+}
+
+export async function deleteVehicle(id: string): Promise<any> {
+  return apiDelete<any>(`/vehicle/${id}`);
+}
+
 // Password
 export async function changePassword(data: {
   currentPassword: string;
@@ -232,4 +383,12 @@ export async function changePassword(data: {
   confirmPassword: string;
 }): Promise<{ ok: boolean }> {
   return apiPut<{ ok: boolean }>('/users/change-password', data);
+}
+
+export async function verifyPassword(password: string): Promise<{ ok: boolean }> {
+  return apiPost<{ ok: boolean }>('/auth/verify-password', { password });
+}
+
+export async function disableRoutesByVehicle(vehicleId: string): Promise<any> {
+  return apiDelete<any>(`/transport/vehicle/${vehicleId}`);
 }

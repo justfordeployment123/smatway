@@ -16,6 +16,38 @@ enum AccountType {
   TRANSPORTER
 }
 
+enum TransportType {
+  CAR
+  BUS
+  VAN
+  MINIBUS
+  TRUCK
+}
+
+enum TransportStatus {
+  ACTIVE
+  INACTIVE
+  FULL
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum PaymentMethod {
+  PAYSTACK
+  FLUTTERWAVE
+  MPAISA
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -33,6 +65,9 @@ model User {
   refreshTokens  RefreshToken[]
   passwordResets PasswordResetToken[]
   profile        UserProfile?
+  transports     Transport[]
+  bookings       Booking[]            @relation("TravelerBookings")
+  vehicles       Vehicle[]
 }
 
 model AuthProvider {
@@ -101,6 +136,67 @@ model EmergencyContact {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Vehicle {
+  id            String   @id @default(uuid())
+  transporterId String
+  transporter   User     @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+
+  name          String
+  model         String
+  plateNumber   String
+  transportType TransportType
+  imageUrl      String?
+  deleted       Boolean  @default(false)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  transports    Transport[]
+}
+
+model Transport {
+  id                 String          @id @default(uuid())
+  transporterId      String
+  transporter        User            @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  vehicleId          String
+  vehicle            Vehicle         @relation(fields: [vehicleId], references: [id], onDelete: Restrict)
+
+  departureCountry   String
+  departureCity      String
+  destinationCountry String
+  destinationCity    String
+
+  price              Decimal         @db.Decimal(10, 2)
+  availableSeats     Int
+  departureDateTime  DateTime
+  maxReachDateTime   DateTime
+
+  status             TransportStatus @default(ACTIVE)
+
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  bookings           Booking[]
+}
+
+model Booking {
+  id            String        @id @default(uuid())
+  travelerId    String
+  traveler      User          @relation("TravelerBookings", fields: [travelerId], references: [id], onDelete: Cascade)
+  transportId   String
+  transport     Transport     @relation(fields: [transportId], references: [id], onDelete: Cascade)
+
+  seatsBooked   Int
+  totalPrice    Decimal       @db.Decimal(10, 2)
+
+  status        BookingStatus @default(PENDING)
+  paymentStatus PaymentStatus @default(PENDING)
+  paymentMethod PaymentMethod?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model NotificationPreferences {

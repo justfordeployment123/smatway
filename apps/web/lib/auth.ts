@@ -11,7 +11,9 @@ export type User = {
   name?: string;
   role?: 'USER' | 'ADMIN';
   accountType?: 'TRAVELER' | 'TRANSPORTER';
-  avatar?: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string;
+  country?: string;
   createdAt?: string;
   updatedAt?: string;
 };

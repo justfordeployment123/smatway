@@ -9,6 +9,7 @@ import { AccountType, Role, User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { Response } from 'express';
 import { PrismaService } from '../database/prisma.service';
+import { StorageService } from '../../common/services/storage.service';
 import { generateRawToken, hashToken } from '../../common/utils/token.util';
 import { clearAuthCookies, setAuthCookies } from '../../common/utils/cookie.util';
 import { MailService } from './mail/mail.service';
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly storageService: StorageService,
   ) { }
 
   async validateLocalUser(email: string, password: string): Promise<User | null> {
@@ -140,6 +142,18 @@ export class AuthService {
     clearAuthCookies(res);
   }
 
+  async verifyPassword(userId: string, password: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user || !user.passwordHash) {
+      throw new BadRequestException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      throw new BadRequestException('Invalid password');
+    }
+  }
+
   private normalizeAccountType(
     accountType?: RegisterDto['accountType'] | 'traveler' | 'transporter',
   ): AccountType | undefined {
@@ -159,5 +173,20 @@ export class AuthService {
   safeUser(user: User): Omit<User, 'passwordHash'> {
     const { passwordHash: _ph, ...safe } = user;
     return safe;
+  }
+
+  async safeUserWithPresignedUrl(user: User): Promise<Omit<User, 'passwordHash'> & { avatarUrl: string | null }> {
+    const { passwordHash: _ph, ...safe } = user;
+
+    let avatarUrl = null;
+    if (user.avatarUrl) {
+      try {
+        avatarUrl = await this.storageService.generatePresignedUrl(user.avatarUrl);
+      } catch (error) {
+        avatarUrl = null;
+      }
+    }
+
+    return { ...safe, avatarUrl };
   }
 }

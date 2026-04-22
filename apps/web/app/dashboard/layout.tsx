@@ -3,11 +3,12 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   MapPinIcon, DashboardIcon, CarIcon, MapPinIcon as RouteIcon,
   BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, BellIcon, LogOutIcon,
 } from "@/app/dashboard/_Components/Icons";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
@@ -148,9 +149,11 @@ function Sidebar({
 
 // ─── Topbar ───────────────────────────────────────────────────────────────────
 
-function Topbar({ title, role, userName }: { title: string; role: "traveler" | "transporter"; userName?: string }) {
+function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
+  const router = useRouter();
   const name = userName || "User";
   const initial = name.charAt(0).toUpperCase();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   return (
     <header className="bg-white border-b border-sidebar-border px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
@@ -168,20 +171,46 @@ function Topbar({ title, role, userName }: { title: string; role: "traveler" | "
           </TooltipContent>
         </Tooltip>
 
-        {/* Avatar + User info */}
-        <div className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 pl-1 pr-3 py-1.5 rounded-xl transition-colors">
-          <Avatar className="h-8 w-8 rounded-xl">
-            <AvatarFallback className="rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
-              {initial}
-            </AvatarFallback>
-          </Avatar>
-          <div className="hidden md:block text-left">
-            <p className="text-sm font-semibold text-zinc-900 leading-none mb-0.5">{name}</p>
-            <p className="text-xs text-slate-400 capitalize">{role}</p>
-          </div>
-          <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+        {/* Avatar + User info + Dropdown */}
+        <div className="relative">
+          <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 pl-1 pr-3 py-1.5 rounded-xl transition-colors">
+            <Avatar className="h-8 w-8 rounded-xl">
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
+              <AvatarFallback className="rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
+                {initial}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden md:block text-left">
+              <p className="text-sm font-semibold text-zinc-900 leading-none mb-0.5">{name}</p>
+              <p className="text-xs text-slate-400 capitalize">{role}</p>
+            </div>
+            <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-50">
+              <Link href="/dashboard/profile" className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-900 hover:bg-slate-50">
+                <UserIcon className="w-4 h-4" />
+                Profile
+              </Link>
+              <Link href="/dashboard/settings" className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-900 hover:bg-slate-50">
+                <SettingsIcon className="w-4 h-4" />
+                Settings
+              </Link>
+              <button
+                onClick={async () => {
+                  await logout();
+                  window.location.href = "/signin";
+                }}
+                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+              >
+                <LogOutIcon className="w-4 h-4" />
+                Sign Out
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </header>
@@ -253,6 +282,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       setLoading(false);
     }
     checkAuth();
+
+    // Refetch user data on focus
+    const handleFocus = () => checkAuth();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [pathname, router]);
 
   if (loading || !user) {
@@ -272,7 +306,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="min-h-dvh flex bg-slate-50/50">
         <Sidebar pathname={pathname} role={role} onRoleSwitch={() => { }} />
         <div className="flex-1 lg:ml-62.5 flex flex-col min-h-dvh">
-          <Topbar title={title} role={role} userName={user?.name} />
+          <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} />
           <MobileNav pathname={pathname} role={role} onRoleSwitch={() => { }} />
           <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
             {children}

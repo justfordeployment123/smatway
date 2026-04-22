@@ -39,8 +39,9 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('session')
-  session(@CurrentUser() user: User) {
-    return { user: this.authService.safeUser(user) };
+  async session(@CurrentUser() user: User) {
+    const userWithUrl = await this.authService.safeUserWithPresignedUrl(user);
+    return { user: userWithUrl };
   }
 
   @Post('refresh')
@@ -64,8 +65,8 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  me(@CurrentUser() user: User) {
-    return this.authService.safeUser(user);
+  async me(@CurrentUser() user: User) {
+    return this.authService.safeUserWithPresignedUrl(user);
   }
 
   @Throttle({ default: { limit: 3, ttl: 60000 * 15 } })
@@ -81,5 +82,13 @@ export class AuthController {
   async resetPassword(@Body() dto: ResetPasswordDto, @Res({ passthrough: false }) res: Response) {
     await this.authService.resetPassword(dto, res);
     res.json({ ok: true });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('verify-password')
+  @HttpCode(200)
+  async verifyPassword(@CurrentUser() user: User, @Body() dto: { password: string }) {
+    await this.authService.verifyPassword(user.id, dto.password);
+    return { ok: true };
   }
 }

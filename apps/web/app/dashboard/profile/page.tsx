@@ -76,8 +76,9 @@ export default function ProfilePage() {
       });
 
       setSuccess('Profile updated successfully');
-      setTimeout(() => setSuccess(null), 3000);
-      await loadProfile();
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save profile');
     } finally {

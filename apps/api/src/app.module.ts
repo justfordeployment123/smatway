@@ -9,6 +9,9 @@ import { DatabaseModule } from './modules/database/database.module';
 import { HealthModule } from './modules/health/health.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { TransportModule } from './modules/transport/transport.module';
+import { BookingModule } from './modules/booking/booking.module';
+import { VehicleModule } from './modules/vehicle/vehicle.module';
 
 @Module({
   imports: [
@@ -17,6 +20,9 @@ import { UsersModule } from './modules/users/users.module';
     HealthModule,
     AuthModule,
     UsersModule,
+    TransportModule,
+    BookingModule,
+    VehicleModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

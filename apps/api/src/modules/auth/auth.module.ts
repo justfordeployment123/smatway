@@ -8,6 +8,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { MailModule } from './mail/mail.module';
 import { DatabaseModule } from '../database/database.module';
+import { StorageModule } from '../../common/services/storage.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { DatabaseModule } from '../database/database.module';
       signOptions: { expiresIn: (process.env.JWT_EXPIRES_IN ?? '15m') as any },
     }),
     MailModule,
+    StorageModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, RolesGuard],
