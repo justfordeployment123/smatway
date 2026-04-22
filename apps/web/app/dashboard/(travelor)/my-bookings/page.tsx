@@ -199,11 +199,10 @@ export default function MyBookingsPage() {
                 <button
                   key={f}
                   onClick={() => setFilter(f as any)}
-                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                    filter === f
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filter === f
                       ? "bg-emerald-600 text-white"
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}
+                    }`}
                 >
                   {f}
                 </button>
@@ -255,24 +254,24 @@ export default function MyBookingsPage() {
                       </div>
                     )}
                     <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[booking.status]}`}>{booking.status}</span>
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${paymentColors[booking.paymentStatus]}`}>Payment: {booking.paymentStatus}</span>
-                      {booking.paymentMethod && (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{booking.paymentMethod}</span>
-                      )}
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[booking.status]}`}>{booking.status}</span>
+                        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${paymentColors[booking.paymentStatus]}`}>Payment: {booking.paymentStatus}</span>
+                        {booking.paymentMethod && (
+                          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">{booking.paymentMethod}</span>
+                        )}
+                      </div>
+                      <h3 className="font-semibold text-zinc-900 text-sm">
+                        {booking.transport.departureCity}, {booking.transport.departureCountry} → {booking.transport.destinationCity}, {booking.transport.destinationCountry}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {dep.toLocaleDateString()} at {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {booking.transport.vehicleModel}
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        {booking.seatsBooked} seat{booking.seatsBooked > 1 ? "s" : ""} · Total: ${Number(booking.totalPrice).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">Ref: #{booking.id.slice(0, 8).toUpperCase()}</p>
                     </div>
-                    <h3 className="font-semibold text-zinc-900 text-sm">
-                      {booking.transport.departureCity}, {booking.transport.departureCountry} → {booking.transport.destinationCity}, {booking.transport.destinationCountry}
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {dep.toLocaleDateString()} at {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {booking.transport.vehicleModel}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      {booking.seatsBooked} seat{booking.seatsBooked > 1 ? "s" : ""} · Total: ${Number(booking.totalPrice).toFixed(2)}
-                    </p>
-                    <p className="text-xs text-slate-400 mt-0.5">Ref: #{booking.id.slice(0, 8).toUpperCase()}</p>
-                  </div>
                     <div className="flex gap-2 flex-shrink-0">
                       <Link href={`/dashboard/traveler/booking/${booking.id}`} className="text-xs border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-50 transition-all">
                         Details

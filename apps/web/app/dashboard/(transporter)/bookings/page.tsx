@@ -206,11 +206,10 @@ export default function TransporterBookingsPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                  filter === f
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${filter === f
                     ? "bg-emerald-600 text-white"
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                }`}
+                  }`}
               >
                 {f}
               </button>
