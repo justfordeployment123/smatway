@@ -5,13 +5,25 @@ import { useRouter } from "next/navigation";
 import { createTransport, getMyVehicles } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
+type RouteForm = {
+  departureCountry: string;
+  departureCity: string;
+  destinationCountry: string;
+  destinationCity: string;
+  price: string;
+  availableSeats: string;
+  departureDateTime: string;
+  maxReachDateTime: string;
+  vehicleId: string;
+};
+
 export default function AddRoutePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [error, setError] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<RouteForm>({
     departureCountry: "",
     departureCity: "",
     destinationCountry: "",
@@ -27,11 +39,12 @@ export default function AddRoutePage() {
     (async () => {
       try {
         const user = await getCurrentUser();
-        if (user?.country) {
+        const country = user?.country;
+        if (country) {
           setForm(f => ({
             ...f,
-            departureCountry: user.country,
-            destinationCountry: user.country,
+            departureCountry: country,
+            destinationCountry: country,
           }));
         }
       } catch (e) {
@@ -52,7 +65,7 @@ export default function AddRoutePage() {
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150";
 
-  function set(field: string, value: string) {
+  function set<K extends keyof RouteForm>(field: K, value: RouteForm[K]) {
     setForm(f => ({ ...f, [field]: value }));
   }
 
