@@ -57,6 +57,7 @@ export class TransportService {
         departureCity: dto.departureCity,
         destinationCountry: dto.destinationCountry,
         destinationCity: dto.destinationCity,
+        transportType: vehicle.transportType,
         price: dto.price,
         availableSeats: dto.availableSeats,
         departureDateTime: new Date(dto.departureDateTime),
@@ -77,6 +78,7 @@ export class TransportService {
     if (dto.departureCountry) where.departureCountry = { contains: dto.departureCountry, mode: 'insensitive' };
     if (dto.destinationCity) where.destinationCity = { contains: dto.destinationCity, mode: 'insensitive' };
     if (dto.destinationCountry) where.destinationCountry = { contains: dto.destinationCountry, mode: 'insensitive' };
+    if (dto.transportType) where.transportType = dto.transportType;
     if (dto.date) {
       const d = new Date(dto.date);
       const next = new Date(d);
@@ -170,16 +172,20 @@ export class TransportService {
     if (!transport) throw new NotFoundException('Transport not found');
     if (transport.transporterId !== transporterId) throw new ForbiddenException();
 
+    let transportType: typeof transport.transportType | undefined;
     if (dto.vehicleId) {
       const vehicle = await this.prisma.vehicle.findUnique({ where: { id: dto.vehicleId } });
       if (!vehicle || vehicle.transporterId !== transporterId) throw new ForbiddenException('Invalid vehicle');
+      transportType = vehicle.transportType;
     }
 
     return this.prisma.transport.update({
       where: { id },
       data: {
         ...dto,
+        transportType,
         departureDateTime: dto.departureDateTime ? new Date(dto.departureDateTime) : undefined,
+        maxReachDateTime: dto.maxReachDateTime ? new Date(dto.maxReachDateTime) : undefined,
       },
     });
   }
