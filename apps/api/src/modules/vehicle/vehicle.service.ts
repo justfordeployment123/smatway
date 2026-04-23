@@ -35,11 +35,18 @@ export class VehicleService {
   }
 
   async myVehicles(transporterId: string) {
-    return this.prisma.vehicle.findMany({
+    const vehicles = await this.prisma.vehicle.findMany({
       where: { transporterId, deleted: false },
       include: { _count: { select: { transports: true } } },
       orderBy: { createdAt: 'desc' },
     });
+
+    return Promise.all(
+      vehicles.map(async (v) => {
+        if (!v.imageUrl) return v;
+        return { ...v, imageUrl: await this.storageService.generatePresignedUrl(v.imageUrl) };
+      }),
+    );
   }
 
   async findOne(id: string) {

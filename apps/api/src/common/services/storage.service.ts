@@ -40,14 +40,37 @@ export class StorageService {
     return { filePath: filename, presignedUrl };
   }
 
-  async generatePresignedUrl(filePath: string): Promise<string> {
+  async generatePresignedUrl(filePathOrUrl: string): Promise<string> {
+    // Old records stored the full presigned URL — extract just the S3 key from it
+    let key = filePathOrUrl;
+    if (filePathOrUrl.startsWith('http')) {
+      const url = new URL(filePathOrUrl);
+      // forcePathStyle URL format: /{bucket}/{key}
+      key = url.pathname.replace(`/${this.bucketName}/`, '');
+    }
+
+    // Use a separate public-facing client if GARAGE_PUBLIC_URL is set,
+    // so presigned URLs are reachable from browsers in production.
+    const publicEndpoint = process.env.GARAGE_PUBLIC_URL;
+    const client = publicEndpoint
+      ? new S3Client({
+          region: 'us-east-1',
+          endpoint: publicEndpoint,
+          credentials: {
+            accessKeyId: process.env.GARAGE_ACCESS_KEY || 'minioadmin',
+            secretAccessKey: process.env.GARAGE_SECRET_KEY || 'minioadmin',
+          },
+          forcePathStyle: true,
+        })
+      : this.s3Client;
+
     const getCommand = new GetObjectCommand({
       Bucket: this.bucketName,
-      Key: filePath,
+      Key: key,
     });
 
-    return getSignedUrl(this.s3Client, getCommand, {
-      expiresIn: 7 * 24 * 60 * 60, // 7 days in seconds
+    return getSignedUrl(client, getCommand, {
+      expiresIn: 7 * 24 * 60 * 60,
     });
   }
 }
