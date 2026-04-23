@@ -33,15 +33,7 @@ export class UsersService {
     if (!user) throw new NotFoundException('User not found');
 
     // Generate presigned URL if avatar exists
-    let avatarUrl = null;
-    if (user.avatarUrl) {
-      try {
-        avatarUrl = await this.storageService.generatePresignedUrl(user.avatarUrl);
-      } catch (error) {
-        // If presigned URL generation fails, return null
-        avatarUrl = null;
-      }
-    }
+    const avatarUrl = await this.storageService.resolveImageUrl(user.avatarUrl);
 
     const profile = await this.prisma.userProfile.findUnique({
       where: { userId },

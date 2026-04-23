@@ -12,16 +12,6 @@ export class TransportService {
     private readonly storageService: StorageService,
   ) {}
 
-  private async generateImageUrl(imageUrl?: string | null): Promise<string | null> {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    try {
-      return await this.storageService.generatePresignedUrl(imageUrl);
-    } catch {
-      return null;
-    }
-  }
-
   private async getTransporterStats(transporterId: string) {
     const reviews = await this.prisma.review.findMany({
       where: { transporterId },
@@ -102,13 +92,13 @@ export class TransportService {
           ...transport,
           transporter: {
             ...transport.transporter,
-            profileImageUrl: await this.generateImageUrl(transport.transporter.profileImageUrl || transport.transporter.avatarUrl),
+            profileImageUrl: await this.storageService.resolveImageUrl(transport.transporter.profileImageUrl || transport.transporter.avatarUrl),
             ...stats,
           },
           vehicle: transport.vehicle
             ? {
                 ...transport.vehicle,
-                imageUrl: await this.generateImageUrl(transport.vehicle.imageUrl),
+                imageUrl: await this.storageService.resolveImageUrl(transport.vehicle.imageUrl),
               }
             : null,
         };
@@ -132,13 +122,13 @@ export class TransportService {
       ...transport,
       transporter: {
         ...transport.transporter,
-        profileImageUrl: await this.generateImageUrl(transport.transporter.profileImageUrl),
+        profileImageUrl: await this.storageService.resolveImageUrl(transport.transporter.profileImageUrl),
         ...stats,
       },
       vehicle: transport.vehicle
         ? {
             ...transport.vehicle,
-            imageUrl: await this.generateImageUrl(transport.vehicle.imageUrl),
+            imageUrl: await this.storageService.resolveImageUrl(transport.vehicle.imageUrl),
           }
         : null,
     };
@@ -160,7 +150,7 @@ export class TransportService {
         vehicle: transport.vehicle
           ? {
               ...transport.vehicle,
-              imageUrl: await this.generateImageUrl(transport.vehicle.imageUrl),
+              imageUrl: await this.storageService.resolveImageUrl(transport.vehicle.imageUrl),
             }
           : null,
       })),

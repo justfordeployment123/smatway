@@ -10,16 +10,6 @@ export class ReviewService {
     private readonly storageService: StorageService,
   ) {}
 
-  private async generateImageUrl(imageUrl?: string | null): Promise<string | null> {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    try {
-      return await this.storageService.generatePresignedUrl(imageUrl);
-    } catch {
-      return null;
-    }
-  }
-
   async createReview(bookingId: string, travelerId: string, rating: number, feedback?: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -107,7 +97,7 @@ export class ReviewService {
       where: { transporterId, deleted: false },
     });
 
-    const profileImageUrl = await this.generateImageUrl(user.profileImageUrl || user.avatarUrl);
+    const profileImageUrl = await this.storageService.resolveImageUrl(user.profileImageUrl || user.avatarUrl);
 
     return {
       ...user,

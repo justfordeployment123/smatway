@@ -64,23 +64,13 @@ export class BookingService {
             ? {
               ...booking.transport.vehicle,
               imageUrl: booking.transport.vehicle.imageUrl
-                ? await this.generateImageUrl(booking.transport.vehicle.imageUrl)
+                ? await this.storageService.resolveImageUrl(booking.transport.vehicle.imageUrl)
                 : null,
             }
             : null,
         },
       })),
     );
-  }
-
-  private async generateImageUrl(imageUrl?: string | null): Promise<string | null> {
-    if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    try {
-      return await this.storageService.generatePresignedUrl(imageUrl);
-    } catch {
-      return null;
-    }
   }
 
   async findOne(id: string, userId: string) {
@@ -119,7 +109,7 @@ export class BookingService {
             ? {
               ...booking.transport.vehicle,
               imageUrl: booking.transport.vehicle.imageUrl
-                ? await this.generateImageUrl(booking.transport.vehicle.imageUrl)
+                ? await this.storageService.resolveImageUrl(booking.transport.vehicle.imageUrl)
                 : null,
             }
             : null,
@@ -128,7 +118,7 @@ export class BookingService {
           ? {
             ...booking.traveler,
             avatarUrl: booking.traveler.avatarUrl
-              ? await this.generateImageUrl(booking.traveler.avatarUrl)
+              ? await this.storageService.resolveImageUrl(booking.traveler.avatarUrl)
               : null,
           }
           : null,
@@ -159,7 +149,7 @@ export class BookingService {
             ? {
               ...booking.transport.vehicle,
               imageUrl: booking.transport.vehicle.imageUrl
-                ? await this.generateImageUrl(booking.transport.vehicle.imageUrl)
+                ? await this.storageService.resolveImageUrl(booking.transport.vehicle.imageUrl)
                 : null,
             }
             : null,
@@ -168,7 +158,7 @@ export class BookingService {
           ? {
             ...booking.traveler,
             avatarUrl: booking.traveler.avatarUrl
-              ? await this.generateImageUrl(booking.traveler.avatarUrl)
+              ? await this.storageService.resolveImageUrl(booking.traveler.avatarUrl)
               : null,
           }
           : null,

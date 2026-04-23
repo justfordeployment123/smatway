@@ -178,15 +178,7 @@ export class AuthService {
   async safeUserWithPresignedUrl(user: User): Promise<Omit<User, 'passwordHash'> & { avatarUrl: string | null }> {
     const { passwordHash: _ph, ...safe } = user;
 
-    let avatarUrl = null;
-    if (user.avatarUrl) {
-      try {
-        avatarUrl = await this.storageService.generatePresignedUrl(user.avatarUrl);
-      } catch (error) {
-        avatarUrl = null;
-      }
-    }
-
+    const avatarUrl = await this.storageService.resolveImageUrl(user.avatarUrl);
     return { ...safe, avatarUrl };
   }
 }

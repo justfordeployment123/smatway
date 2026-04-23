@@ -40,8 +40,19 @@ export class StorageService {
     return { filePath: filename, presignedUrl };
   }
 
+  // Call this everywhere an image URL needs to be served to a browser.
+  // Handles null, raw S3 keys, and old full-URL records safely.
+  async resolveImageUrl(filePathOrUrl: string | null | undefined): Promise<string | null> {
+    if (!filePathOrUrl) return null;
+    try {
+      return await this.generatePresignedUrl(filePathOrUrl);
+    } catch {
+      return null;
+    }
+  }
+
   async generatePresignedUrl(filePathOrUrl: string): Promise<string> {
-    // Old records stored the full presigned URL — extract just the S3 key from it
+    // Old records stored the full presigned URL — extract just the S3 key.
     let key = filePathOrUrl;
     if (filePathOrUrl.startsWith('http')) {
       const url = new URL(filePathOrUrl);
@@ -49,8 +60,7 @@ export class StorageService {
       key = url.pathname.replace(`/${this.bucketName}/`, '');
     }
 
-    // Use a separate public-facing client if GARAGE_PUBLIC_URL is set,
-    // so presigned URLs are reachable from browsers in production.
+    // Use GARAGE_PUBLIC_URL for the presigned URL endpoint so browsers can reach it.
     const publicEndpoint = process.env.GARAGE_PUBLIC_URL;
     const client = publicEndpoint
       ? new S3Client({
@@ -64,12 +74,7 @@ export class StorageService {
         })
       : this.s3Client;
 
-    const getCommand = new GetObjectCommand({
-      Bucket: this.bucketName,
-      Key: key,
-    });
-
-    return getSignedUrl(client, getCommand, {
+    return getSignedUrl(client, new GetObjectCommand({ Bucket: this.bucketName, Key: key }), {
       expiresIn: 7 * 24 * 60 * 60,
     });
   }

@@ -44,7 +44,7 @@ export class VehicleService {
     return Promise.all(
       vehicles.map(async (v) => {
         if (!v.imageUrl) return v;
-        return { ...v, imageUrl: await this.storageService.generatePresignedUrl(v.imageUrl) };
+        return { ...v, imageUrl: await this.storageService.resolveImageUrl(v.imageUrl) };
       }),
     );
   }
@@ -110,7 +110,7 @@ export class VehicleService {
 
     return {
       ...vehicle,
-      imageUrl: await this.storageService.generatePresignedUrl(vehicle.imageUrl),
+      imageUrl: await this.storageService.resolveImageUrl(vehicle.imageUrl),
     };
   }
 }
