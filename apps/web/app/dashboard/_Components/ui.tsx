@@ -112,8 +112,9 @@ export function StatusPill({ tone = "slate", children, dot = false, className = 
   return (
     <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ring-1 ring-inset ${toneMap[tone]} ${className}`}>
       {dot && (
-        <span className={`w-1.5 h-1.5 rounded-full ${dotColor[tone]}`}>
-          <span className={`absolute w-1.5 h-1.5 rounded-full ${dotColor[tone]} opacity-60 animate-ping`} />
+        <span className="relative flex shrink-0 w-1.5 h-1.5">
+          <span className={`absolute inset-0 rounded-full ${dotColor[tone]} opacity-60 animate-ping`} />
+          <span className={`relative w-1.5 h-1.5 rounded-full ${dotColor[tone]}`} />
         </span>
       )}
       {children}

@@ -61,6 +61,17 @@ export async function apiRequest<T = unknown>(
     const data = await response.json();
 
     if (!response.ok) {
+      // Token expired or invalid — wipe local auth and send to sign-in so the
+      // user sees a clean login screen instead of a crash or broken page.
+      if (response.status === 401 && typeof window !== 'undefined') {
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_token_expires_at');
+        localStorage.removeItem('auth_user');
+        window.location.href = '/signin';
+        // Throw anyway so callers awaiting this don't keep running.
+        throw new ApiError('Session expired', 401, data);
+      }
+
       throw new ApiError(
         data.message || `API Error: ${response.status}`,
         response.status,

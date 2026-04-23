@@ -3,6 +3,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { StorageService } from '../../common/services/storage.service';
+import { ChatGateway } from '../chat/chat.gateway';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { BookingStatus, PaymentMethod } from '@prisma/client';
 
@@ -11,6 +12,7 @@ export class BookingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly chatGateway: ChatGateway,
   ) {}
 
   async create(travelerId: string, dto: CreateBookingDto) {
@@ -37,6 +39,20 @@ export class BookingService {
         data: { availableSeats: { decrement: dto.seatsBooked } },
       }),
     ]);
+
+    // Notify the transporter in real-time
+    const traveler = await this.prisma.user.findUnique({
+      where: { id: travelerId },
+      select: { id: true, name: true },
+    });
+    this.chatGateway.notifyUser(transport.transporterId, {
+      type: 'booking',
+      bookingId: booking.id,
+      traveler,
+      seatsBooked: dto.seatsBooked,
+      totalPrice,
+      route: `${transport.departureCity} → ${transport.destinationCity}`,
+    });
 
     return booking;
   }
@@ -167,7 +183,13 @@ export class BookingService {
   }
 
   async cancel(id: string, travelerId: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id }, include: { transport: true } });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        transport: true,
+        traveler: { select: { id: true, name: true } },
+      },
+    });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.travelerId !== travelerId) throw new ForbiddenException();
     if (booking.status === BookingStatus.CANCELLED)
@@ -184,24 +206,52 @@ export class BookingService {
       }),
     ]);
 
+    // Notify the transporter about the cancellation
+    this.chatGateway.notifyUser(booking.transport.transporterId, {
+      type: 'booking_cancelled',
+      bookingId: booking.id,
+      traveler: booking.traveler,
+      seatsBooked: booking.seatsBooked,
+      route: `${booking.transport.departureCity} → ${booking.transport.destinationCity}`,
+    });
+
     return updated;
   }
 
   async confirm(id: string, transporterId: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id }, include: { transport: true } });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        transport: { include: { transporter: { select: { id: true, name: true } } } },
+      },
+    });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.transport.transporterId !== transporterId) throw new ForbiddenException();
     if (booking.status !== BookingStatus.PENDING)
       throw new BadRequestException('Only pending bookings can be confirmed');
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: { status: BookingStatus.CONFIRMED },
     });
+
+    this.chatGateway.notifyUser(booking.travelerId, {
+      type: 'booking_confirmed',
+      bookingId: booking.id,
+      transporter: booking.transport.transporter,
+      route: `${booking.transport.departureCity} → ${booking.transport.destinationCity}`,
+    });
+
+    return updated;
   }
 
   async reject(id: string, transporterId: string) {
-    const booking = await this.prisma.booking.findUnique({ where: { id }, include: { transport: true } });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+      include: {
+        transport: { include: { transporter: { select: { id: true, name: true } } } },
+      },
+    });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.transport.transporterId !== transporterId) throw new ForbiddenException();
     if (booking.status !== BookingStatus.PENDING)
@@ -218,21 +268,39 @@ export class BookingService {
       }),
     ]);
 
+    this.chatGateway.notifyUser(booking.travelerId, {
+      type: 'booking_rejected',
+      bookingId: booking.id,
+      transporter: booking.transport.transporter,
+      route: `${booking.transport.departureCity} → ${booking.transport.destinationCity}`,
+    });
+
     return updated;
   }
 
   async complete(id: string, transporterId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id },
-      include: { transport: true },
+      include: {
+        transport: { include: { transporter: { select: { id: true, name: true } } } },
+      },
     });
     if (!booking) throw new NotFoundException('Booking not found');
     if (booking.transport.transporterId !== transporterId) throw new ForbiddenException();
 
-    return this.prisma.booking.update({
+    const updated = await this.prisma.booking.update({
       where: { id },
       data: { status: BookingStatus.COMPLETED },
     });
+
+    this.chatGateway.notifyUser(booking.travelerId, {
+      type: 'booking_completed',
+      bookingId: booking.id,
+      transporter: booking.transport.transporter,
+      route: `${booking.transport.departureCity} → ${booking.transport.destinationCity}`,
+    });
+
+    return updated;
   }
 
   async updatePaymentMethod(id: string, travelerId: string, paymentMethod: PaymentMethod) {

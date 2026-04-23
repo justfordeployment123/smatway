@@ -151,9 +151,17 @@ export default function TransporterDashboardPage() {
                           href={`/dashboard/bookings/${booking.id}`}
                           className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50/70 transition-colors"
                         >
-                          <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-slate-600 text-white flex items-center justify-center text-xs font-semibold shrink-0">
-                            {initial}
-                          </div>
+                          {traveler?.avatarUrl ? (
+                            <img
+                              src={traveler.avatarUrl}
+                              alt={traveler.name || "Traveler"}
+                              className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-slate-200"
+                            />
+                          ) : (
+                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-900 to-slate-600 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+                              {initial}
+                            </div>
+                          )}
                           <div className="flex-1 min-w-0">
                             <p className="text-[13px] font-semibold text-zinc-950 truncate">
                               {booking.transport.departureCity} → {booking.transport.destinationCity}

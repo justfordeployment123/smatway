@@ -10,7 +10,7 @@ import {
   ChevronDownIcon,
 } from "@/app/dashboard/_Components/Icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getCurrentUser, logout } from "@/lib/auth";
+import { getCurrentUser, logout, isTokenExpired, clearAuthData } from "@/lib/auth";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useLiveAvatar } from "@/app/dashboard/_Components/events";
 
@@ -167,7 +167,7 @@ function Sidebar({ pathname, role }: { pathname: string; role: "traveler" | "tra
 // notification bell or avatar dropdown. NotificationBell has its own internal
 // state and is the only thing that updates this area on notification events.
 const UserNav = memo(
-  function UserNav({ role, userName, avatarUrl }: { role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
+  function UserNav({ role, userName, avatarUrl, userId }: { role: "traveler" | "transporter"; userName?: string; avatarUrl?: string; userId?: string }) {
     const name = userName || "User";
     const initial = name.charAt(0).toUpperCase();
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -184,7 +184,7 @@ const UserNav = memo(
 
     return (
       <div className="flex items-center gap-2">
-        <NotificationBell />
+        <NotificationBell userId={userId} />
 
         <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
 
@@ -245,15 +245,16 @@ const UserNav = memo(
       </div>
     );
   },
-  // Skip re-render unless avatarUrl, userName, or role actually change.
+  // Skip re-render unless avatarUrl, userName, role, or userId actually change.
   (prev, next) =>
     prev.avatarUrl === next.avatarUrl &&
     prev.userName === next.userName &&
-    prev.role === next.role
+    prev.role === next.role &&
+    prev.userId === next.userId
 );
 
 // ─── Topbar (title swaps on nav; UserNav stays mounted & stable) ──────────────
-function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
+function Topbar({ title, role, userName, avatarUrl, userId }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string; userId?: string }) {
   return (
     <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/70 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
       <div className="flex items-center gap-3 min-w-0">
@@ -268,7 +269,7 @@ function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "tr
         </motion.h2>
       </div>
 
-      <UserNav role={role} userName={userName} avatarUrl={avatarUrl} />
+      <UserNav role={role} userName={userName} avatarUrl={avatarUrl} userId={userId} />
     </header>
   );
 }
@@ -339,6 +340,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     }
   }, [pathname, user, router]);
 
+  // When the user comes back to the tab after being away, check if their token
+  // has expired while they were gone. If so, wipe auth and redirect cleanly.
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible" && isTokenExpired()) {
+        clearAuthData();
+        router.push("/signin");
+      }
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [router]);
+
   if (loading || !user) {
     return (
       <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50">
@@ -362,7 +376,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="h-[100dvh] flex bg-[#fafafa] overflow-hidden">
       <Sidebar pathname={pathname} role={role} />
       <div className="flex-1 lg:ml-64 flex flex-col h-[100dvh] overflow-hidden">
-        <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} />
+        <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} userId={user?.id} />
         <MobileNav pathname={pathname} role={role} />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-10">
