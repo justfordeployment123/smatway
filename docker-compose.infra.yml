@@ -16,6 +16,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # RAM limits for PostgreSQL
+    mem_limit: 512m
+    mem_reservation: 256m
 
   redis:
     image: redis:7-alpine
@@ -30,6 +33,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # RAM limits for Redis
+    mem_limit: 256m
+    mem_reservation: 128m
 
   garage:
     image: minio/minio:latest
@@ -49,6 +55,9 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # RAM limits for MinIO
+    mem_limit: 512m
+    mem_reservation: 256m
 
 volumes:
   smatway-postgres-data:
