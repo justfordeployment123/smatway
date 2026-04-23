@@ -1,5 +1,6 @@
 // Central icon library for the dashboard.
 // All icons use currentColor and accept a className prop (default "w-5 h-5").
+// Stroke width standardized to 1.75 for premium, modern feel.
 
 interface IconProps {
   className?: string;
@@ -10,7 +11,7 @@ const attrs = {
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 2 as number,
+  strokeWidth: 1.75 as number,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 };
@@ -114,6 +115,82 @@ export function PlusIcon({ className = base }: IconProps) {
   );
 }
 
+export function ArrowRightIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
+export function ArrowLeftIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <path d="M19 12H5" /><path d="m12 19-7-7 7-7" />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+    </svg>
+  );
+}
+
+export function FilterIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+    </svg>
+  );
+}
+
+export function ChevronDownIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}><path d="m6 9 6 6 6-6" /></svg>
+  );
+}
+
+export function ChevronRightIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}><path d="m9 6 6 6-6 6" /></svg>
+  );
+}
+
+export function TrashIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" />
+    </svg>
+  );
+}
+
+export function EditIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </svg>
+  );
+}
+
+export function SendIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
+    </svg>
+  );
+}
+
+export function XIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <line x1="18" x2="6" y1="6" y2="18" /><line x1="6" x2="18" y1="6" y2="18" />
+    </svg>
+  );
+}
+
 // ─── Stat / Status ────────────────────────────────────────────────────────────
 
 export function ClockIcon({ className = base }: IconProps) {
@@ -159,6 +236,38 @@ export function CreditCardIcon({ className = base }: IconProps) {
     <svg className={className} {...attrs}>
       <rect width="20" height="14" x="2" y="5" rx="2" />
       <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  );
+}
+
+export function CalendarIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <rect width="18" height="18" x="3" y="4" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" />
+    </svg>
+  );
+}
+
+export function TrendingUpIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
+    </svg>
+  );
+}
+
+export function StarIcon({ className = base, filled = true }: IconProps & { filled?: boolean }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+    </svg>
+  );
+}
+
+export function SparklesIcon({ className = base }: IconProps) {
+  return (
+    <svg className={className} {...attrs}>
+      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
     </svg>
   );
 }
@@ -213,7 +322,6 @@ export function PhoneIcon({ className = base }: IconProps) {
 
 // ─── Alert / Info ─────────────────────────────────────────────────────────────
 
-/** AntD-style filled circle-i icon used in info alerts */
 export function InfoCircleIcon({ className = base }: IconProps) {
   return (
     <svg className={className} viewBox="64 64 896 896" fill="currentColor">

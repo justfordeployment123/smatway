@@ -1,35 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
 import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
+import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  SearchIcon, CarIcon, MapPinIcon, CalendarIcon, ChevronDownIcon,
+  UsersIcon, ArrowRightIcon, XIcon, StarIcon, SparklesIcon,
+  CheckCircleIcon,
+} from "@/app/dashboard/_Components/Icons";
+import {
+  Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
+  PrimaryButton, SurfaceCard, spring,
+} from "@/app/dashboard/_Components/ui";
 
-const transportTypes = ["All Types", "CAR", "BUS", "VAN", "MINIBUS", "TRUCK"];
-
-function EmptyIllustration() {
-  return (
-    <svg width="120" height="100" viewBox="0 0 184 152" xmlns="http://www.w3.org/2000/svg">
-      <title>No results</title>
-      <g fill="none" fillRule="evenodd">
-        <g transform="translate(24 31.67)">
-          <ellipse fillOpacity=".8" fill="#F5F5F7" cx="67.797" cy="106.89" rx="67.797" ry="12.668" />
-          <path d="M122.034 69.674L98.109 40.229c-1.148-1.386-2.826-2.225-4.593-2.225h-51.44c-1.766 0-3.444.839-4.592 2.225L13.56 69.674v15.383h108.475V69.674z" fill="#AEB8C2" />
-          <path d="M33.83 0h67.933a4 4 0 0 1 4 4v93.344a4 4 0 0 1-4 4H33.83a4 4 0 0 1-4-4V4a4 4 0 0 1 4-4z" fill="#F5F5F7" />
-          <path d="M121.813 105.032c-.775 3.071-3.497 5.36-6.735 5.36H20.515c-3.238 0-5.96-2.29-6.734-5.36a7.309 7.309 0 0 1-.222-1.79V69.675h26.318c2.907 0 5.25 2.448 5.25 5.42v.04c0 2.971 2.37 5.37 5.277 5.37h34.785c2.907 0 5.277-2.421 5.277-5.393V75.1c0-2.972 2.343-5.426 5.25-5.426h26.318v33.569c0 .617-.077 1.216-.221 1.789z" fill="#DCE0E6" />
-        </g>
-      </g>
-    </svg>
-  );
-}
+const transportTypes = ["All", "CAR", "BUS", "VAN", "MINIBUS", "TRUCK"] as const;
 
 export default function SearchRidesPage() {
   const [depCountry, setDepCountry] = useState("");
   const [depCity, setDepCity] = useState("");
   const [destCountry, setDestCountry] = useState("");
   const [destCity, setDestCity] = useState("");
-  const [transportType, setTransportType] = useState("All Types");
+  const [transportType, setTransportType] = useState<(typeof transportTypes)[number]>("All");
   const [date, setDate] = useState("");
   const [results, setResults] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,16 +37,10 @@ export default function SearchRidesPage() {
           setDepCountry(user.country);
           setDestCountry(user.country);
         }
-        const today = new Date().toISOString().split('T')[0];
-        setDate(today);
-      } catch (e) {
-        // User not loaded or unauthorized
-      }
+        setDate(new Date().toISOString().split("T")[0]);
+      } catch {}
     })();
   }, []);
-
-  const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all duration-150";
 
   async function handleSearch() {
     setLoading(true);
@@ -63,7 +51,7 @@ export default function SearchRidesPage() {
         departureCity: depCity || undefined,
         destinationCountry: destCountry || undefined,
         destinationCity: destCity || undefined,
-        transportType: transportType !== "All Types" ? transportType : undefined,
+        transportType: transportType !== "All" ? transportType : undefined,
         date: date || undefined,
       });
       setResults(data);
@@ -75,81 +63,180 @@ export default function SearchRidesPage() {
   }
 
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Available Rides</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Search routes by location and transport type</p>
-      </div>
+    <Page>
+      {/* Hero search */}
+      <Reveal>
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-950 via-zinc-900 to-emerald-950 text-white p-6 md:p-10 mb-8">
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full bg-emerald-500/20 blur-3xl" />
+          <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-teal-500/10 blur-3xl" />
 
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6">
-        <h3 className="text-sm font-semibold text-zinc-900 mb-5">Search Routes</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Departure Country</label>
-            <input type="text" placeholder="e.g. Pakistan" value={depCountry} onChange={e => setDepCountry(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Departure City</label>
-            <input type="text" placeholder="e.g. Lahore" value={depCity} onChange={e => setDepCity(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Destination Country</label>
-            <input type="text" placeholder="e.g. Pakistan" value={destCountry} onChange={e => setDestCountry(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Destination City</label>
-            <input type="text" placeholder="e.g. Islamabad" value={destCity} onChange={e => setDestCity(e.target.value)} className={inputClass} />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Transport Type</label>
-            <div className="relative">
-              <select value={transportType} onChange={e => setTransportType(e.target.value)} className={`${inputClass} appearance-none pr-9 cursor-pointer`}>
-                {transportTypes.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6" /></svg>
-              </span>
+          <div className="relative">
+            <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-emerald-300 bg-emerald-500/10 ring-1 ring-emerald-400/20 rounded-full px-2.5 py-1 mb-5">
+              <SparklesIcon className="w-3 h-3" />
+              Trusted transporters
+            </div>
+            <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-3 max-w-2xl">
+              Where are you headed?
+            </h1>
+            <p className="text-sm md:text-[15px] text-slate-300 max-w-md mb-8">
+              Search verified routes across cities and book a seat in seconds.
+            </p>
+
+            {/* Search grid */}
+            <div className="bg-white rounded-2xl p-4 md:p-5 shadow-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                <Field label="From" icon={<MapPinIcon className="w-4 h-4" />}>
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={depCity}
+                      onChange={(e) => setDepCity(e.target.value)}
+                      className="w-full bg-transparent text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none font-medium"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={depCountry}
+                      onChange={(e) => setDepCountry(e.target.value)}
+                      className="w-full bg-transparent text-[11px] text-slate-500 placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="To" icon={<MapPinIcon className="w-4 h-4" />}>
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      placeholder="City"
+                      value={destCity}
+                      onChange={(e) => setDestCity(e.target.value)}
+                      className="w-full bg-transparent text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none font-medium"
+                    />
+                    <input
+                      type="text"
+                      placeholder="Country"
+                      value={destCountry}
+                      onChange={(e) => setDestCountry(e.target.value)}
+                      className="w-full bg-transparent text-[11px] text-slate-500 placeholder:text-slate-400 focus:outline-none"
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Departure" icon={<CalendarIcon className="w-4 h-4" />}>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="w-full bg-transparent text-sm text-zinc-900 focus:outline-none font-medium"
+                  />
+                </Field>
+
+                <Field label="Type" icon={<CarIcon className="w-4 h-4" />}>
+                  <div className="relative">
+                    <select
+                      value={transportType}
+                      onChange={(e) => setTransportType(e.target.value as any)}
+                      className="w-full bg-transparent text-sm text-zinc-900 focus:outline-none font-medium appearance-none cursor-pointer pr-6"
+                    >
+                      {transportTypes.map((t) => (
+                        <option key={t} value={t}>
+                          {t === "All" ? "All types" : t.charAt(0) + t.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDownIcon className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
+                  </div>
+                </Field>
+              </div>
+
+              <div className="flex items-center gap-3 mt-4 pt-4 border-t border-slate-100">
+                {error && <p className="text-[12px] text-red-600 flex-1">{error}</p>}
+                <button
+                  type="button"
+                  onClick={handleSearch}
+                  disabled={loading}
+                  className="ml-auto inline-flex items-center gap-2 bg-zinc-950 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-zinc-800 disabled:opacity-60 transition-all active:scale-[0.98]"
+                >
+                  {loading ? (
+                    <>
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full"
+                      />
+                      Searching
+                    </>
+                  ) : (
+                    <>
+                      <SearchIcon className="w-4 h-4" />
+                      Find rides
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Date (optional)</label>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} className={inputClass} />
-          </div>
         </div>
-        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
-        <button
-          type="button"
-          onClick={handleSearch}
-          disabled={loading}
-          className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white text-sm font-semibold px-8 py-2.5 rounded-xl transition-all duration-150 active:scale-[0.98]"
-        >
-          {loading ? "Searching..." : "Search Routes"}
-        </button>
-      </div>
+      </Reveal>
 
-      {results === null ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <EmptyIllustration />
-          <p className="text-sm font-medium text-zinc-900 mt-4">No routes yet</p>
-          <p className="text-sm text-slate-400 max-w-xs mt-1">Enter your departure and destination above, then click &ldquo;Search Routes&rdquo; to find available rides.</p>
-        </div>
+      {/* Results */}
+      {loading ? (
+        <SkeletonList count={3} />
+      ) : results === null ? (
+        <Reveal>
+          <EmptyState
+            title="Start your search"
+            description="Enter your departure and destination above to find available routes from verified transporters."
+            icon={<SearchIcon className="w-6 h-6" />}
+          />
+        </Reveal>
       ) : results.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <EmptyIllustration />
-          <p className="text-sm font-medium text-zinc-900 mt-4">No routes found</p>
-          <p className="text-sm text-slate-400 max-w-xs mt-1">Try adjusting your search criteria or check back later.</p>
-        </div>
+        <Reveal>
+          <EmptyState
+            title="No routes found"
+            description="Try widening your search, switching dates, or picking a different transport type."
+            icon={<MapPinIcon className="w-6 h-6" />}
+          />
+        </Reveal>
       ) : (
-        <div className="space-y-4">
-          {results.map(transport => (
-            <TransportCard key={transport.id} transport={transport} />
-          ))}
-        </div>
+        <>
+          <Reveal className="flex items-center justify-between mb-4">
+            <p className="text-[13px] font-semibold text-zinc-950">
+              {results.length} {results.length === 1 ? "route" : "routes"} found
+            </p>
+            <p className="text-[11px] text-slate-500">Sorted by earliest departure</p>
+          </Reveal>
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+            className="grid grid-cols-1 gap-3"
+          >
+            {results.map((transport) => (
+              <TransportCard key={transport.id} transport={transport} />
+            ))}
+          </motion.div>
+        </>
       )}
+    </Page>
+  );
+}
+
+// ─── Field ────────────────────────────────────────────────────────────────────
+function Field({ label, icon, children }: { label: string; icon?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:border-slate-300 transition-colors">
+      <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-0.5">
+        {icon}
+        {label}
+      </div>
+      {children}
     </div>
   );
 }
 
+// ─── Transport card ───────────────────────────────────────────────────────────
 function TransportCard({ transport }: { transport: any }) {
   const [booking, setBooking] = useState(false);
   const [seats, setSeats] = useState(1);
@@ -186,144 +273,236 @@ function TransportCard({ transport }: { transport: any }) {
   const dep = new Date(transport.departureDateTime);
   const maxReach = new Date(transport.maxReachDateTime);
   const vehicle = transport.vehicle;
+  const rating = Number(transport.transporter?.averageRating || 0);
+  const rides = transport.transporter?.totalCompletedRides || 0;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    <SurfaceCard>
       <div className="p-5">
-        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-          {vehicle?.imageUrl && (
-            <div className="hidden sm:block sm:w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
+        <div className="flex flex-col sm:flex-row gap-4">
+          {/* Vehicle image */}
+          <div className="sm:w-28 h-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100">
+            {vehicle?.imageUrl ? (
               <img src={vehicle.imageUrl} alt={vehicle.name} className="w-full h-full object-cover" />
-            </div>
-          )}
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">{vehicle?.transportType || "UNKNOWN"}</span>
-              <span className="text-xs text-slate-400">{vehicle?.model || "Unknown"} · {vehicle?.plateNumber || "N/A"}</span>
-            </div>
-            <h3 className="font-semibold text-zinc-900 text-sm">
-              {transport.departureCity}, {transport.departureCountry} → {transport.destinationCity}, {transport.destinationCountry}
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              {dep.toLocaleDateString()} at {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} · {transport.availableSeats} seats left
-            </p>
-            <p className="text-xs text-slate-500">Reaches by: {maxReach.toLocaleDateString()} at {maxReach.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-            <p className="text-xs text-slate-500">{vehicle?.name}</p>
-            <div className="flex items-center gap-2 mt-2">
-              <button onClick={openTransporterProfile} className="flex items-center gap-2 hover:opacity-75 transition">
-                <Avatar className="h-6 w-6 rounded">
-                  {transport.transporter?.profileImageUrl && (
-                    <img src={transport.transporter.profileImageUrl} alt={transport.transporter.name} className="h-6 w-6 rounded object-cover" />
-                  )}
-                  {!transport.transporter?.profileImageUrl && <AvatarFallback className="text-xs">{transport.transporter?.name?.charAt(0).toUpperCase() || "?"}</AvatarFallback>}
-                </Avatar>
-                <div className="text-left">
-                  <p className="text-xs font-medium text-zinc-900">{transport.transporter?.name || "Unknown"}</p>
-                  <p className="text-xs text-emerald-600 font-semibold">⭐ {transport.transporter?.averageRating || 0} ({transport.transporter?.totalCompletedRides || 0} rides)</p>
-                </div>
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-2 min-w-[140px]">
-            <p className="text-lg font-bold text-zinc-900">${Number(transport.price).toFixed(2)}<span className="text-xs font-normal text-slate-400">/seat</span></p>
-            {booked ? (
-              <Link href={`/dashboard/traveler/booking/${booked.id}`} className="text-xs text-emerald-600 font-semibold underline">View Booking →</Link>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="w-full h-full flex items-center justify-center text-slate-300">
+                <CarIcon className="w-8 h-8" />
+              </div>
+            )}
+          </div>
+
+          {/* Route & transporter */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <StatusPill tone="emerald">{vehicle?.transportType || "ROUTE"}</StatusPill>
+              <span className="text-[11px] text-slate-400">
+                {vehicle?.model || "—"} · {vehicle?.plateNumber || "N/A"}
+              </span>
+            </div>
+            <h3 className="text-[15px] font-semibold text-zinc-950 flex items-center gap-1.5 flex-wrap">
+              <span>{transport.departureCity}</span>
+              <ArrowRightIcon className="w-3.5 h-3.5 text-slate-400" />
+              <span>{transport.destinationCity}</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {transport.departureCountry} → {transport.destinationCountry}
+            </p>
+
+            <div className="flex items-center gap-4 text-[11px] text-slate-500 mt-2.5 flex-wrap">
+              <span className="inline-flex items-center gap-1">
+                <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
+                {dep.toLocaleDateString()} · {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <UsersIcon className="w-3.5 h-3.5 text-slate-400" />
+                {transport.availableSeats} seats left
+              </span>
+              <span className="text-slate-400">
+                Arrives by {maxReach.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              </span>
+            </div>
+
+            {/* Transporter mini */}
+            <button
+              onClick={openTransporterProfile}
+              className="inline-flex items-center gap-2 mt-3 rounded-full bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 transition-colors"
+            >
+              <Avatar className="h-5 w-5 rounded-full">
+                {transport.transporter?.profileImageUrl && (
+                  <AvatarImage src={transport.transporter.profileImageUrl} alt={transport.transporter.name} />
+                )}
+                <AvatarFallback className="text-[9px] bg-zinc-950 text-white">
+                  {transport.transporter?.name?.charAt(0).toUpperCase() || "?"}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-[11px] font-semibold text-zinc-950">
+                {transport.transporter?.name || "Unknown"}
+              </span>
+              <span className="flex items-center gap-0.5 text-[10px] text-amber-600 font-semibold">
+                <StarIcon className="w-3 h-3 fill-current" />
+                {rating.toFixed(1)}
+              </span>
+              <span className="text-[10px] text-slate-400">· {rides} rides</span>
+            </button>
+          </div>
+
+          {/* Book */}
+          <div className="flex flex-row sm:flex-col items-end sm:items-end justify-between gap-3 sm:min-w-[160px] sm:border-l sm:border-slate-100 sm:pl-5">
+            <div className="text-right">
+              <p className="text-xl font-semibold text-zinc-950 tabular-nums leading-tight">
+                ${Number(transport.price).toFixed(2)}
+              </p>
+              <p className="text-[10px] text-slate-400">per seat</p>
+            </div>
+            {booked ? (
+              <Link
+                href={`/dashboard/traveler/booking/${booked.id}`}
+                className="text-xs font-semibold text-emerald-700 inline-flex items-center gap-1 hover:text-emerald-800"
+              >
+                <CheckCircleIcon className="w-3.5 h-3.5" />
+                View booking
+              </Link>
+            ) : (
+              <div className="flex items-center gap-1.5">
                 <input
-                  type="number" min={1} max={transport.availableSeats} value={seats}
-                  onChange={e => setSeats(Number(e.target.value))}
-                  className="w-14 text-center rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                  type="number"
+                  min={1}
+                  max={transport.availableSeats}
+                  value={seats}
+                  onChange={(e) => setSeats(Number(e.target.value))}
+                  className="w-12 text-center rounded-lg border border-slate-200 px-1 py-1.5 text-sm font-semibold tabular-nums"
                 />
                 <button
                   onClick={handleBook}
                   disabled={booking || transport.availableSeats === 0}
-                  className="bg-zinc-900 hover:bg-zinc-800 disabled:opacity-50 text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-all"
+                  className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all active:scale-[0.98]"
                 >
                   {booking ? "..." : "Book"}
                 </button>
               </div>
             )}
-            {error && <p className="text-xs text-red-500">{error}</p>}
+            {error && <p className="text-[10px] text-red-600">{error}</p>}
           </div>
         </div>
       </div>
 
-      {/* Transporter Profile Modal */}
-      {showProfile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            {loadingProfile ? (
-              <div className="p-8 text-center">Loading...</div>
-            ) : profile ? (
-              <>
-                {/* Header */}
-                <div className="p-6 border-b border-slate-200">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3 flex-1">
-                      <Avatar className="h-12 w-12 rounded-lg">
-                        {profile.profileImageUrl && <img src={profile.profileImageUrl} alt={profile.name} className="h-12 w-12 rounded-lg object-cover" />}
-                        {!profile.profileImageUrl && <AvatarFallback className="rounded-lg">{profile.name?.charAt(0).toUpperCase()}</AvatarFallback>}
-                      </Avatar>
-                      <div>
-                        <h2 className="font-semibold text-zinc-900">{profile.name}</h2>
-                        <p className="text-xs text-slate-500">Member since {new Date(profile.createdAt).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    <button onClick={() => setShowProfile(false)} className="text-2xl text-slate-400 hover:text-slate-600">×</button>
-                  </div>
-                </div>
+      {/* Transporter profile modal */}
+      <AnimatePresence>
+        {showProfile && (
+          <TransporterProfileModal
+            loading={loadingProfile}
+            profile={profile}
+            onClose={() => setShowProfile(false)}
+          />
+        )}
+      </AnimatePresence>
+    </SurfaceCard>
+  );
+}
 
-                {/* Stats */}
-                <div className="p-6 border-b border-slate-200">
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold text-emerald-600">⭐ {profile.averageRating}</p>
-                      <p className="text-xs text-slate-600 mt-1">Rating</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-900">{profile.totalCompletedRides}</p>
-                      <p className="text-xs text-slate-600 mt-1">Completed</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-slate-900">{profile.vehicleCount}</p>
-                      <p className="text-xs text-slate-600 mt-1">Vehicles</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Reviews */}
-                {profile.reviews && profile.reviews.length > 0 && (
-                  <div className="p-6 border-b border-slate-200">
-                    <h3 className="font-semibold text-sm text-zinc-900 mb-3">Recent Feedback</h3>
-                    <div className="space-y-3">
-                      {profile.reviews.map((review: any) => (
-                        <div key={review.id} className="bg-slate-50 p-3 rounded-lg">
-                          <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs font-medium text-zinc-900">{review.traveler?.name || "Anonymous"}</p>
-                            <p className="text-xs text-emerald-600">⭐ {review.rating}</p>
-                          </div>
-                          {review.feedback && <p className="text-xs text-slate-600 line-clamp-2">{review.feedback}</p>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Contact */}
-                {profile.phoneNumber && (
-                  <div className="p-6">
-                    <p className="text-xs text-slate-500 mb-2">Contact</p>
-                    <p className="text-sm font-medium text-zinc-900">{profile.phoneNumber}</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="p-8 text-center text-red-600">Failed to load profile</div>
-            )}
-          </div>
+// ─── Transporter profile modal ────────────────────────────────────────────────
+function TransporterProfileModal({ loading, profile, onClose }: { loading: boolean; profile: any; onClose: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 8, scale: 0.98 }}
+        transition={spring}
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl"
+      >
+        <div className="sticky top-0 bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between">
+          <p className="text-[13px] font-semibold text-zinc-950">Transporter profile</p>
+          <button onClick={onClose} className="text-slate-400 hover:text-zinc-900 p-1 -m-1">
+            <XIcon className="w-4 h-4" />
+          </button>
         </div>
-      )}
+
+        {loading ? (
+          <div className="p-10 text-center text-sm text-slate-400">Loading profile...</div>
+        ) : profile ? (
+          <>
+            <div className="p-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-14 w-14 rounded-2xl ring-2 ring-white shadow-sm">
+                  {profile.profileImageUrl && <AvatarImage src={profile.profileImageUrl} alt={profile.name} />}
+                  <AvatarFallback className="rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white text-lg font-semibold">
+                    {profile.name?.charAt(0).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h2 className="text-[16px] font-semibold text-zinc-950">{profile.name}</h2>
+                  <p className="text-[11px] text-slate-500">
+                    Member since {new Date(profile.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 divide-x divide-slate-100 border-y border-slate-100">
+              <ProfileStat label="Rating" value={profile.averageRating?.toFixed(1) || "—"} accent />
+              <ProfileStat label="Completed" value={profile.totalCompletedRides || 0} />
+              <ProfileStat label="Vehicles" value={profile.vehicleCount || 0} />
+            </div>
+
+            {profile.reviews && profile.reviews.length > 0 && (
+              <div className="p-6">
+                <h3 className="text-[13px] font-semibold text-zinc-950 mb-3">Recent reviews</h3>
+                <div className="space-y-3">
+                  {profile.reviews.map((review: any) => (
+                    <div key={review.id} className="bg-slate-50 px-3.5 py-3 rounded-xl">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[12px] font-semibold text-zinc-950">
+                          {review.traveler?.name || "Anonymous"}
+                        </p>
+                        <span className="flex items-center gap-0.5 text-[11px] text-amber-600 font-semibold">
+                          <StarIcon className="w-3 h-3 fill-current" />
+                          {review.rating}
+                        </span>
+                      </div>
+                      {review.feedback && (
+                        <p className="text-[11px] text-slate-600 line-clamp-2">{review.feedback}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {profile.phoneNumber && (
+              <div className="px-6 pb-6">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
+                  Contact
+                </p>
+                <p className="text-[14px] font-medium text-zinc-950">{profile.phoneNumber}</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="p-10 text-center text-sm text-red-600">Failed to load profile</div>
+        )}
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function ProfileStat({ label, value, accent }: { label: string; value: any; accent?: boolean }) {
+  return (
+    <div className="p-5 text-center">
+      <div className="flex items-center justify-center gap-1">
+        {accent && <StarIcon className="w-4 h-4 text-amber-500 fill-current" />}
+        <p className={`text-xl font-semibold tabular-nums ${accent ? "text-amber-600" : "text-zinc-950"}`}>
+          {value}
+        </p>
+      </div>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-slate-400 mt-1">{label}</p>
     </div>
   );
 }

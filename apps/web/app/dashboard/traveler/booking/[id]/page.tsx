@@ -9,21 +9,18 @@ const paymentMethods = [
     id: "PAYSTACK",
     name: "Paystack",
     description: "Pay with card, bank transfer, or USSD",
-    icon: "💳",
     available: false,
   },
   {
     id: "FLUTTERWAVE",
     name: "Flutterwave",
     description: "Pay with card, mobile money, or bank",
-    icon: "🌊",
     available: false,
   },
   {
     id: "MPAISA",
     name: "MPaisa",
     description: "Pay with mobile wallet",
-    icon: "📱",
     available: false,
   },
 ];
@@ -187,7 +184,11 @@ export default function BookingDetailPage() {
                       : "border-slate-200 hover:border-slate-300 bg-white"
                   }`}
                 >
-                  <span className="text-2xl">{method.icon}</span>
+                  <span className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                      <rect width="20" height="14" x="2" y="5" rx="2" /><line x1="2" x2="22" y1="10" y2="10" />
+                    </svg>
+                  </span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-zinc-900">{method.name}</span>

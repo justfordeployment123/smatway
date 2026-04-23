@@ -1,13 +1,15 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { LockIcon, BellIcon, EyeIcon, EyeOffIcon } from '@/app/dashboard/_Components/Icons';
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { LockIcon, BellIcon, EyeIcon, EyeOffIcon } from "@/app/dashboard/_Components/Icons";
 import {
-  changePassword,
-  getNotificationPreferences,
-  updateNotificationPreferences,
-} from '@/lib/api';
-import type { NotificationPreferences } from '@/types/profile.types';
+  changePassword, getNotificationPreferences, updateNotificationPreferences,
+} from "@/lib/api";
+import type { NotificationPreferences } from "@/types/profile.types";
+import {
+  Page, Reveal, PageHeader, Skeleton, PrimaryButton, spring,
+} from "@/app/dashboard/_Components/ui";
 
 function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
   return (
@@ -16,10 +18,12 @@ function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void 
       role="switch"
       aria-checked={enabled}
       onClick={onToggle}
-      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${enabled ? 'bg-emerald-500' : 'bg-slate-200'}`}
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${enabled ? "bg-emerald-600" : "bg-slate-200"}`}
     >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${enabled ? 'translate-x-6' : 'translate-x-1'}`}
+      <motion.span
+        layout
+        transition={spring}
+        className={`inline-block h-4 w-4 rounded-full bg-white shadow ${enabled ? "ml-auto mr-1" : "ml-1"}`}
       />
     </button>
   );
@@ -33,210 +37,241 @@ export default function SettingsPage() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [savingPassword, setSavingPassword] = useState(false);
-
   const [notifications, setNotifications] = useState<NotificationPreferences | null>(null);
-  const [savingNotifications, setSavingNotifications] = useState(false);
 
   const notificationTypes = [
-    { key: 'bookingUpdates' as const, title: 'Booking Updates', description: 'Get notified about booking confirmations and changes' },
-    { key: 'paymentUpdates' as const, title: 'Payment Updates', description: 'Receive notifications about payment status' },
-    { key: 'routeUpdates' as const, title: 'Route Updates', description: 'Get notified about route changes and new routes' },
-    { key: 'vehicleUpdates' as const, title: 'Vehicle Updates', description: 'Receive notifications about vehicle changes' },
-    { key: 'systemAnnouncements' as const, title: 'System Announcements', description: 'Important updates and announcements from Smatway' },
+    { key: "bookingUpdates" as const, title: "Booking updates", description: "Confirmations, changes, and cancellations" },
+    { key: "paymentUpdates" as const, title: "Payment updates", description: "Receipts, failed payments, and refunds" },
+    { key: "routeUpdates" as const, title: "Route updates", description: "Schedule changes and new routes you may like" },
+    { key: "vehicleUpdates" as const, title: "Vehicle updates", description: "Alerts on vehicles you've interacted with" },
+    { key: "systemAnnouncements" as const, title: "System announcements", description: "Important updates from SmatWay" },
   ];
 
   useEffect(() => {
-    loadNotificationPreferences();
+    (async () => {
+      try {
+        const prefs = await getNotificationPreferences();
+        setNotifications(prefs);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to load preferences");
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
-
-  async function loadNotificationPreferences() {
-    try {
-      setLoading(true);
-      const prefs = await getNotificationPreferences();
-      setNotifications(prefs);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load notification preferences');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
     try {
       setError(null);
       setSavingPassword(true);
-
       await changePassword(passwordData);
-
-      setSuccess('Password changed successfully');
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setSuccess("Password updated successfully");
+      setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setShowNew(false);
       setShowConfirm(false);
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password');
+      setError(err instanceof Error ? err.message : "Failed to change password");
     } finally {
       setSavingPassword(false);
     }
   }
 
-  async function handleNotificationToggle(key: keyof NotificationPreferences) {
+  async function handleToggle(key: keyof NotificationPreferences) {
     if (!notifications) return;
-
-    const updated = { ...notifications, [key]: !notifications[key] };
+    const updated = { ...notifications, [key]: !notifications[key] } as any;
     setNotifications(updated);
-
     try {
-      setSavingNotifications(true);
       setError(null);
-
-      await updateNotificationPreferences({
-        [key]: updated[key],
-      });
-
-      setSuccess('Notification settings updated');
-      setTimeout(() => setSuccess(null), 3000);
+      await updateNotificationPreferences({ [key]: updated[key] });
+      setSuccess("Preferences updated");
+      setTimeout(() => setSuccess(null), 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update settings');
+      setError(err instanceof Error ? err.message : "Failed to update");
       setNotifications(notifications);
-    } finally {
-      setSavingNotifications(false);
     }
   }
 
-  if (loading) {
-    return (
-      <div className="max-w-4xl">
-        <h1 className="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
-        <p className="text-slate-600">Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-2xl font-bold text-slate-900 mb-6">Settings</h1>
+    <Page>
+      <PageHeader
+        kicker="Account"
+        title="Settings"
+        subtitle="Manage your password and notification preferences."
+      />
 
-      {error && <div className="mb-4 p-3 bg-red-50 border border-red-300 text-red-700 rounded-lg">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-green-50 border border-green-300 text-green-700 rounded-lg">{success}</div>}
-
-      <div className="bg-white rounded-lg border border-[#f0f0f0] p-6 mb-6">
-        <div className="flex items-center space-x-3 mb-6">
-          <LockIcon className="w-6 h-6 text-emerald-600" />
-          <h2 className="text-xl font-bold text-slate-900">Change Password</h2>
-        </div>
-
-        <form onSubmit={handlePasswordSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <span className="text-red-500 mr-1">*</span>Current Password
-            </label>
-            <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-blue-500">
-              <input
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                placeholder="Enter current password"
-                required
-                className="flex-1 outline-none text-slate-900 text-sm bg-transparent"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <span className="text-red-500 mr-1">*</span>New Password
-            </label>
-            <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-blue-500">
-              <input
-                type={showNew ? 'text' : 'password'}
-                value={passwordData.newPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                placeholder="Enter new password"
-                required
-                className="flex-1 outline-none text-slate-900 text-sm bg-transparent"
-              />
-              <button type="button" onClick={() => setShowNew(!showNew)}>
-                {showNew ? <EyeIcon className="w-4 h-4 text-slate-400" /> : <EyeOffIcon className="w-4 h-4 text-slate-400" />}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1.5">
-              <span className="text-red-500 mr-1">*</span>Confirm Password
-            </label>
-            <div className="flex items-center border border-slate-300 rounded-lg px-3 py-2.5 focus-within:border-blue-500">
-              <input
-                type={showConfirm ? 'text' : 'password'}
-                value={passwordData.confirmPassword}
-                onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                placeholder="Confirm new password"
-                required
-                className="flex-1 outline-none text-slate-900 text-sm bg-transparent"
-              />
-              <button type="button" onClick={() => setShowConfirm(!showConfirm)}>
-                {showConfirm ? <EyeIcon className="w-4 h-4 text-slate-400" /> : <EyeOffIcon className="w-4 h-4 text-slate-400" />}
-              </button>
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={savingPassword}
-            className="bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-lg disabled:opacity-50"
+      {/* Toasts */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-700 text-[13px]"
           >
-            {savingPassword ? 'Updating...' : 'Update Password'}
-          </button>
-        </form>
-      </div>
+            {error}
+          </motion.div>
+        )}
+        {success && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="mb-4 px-4 py-2.5 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-700 text-[13px]"
+          >
+            {success}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {notifications && (
-        <div className="bg-white rounded-lg border border-[#f0f0f0] p-6">
-          <div className="flex items-center space-x-3 mb-6">
-            <BellIcon className="w-6 h-6 text-emerald-600" />
-            <h2 className="text-xl font-bold text-slate-900">Notifications</h2>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-lg border-2 border-emerald-200">
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 max-w-5xl">
+        {/* Password */}
+        <Reveal className="lg:col-span-2">
+          <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                <LockIcon className="w-4 h-4 text-slate-600" />
+              </div>
               <div>
-                <p className="font-bold text-slate-900">Enable Push Notifications</p>
-                <p className="text-sm text-slate-600">Receive notifications about your bookings and updates</p>
+                <h2 className="text-[13px] font-semibold text-zinc-950">Password</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Use 8+ characters with a mix of numbers</p>
               </div>
-              <Toggle
-                enabled={notifications.pushEnabled}
-                onToggle={() => handleNotificationToggle('pushEnabled')}
+            </div>
+
+            <form onSubmit={handlePasswordSubmit} className="p-5 space-y-4">
+              <PasswordField
+                label="Current password"
+                value={passwordData.currentPassword}
+                onChange={(v) => setPasswordData({ ...passwordData, currentPassword: v })}
+                visible={false}
+                placeholder="••••••••"
               />
-            </div>
+              <PasswordField
+                label="New password"
+                value={passwordData.newPassword}
+                onChange={(v) => setPasswordData({ ...passwordData, newPassword: v })}
+                visible={showNew}
+                onToggleVisibility={() => setShowNew(!showNew)}
+                placeholder="Minimum 8 characters"
+              />
+              <PasswordField
+                label="Confirm new password"
+                value={passwordData.confirmPassword}
+                onChange={(v) => setPasswordData({ ...passwordData, confirmPassword: v })}
+                visible={showConfirm}
+                onToggleVisibility={() => setShowConfirm(!showConfirm)}
+                placeholder="Retype new password"
+              />
 
-            <div className="flex items-center gap-4 my-2">
-              <div className="flex-1 border-t border-[#f0f0f0]" />
-              <span className="text-sm font-medium text-slate-500 whitespace-nowrap">Notification Types</span>
-              <div className="flex-1 border-t border-[#f0f0f0]" />
-            </div>
-
-            {notificationTypes.map((type) => (
-              <div key={type.key} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                <div>
-                  <p className="font-semibold text-slate-900">{type.title}</p>
-                  <p className="text-sm text-slate-600">{type.description}</p>
-                </div>
-                <Toggle
-                  enabled={notifications[type.key]}
-                  onToggle={() => handleNotificationToggle(type.key)}
-                />
-              </div>
-            ))}
+              <PrimaryButton type="submit" disabled={savingPassword} className="w-full">
+                {savingPassword ? "Updating..." : "Update password"}
+              </PrimaryButton>
+            </form>
           </div>
-        </div>
-      )}
+        </Reveal>
+
+        {/* Notifications */}
+        <Reveal className="lg:col-span-3">
+          <div className="rounded-2xl bg-white border border-slate-200/80 overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                <BellIcon className="w-4 h-4 text-emerald-700" />
+              </div>
+              <div>
+                <h2 className="text-[13px] font-semibold text-zinc-950">Notifications</h2>
+                <p className="text-[11px] text-slate-500 mt-0.5">Control what you hear from SmatWay</p>
+              </div>
+            </div>
+
+            {loading ? (
+              <div className="p-5 space-y-3">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-3 w-1/3" />
+                      <Skeleton className="h-2.5 w-2/3" />
+                    </div>
+                    <Skeleton className="h-6 w-11 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            ) : notifications ? (
+              <>
+                {/* Master switch */}
+                <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-gradient-to-br from-emerald-50/60 to-white">
+                  <div>
+                    <p className="text-[13px] font-semibold text-zinc-950">Push notifications</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Master switch for all channels</p>
+                  </div>
+                  <Toggle
+                    enabled={notifications.pushEnabled}
+                    onToggle={() => handleToggle("pushEnabled")}
+                  />
+                </div>
+
+                <ul className="divide-y divide-slate-100">
+                  {notificationTypes.map((type) => (
+                    <li key={type.key} className="px-5 py-4 flex items-center justify-between">
+                      <div className="min-w-0 pr-4">
+                        <p className="text-[13px] font-semibold text-zinc-950">{type.title}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{type.description}</p>
+                      </div>
+                      <Toggle
+                        enabled={notifications[type.key] as boolean}
+                        onToggle={() => handleToggle(type.key)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : null}
+          </div>
+        </Reveal>
+      </div>
+    </Page>
+  );
+}
+
+function PasswordField({
+  label, value, onChange, visible, onToggleVisibility, placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  visible: boolean;
+  onToggleVisibility?: () => void;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
+        {label}
+      </label>
+      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+        <input
+          type={visible ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+          required
+          className="flex-1 outline-none text-[13px] text-zinc-950 placeholder:text-slate-400 bg-transparent"
+        />
+        {onToggleVisibility && (
+          <button
+            type="button"
+            onClick={onToggleVisibility}
+            className="text-slate-400 hover:text-slate-600"
+          >
+            {visible ? <EyeIcon className="w-4 h-4" /> : <EyeOffIcon className="w-4 h-4" />}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

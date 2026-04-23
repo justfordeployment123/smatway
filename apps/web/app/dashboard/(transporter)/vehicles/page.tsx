@@ -2,14 +2,22 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
 import { getMyVehicles, deleteVehicle, disableRoutesByVehicle } from "@/lib/api";
+import {
+  CarIcon, PlusIcon, EditIcon, TrashIcon, XIcon,
+} from "@/app/dashboard/_Components/Icons";
+import {
+  Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
+  PrimaryButton, GhostButton, SurfaceCard, spring,
+} from "@/app/dashboard/_Components/ui";
 
-const transportTypeColors: Record<string, string> = {
-  CAR: "bg-blue-50 text-blue-700",
-  BUS: "bg-green-50 text-green-700",
-  VAN: "bg-purple-50 text-purple-700",
-  MINIBUS: "bg-orange-50 text-orange-700",
-  TRUCK: "bg-red-50 text-red-700",
+const typeTone: Record<string, string> = {
+  CAR: "bg-blue-50 text-blue-700 ring-blue-200",
+  BUS: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  VAN: "bg-violet-50 text-violet-700 ring-violet-200",
+  MINIBUS: "bg-orange-50 text-orange-700 ring-orange-200",
+  TRUCK: "bg-rose-50 text-rose-700 ring-rose-200",
 };
 
 export default function TransporterVehiclesPage() {
@@ -27,11 +35,11 @@ export default function TransporterVehiclesPage() {
     setDeleting(id);
     try {
       await deleteVehicle(id);
-      setVehicles(v => v.filter(t => t.id !== id));
+      setVehicles((v) => v.filter((t) => t.id !== id));
     } catch (e: any) {
       const errorMsg = e?.message || "Failed to delete vehicle";
       if (errorMsg.includes("active routes")) {
-        const vehicle = vehicles.find(v => v.id === id);
+        const vehicle = vehicles.find((v) => v.id === id);
         setDeleteModal({ vehicleId: id, vehicleName: vehicle?.name || "Vehicle" });
         setDeleteError("");
       }
@@ -42,11 +50,10 @@ export default function TransporterVehiclesPage() {
 
   async function handleDeleteAllRoutes() {
     if (!deleteModal) return;
-
     try {
       await disableRoutesByVehicle(deleteModal.vehicleId);
       await deleteVehicle(deleteModal.vehicleId);
-      setVehicles(v => v.filter(t => t.id !== deleteModal.vehicleId));
+      setVehicles((v) => v.filter((t) => t.id !== deleteModal.vehicleId));
       setDeleteModal(null);
       setDeleteError("");
     } catch (e: any) {
@@ -55,99 +62,177 @@ export default function TransporterVehiclesPage() {
   }
 
   return (
-    <div className="p-4 md:p-0">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-900">My Vehicles</h1>
-          <p className="text-sm md:text-base text-slate-600">Manage your transport vehicles</p>
-        </div>
-        <Link
-          href="/dashboard/vehicles/add"
-          className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-zinc-900 hover:bg-zinc-800 rounded-lg transition-all w-full sm:w-auto justify-center"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-          Add Vehicle
-        </Link>
-      </div>
+    <Page>
+      <PageHeader
+        kicker={`${vehicles.length} ${vehicles.length === 1 ? "vehicle" : "vehicles"}`}
+        title="Your fleet"
+        subtitle="Every vehicle available for routes. Update details, add photos, or retire vehicles that are no longer in service."
+        action={
+          <PrimaryButton
+            href="/dashboard/vehicles/add"
+            icon={<PlusIcon className="w-4 h-4" />}
+          >
+            Add vehicle
+          </PrimaryButton>
+        }
+      />
 
       {loading ? (
-        <div className="text-sm text-slate-400 py-10 text-center">Loading vehicles...</div>
+        <SkeletonList count={3} />
       ) : vehicles.length === 0 ? (
-        <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
-          <p className="text-sm font-medium text-zinc-900 mb-1">No vehicles yet</p>
-          <p className="text-sm text-slate-400 mb-4">Add your first vehicle to start creating routes.</p>
-          <Link href="/dashboard/vehicles/add" className="inline-flex text-sm font-semibold text-emerald-600 underline">Add Vehicle →</Link>
-        </div>
+        <EmptyState
+          title="No vehicles yet"
+          description="Add your first vehicle to start creating routes and accepting bookings."
+          ctaLabel="Add vehicle"
+          ctaHref="/dashboard/vehicles/add"
+          icon={<CarIcon className="w-6 h-6" />}
+        />
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {vehicles.map(vehicle => (
-            <div key={vehicle.id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex gap-4 p-4">
-                {vehicle.imageUrl && (
-                  <div className="w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-slate-100">
-                    <img src={vehicle.imageUrl} alt={vehicle.name} className="w-full h-full object-cover" />
+        <motion.div
+          initial="hidden"
+          animate="show"
+          variants={{ show: { transition: { staggerChildren: 0.05 } } }}
+          className="grid grid-cols-1 gap-3"
+        >
+          {vehicles.map((vehicle) => {
+            const routeCount = vehicle._count?.transports ?? 0;
+            return (
+              <SurfaceCard key={vehicle.id}>
+                <div className="flex flex-col sm:flex-row gap-4 p-4 sm:p-5">
+                  {/* Image */}
+                  <div className="sm:w-32 h-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100 relative">
+                    {vehicle.imageUrl ? (
+                      <img
+                        src={vehicle.imageUrl}
+                        alt={vehicle.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300">
+                        <CarIcon className="w-8 h-8" />
+                      </div>
+                    )}
                   </div>
-                )}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-1">
-                    <div>
-                      <h3 className="font-semibold text-zinc-900 text-sm">{vehicle.name}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{vehicle.model} · {vehicle.plateNumber}</p>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ring-inset ${typeTone[vehicle.transportType] || "bg-slate-100 text-slate-600 ring-slate-200"}`}>
+                            {vehicle.transportType}
+                          </span>
+                          {routeCount > 0 && (
+                            <StatusPill tone="emerald" dot>
+                              {routeCount} {routeCount === 1 ? "route" : "routes"}
+                            </StatusPill>
+                          )}
+                        </div>
+                        <h3 className="text-[15px] font-semibold text-zinc-950 truncate">
+                          {vehicle.name}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">
+                          {vehicle.model} · Plate {vehicle.plateNumber}
+                        </p>
+                      </div>
+
+                      <div className="flex gap-1.5 shrink-0">
+                        <GhostButton
+                          href={`/dashboard/vehicles/edit/${vehicle.id}`}
+                          icon={<EditIcon className="w-3.5 h-3.5" />}
+                        >
+                          <span className="hidden sm:inline">Edit</span>
+                        </GhostButton>
+                        <GhostButton
+                          onClick={() => handleDelete(vehicle.id)}
+                          disabled={deleting === vehicle.id}
+                          tone="red"
+                          icon={<TrashIcon className="w-3.5 h-3.5" />}
+                        >
+                          <span className="hidden sm:inline">
+                            {deleting === vehicle.id ? "..." : "Delete"}
+                          </span>
+                        </GhostButton>
+                      </div>
                     </div>
-                    <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${transportTypeColors[vehicle.transportType]}`}>
-                      {vehicle.transportType}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-2 mb-3">{vehicle._count?.transports ?? 0} route{(vehicle._count?.transports ?? 0) !== 1 ? "s" : ""}</p>
-                  <div className="flex gap-2">
-                    <Link href={`/dashboard/vehicles/edit/${vehicle.id}`} className="flex-1 text-xs border border-slate-200 text-zinc-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all font-medium text-center">
-                      Edit
-                    </Link>
-                    <button
-                      onClick={() => handleDelete(vehicle.id)}
-                      disabled={deleting === vehicle.id}
-                      className="flex-1 text-xs border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-all disabled:opacity-50 font-medium"
-                    >
-                      {deleting === vehicle.id ? "..." : "Delete"}
-                    </button>
                   </div>
                 </div>
+              </SurfaceCard>
+            );
+          })}
+        </motion.div>
+      )}
+
+      {/* Delete confirmation modal */}
+      <AnimatePresence>
+        {deleteModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={() => {
+              setDeleteModal(null);
+              setDeleteError("");
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 12, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.98 }}
+              transition={spring}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-10 h-10 rounded-xl bg-red-50 ring-1 ring-red-100 flex items-center justify-center">
+                  <TrashIcon className="w-5 h-5 text-red-600" />
+                </div>
+                <button
+                  onClick={() => {
+                    setDeleteModal(null);
+                    setDeleteError("");
+                  }}
+                  className="text-slate-400 hover:text-slate-600 p-1 -m-1"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
 
-      {deleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-lg max-w-sm w-full p-6 space-y-4">
-            <div>
-              <h2 className="text-lg font-semibold text-zinc-900">Delete "{deleteModal.vehicleName}"?</h2>
-              <p className="text-sm text-slate-500 mt-1">This will disable all active routes and delete the vehicle.</p>
-            </div>
+              <h2 className="text-[16px] font-semibold text-zinc-950">
+                Delete "{deleteModal.vehicleName}"?
+              </h2>
+              <p className="text-sm text-slate-500 mt-1.5">
+                This vehicle has active routes. Deleting will disable all routes associated with it.
+              </p>
 
-            {deleteError && <p className="text-sm text-red-500 bg-red-50 p-3 rounded-lg">{deleteError}</p>}
+              {deleteError && (
+                <p className="text-xs text-red-600 bg-red-50 px-3 py-2 rounded-lg mt-4 border border-red-100">
+                  {deleteError}
+                </p>
+              )}
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setDeleteModal(null);
-                  setDeleteError("");
-                }}
-                className="flex-1 border border-slate-200 text-zinc-700 font-medium py-2.5 rounded-lg hover:bg-slate-50 transition-all"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAllRoutes}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-lg transition-all"
-              >
-                Delete All Routes
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={() => {
+                    setDeleteModal(null);
+                    setDeleteError("");
+                  }}
+                  className="flex-1 border border-slate-200 text-slate-700 font-medium py-2.5 rounded-xl hover:bg-slate-50 transition-all active:scale-[0.98] text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAllRoutes}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 rounded-xl transition-all active:scale-[0.98] text-sm"
+                >
+                  Delete anyway
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </Page>
   );
 }

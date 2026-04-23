@@ -1,38 +1,36 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import { motion, AnimatePresence } from "motion/react";
 import {
-  MapPinIcon, DashboardIcon, CarIcon, MapPinIcon as RouteIcon,
-  BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, BellIcon, LogOutIcon,
+  MapPinIcon, DashboardIcon, CarIcon,
+  BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, LogOutIcon,
+  ChevronDownIcon,
 } from "@/app/dashboard/_Components/Icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Separator } from "@/components/ui/separator";
 import { getCurrentUser, logout } from "@/lib/auth";
 import { NotificationBell } from "@/components/NotificationBell";
+import { useLiveAvatar } from "@/app/dashboard/_Components/events";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
-
 const travelerNav = [
-  { key: "/dashboard", label: "Search Rides", icon: <DashboardIcon /> },
-  { key: "/dashboard/my-bookings", label: "My Bookings", icon: <BookOpenIcon /> },
-  { key: "/dashboard/announcements", label: "Announcements", icon: <MegaphoneIcon /> },
-  { key: "/dashboard/profile", label: "Profile", icon: <UserIcon /> },
-  { key: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
+  { key: "/dashboard", label: "Search Rides", icon: DashboardIcon },
+  { key: "/dashboard/my-bookings", label: "My Bookings", icon: BookOpenIcon },
+  { key: "/dashboard/announcements", label: "Announcements", icon: MegaphoneIcon },
+  { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
+  { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 const transporterNav = [
-  { key: "/dashboard/overview", label: "Dashboard", icon: <DashboardIcon /> },
-  { key: "/dashboard/vehicles", label: "My Transport", icon: <CarIcon /> },
-  { key: "/dashboard/routes", label: "My Routes", icon: <RouteIcon /> },
-  { key: "/dashboard/bookings", label: "Bookings", icon: <BookOpenIcon /> },
-  { key: "/dashboard/t-announcements", label: "My Announcements", icon: <MegaphoneIcon /> },
-  { key: "/dashboard/profile", label: "Profile", icon: <UserIcon /> },
-  { key: "/dashboard/settings", label: "Settings", icon: <SettingsIcon /> },
+  { key: "/dashboard/overview", label: "Dashboard", icon: DashboardIcon },
+  { key: "/dashboard/vehicles", label: "Fleet", icon: CarIcon },
+  { key: "/dashboard/routes", label: "Routes", icon: MapPinIcon },
+  { key: "/dashboard/bookings", label: "Bookings", icon: BookOpenIcon },
+  { key: "/dashboard/t-announcements", label: "Announcements", icon: MegaphoneIcon },
+  { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
+  { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 const travelerTitles: Record<string, string> = {
@@ -45,10 +43,10 @@ const travelerTitles: Record<string, string> = {
 
 const transporterTitles: Record<string, string> = {
   "/dashboard/overview": "Dashboard",
-  "/dashboard/vehicles": "My Transport",
-  "/dashboard/routes": "My Routes",
+  "/dashboard/vehicles": "Fleet",
+  "/dashboard/routes": "Routes",
   "/dashboard/bookings": "Bookings",
-  "/dashboard/t-announcements": "My Announcements",
+  "/dashboard/t-announcements": "Announcements",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };
@@ -73,74 +71,90 @@ function roleFromPath(pathname: string, fallback: "traveler" | "transporter") {
   return fallback;
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function isActivePath(pathname: string, key: string) {
+  if (pathname === key) return true;
+  if (key !== "/dashboard" && pathname.startsWith(key + "/")) return true;
+  return false;
+}
 
-function Sidebar({
-  pathname,
-  role,
-  onRoleSwitch,
-}: {
-  pathname: string;
-  role: "traveler" | "transporter";
-  onRoleSwitch: (r: "traveler" | "transporter") => void;
-}) {
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function Sidebar({ pathname, role }: { pathname: string; role: "traveler" | "transporter" }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
 
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-62.5 bg-white border-r border-sidebar-border z-30">
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-200/70 z-30">
       {/* Logo */}
-      <div className="h-16 flex items-center px-5">
-        <Link href="/dashboard" className="flex items-center gap-2.5">
-          <div className="bg-linear-to-br from-emerald-500 to-teal-600 p-2 rounded-xl shadow-sm">
-            <MapPinIcon className="w-4 h-4 text-white" />
+      <div className="h-16 flex items-center px-6">
+        <Link href="/dashboard" className="flex items-center gap-2.5 group">
+          <div className="relative">
+            <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-2 rounded-xl shadow-sm ring-1 ring-emerald-600/20">
+              <MapPinIcon className="w-4 h-4 text-white" />
+            </div>
+            <div className="absolute -inset-1 bg-emerald-500/10 rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
-          <span className="text-lg font-bold text-zinc-900 tracking-tight">SmatWay</span>
+          <div>
+            <span className="text-[15px] font-semibold text-zinc-950 tracking-tight">SmatWay</span>
+            <p className="text-[10px] text-slate-400 font-medium tracking-wide capitalize -mt-0.5">{role} Hub</p>
+          </div>
         </Link>
       </div>
 
-      <Separator className="mx-4" />
+      <div className="px-4">
+        <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      </div>
 
       {/* Section label */}
-      <p className="px-5 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-widest text-slate-400">
-        Navigation
+      <p className="px-6 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        Menu
       </p>
 
       {/* Nav */}
-      <ul className="flex-1 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = pathname === item.key;
-          return (
-            <li key={item.key}>
-              <Link
-                href={item.key}
-                className={`flex items-center gap-3 py-2.5 pr-4 text-sm font-medium transition-all duration-150 ${active
-                  ? "border-l-2 border-emerald-600 pl-5.5 bg-emerald-50/70 text-emerald-700"
-                  : "border-l-2 border-transparent pl-5.5 text-slate-500 hover:bg-slate-50/80 hover:text-zinc-900"
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        <ul className="space-y-0.5">
+          {navItems.map((item) => {
+            const active = isActivePath(pathname, item.key);
+            const Icon = item.icon;
+            return (
+              <li key={item.key} className="relative">
+                {active && (
+                  <motion.div
+                    layoutId="sidebar-indicator"
+                    className="absolute inset-0 bg-zinc-950 rounded-xl"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <Link
+                  href={item.key}
+                  className={`relative flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-xl transition-colors ${
+                    active ? "text-white" : "text-slate-600 hover:text-zinc-950 hover:bg-slate-100/60"
                   }`}
-              >
-                <span className={active ? "text-emerald-600" : "text-slate-400"}>
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-
-      {/* Fade gradient */}
-      <div className="h-10 bg-linear-to-t from-white to-transparent pointer-events-none" />
+                >
+                  <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
+                  {item.label}
+                  {active && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)]"
+                    />
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
 
       {/* Logout */}
-      <div className="px-4 pb-4 pt-1 shrink-0">
+      <div className="px-3 pb-4 shrink-0">
         <button
           onClick={async () => {
             await logout();
             window.location.href = "/signin";
           }}
-          className="flex items-center gap-2 w-full px-3 py-2.5 text-sm font-medium text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors duration-150 cursor-pointer"
+          className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-slate-500 hover:text-red-600 hover:bg-red-50/60 rounded-xl transition-colors cursor-pointer"
         >
-          <LogOutIcon className="w-4 h-4" />
+          <LogOutIcon className="w-[18px] h-[18px]" />
           Sign out
         </button>
       </div>
@@ -148,94 +162,137 @@ function Sidebar({
   );
 }
 
-// ─── Topbar ───────────────────────────────────────────────────────────────────
+// ─── UserNav (memoized — only re-renders when avatar or name changes) ─────────
+// Isolated from the title so navigation does not trigger a re-render of the
+// notification bell or avatar dropdown. NotificationBell has its own internal
+// state and is the only thing that updates this area on notification events.
+const UserNav = memo(
+  function UserNav({ role, userName, avatarUrl }: { role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
+    const name = userName || "User";
+    const initial = name.charAt(0).toUpperCase();
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+    // Subscribes to `smatway:avatar-changed` events — updates instantly when
+    // the profile page fires one after a successful upload.
+    const liveAvatar = useLiveAvatar(avatarUrl);
 
-function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
-  const router = useRouter();
-  const name = userName || "User";
-  const initial = name.charAt(0).toUpperCase();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+    useEffect(() => {
+      if (!dropdownOpen) return;
+      const close = () => setDropdownOpen(false);
+      window.addEventListener("click", close);
+      return () => window.removeEventListener("click", close);
+    }, [dropdownOpen]);
 
-  return (
-    <header className="bg-white border-b border-sidebar-border px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
-      <h2 className="text-base font-semibold text-zinc-900 tracking-tight hidden sm:block">{title}</h2>
-
+    return (
       <div className="flex items-center gap-2">
         <NotificationBell />
 
-        {/* Avatar + User info + Dropdown */}
-        <div className="relative">
-          <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 pl-1 pr-3 py-1.5 rounded-xl transition-colors">
-            <Avatar className="h-8 w-8 rounded-xl">
-              {avatarUrl && <AvatarImage src={avatarUrl} alt={name} />}
-              <AvatarFallback className="rounded-xl bg-linear-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold">
+        <div className="w-px h-6 bg-slate-200 mx-1 hidden sm:block" />
+
+        <div className="relative" onClick={(e) => e.stopPropagation()}>
+          <button
+            onClick={() => setDropdownOpen((o) => !o)}
+            className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-100/70 pl-1 pr-2.5 py-1.5 rounded-xl transition-colors"
+          >
+            <Avatar className="h-8 w-8 rounded-xl ring-2 ring-white">
+              {liveAvatar && <AvatarImage src={liveAvatar} alt={name} />}
+              <AvatarFallback className="rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xs font-semibold">
                 {initial}
               </AvatarFallback>
             </Avatar>
             <div className="hidden md:block text-left">
-              <p className="text-sm font-semibold text-zinc-900 leading-none mb-0.5">{name}</p>
-              <p className="text-xs text-slate-400 capitalize">{role}</p>
+              <p className="text-[13px] font-semibold text-zinc-950 leading-none mb-0.5">{name}</p>
+              <p className="text-[11px] text-slate-400 capitalize">{role}</p>
             </div>
-            <svg className="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m6 9 6 6 6-6" />
-            </svg>
+            <ChevronDownIcon className={`w-3.5 h-3.5 text-slate-400 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
           </button>
 
-          {dropdownOpen && (
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl border border-slate-200 shadow-lg py-1 z-50">
-              <Link href="/dashboard/profile" className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-900 hover:bg-slate-50">
-                <UserIcon className="w-4 h-4" />
-                Profile
-              </Link>
-              <Link href="/dashboard/settings" className="flex items-center gap-2 px-4 py-2.5 text-sm text-zinc-900 hover:bg-slate-50">
-                <SettingsIcon className="w-4 h-4" />
-                Settings
-              </Link>
-              <button
-                onClick={async () => {
-                  await logout();
-                  window.location.href = "/signin";
-                }}
-                className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50"
+          <AnimatePresence>
+            {dropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                className="absolute right-0 mt-2 w-56 bg-white rounded-2xl border border-slate-200/80 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.15)] py-1.5 z-50 overflow-hidden"
               >
-                <LogOutIcon className="w-4 h-4" />
-                Sign Out
-              </button>
-            </div>
-          )}
+                <div className="px-4 py-3 border-b border-slate-100">
+                  <p className="text-[13px] font-semibold text-zinc-950 truncate">{name}</p>
+                  <p className="text-[11px] text-slate-400 capitalize">{role} account</p>
+                </div>
+                <Link href="/dashboard/profile" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-slate-700 hover:bg-slate-50">
+                  <UserIcon className="w-4 h-4 text-slate-400" />
+                  Profile
+                </Link>
+                <Link href="/dashboard/settings" className="flex items-center gap-2.5 px-4 py-2 text-[13px] text-slate-700 hover:bg-slate-50">
+                  <SettingsIcon className="w-4 h-4 text-slate-400" />
+                  Settings
+                </Link>
+                <div className="h-px bg-slate-100 my-1" />
+                <button
+                  onClick={async () => {
+                    await logout();
+                    window.location.href = "/signin";
+                  }}
+                  className="flex items-center gap-2.5 w-full px-4 py-2 text-[13px] text-red-600 hover:bg-red-50"
+                >
+                  <LogOutIcon className="w-4 h-4" />
+                  Sign out
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
+    );
+  },
+  // Skip re-render unless avatarUrl, userName, or role actually change.
+  (prev, next) =>
+    prev.avatarUrl === next.avatarUrl &&
+    prev.userName === next.userName &&
+    prev.role === next.role
+);
+
+// ─── Topbar (title swaps on nav; UserNav stays mounted & stable) ──────────────
+function Topbar({ title, role, userName, avatarUrl }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string }) {
+  return (
+    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/70 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
+      <div className="flex items-center gap-3 min-w-0">
+        <motion.h2
+          key={title}
+          initial={{ opacity: 0, x: -4 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.2 }}
+          className="text-[15px] font-semibold text-zinc-950 tracking-tight hidden sm:block"
+        >
+          {title}
+        </motion.h2>
+      </div>
+
+      <UserNav role={role} userName={userName} avatarUrl={avatarUrl} />
     </header>
   );
 }
 
-function MobileNav({
-  pathname,
-  role,
-  onRoleSwitch,
-}: {
-  pathname: string;
-  role: "traveler" | "transporter";
-  onRoleSwitch: (r: "traveler" | "transporter") => void;
-}) {
+// ─── Mobile Nav ───────────────────────────────────────────────────────────────
+function MobileNav({ pathname, role }: { pathname: string; role: "traveler" | "transporter" }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
 
   return (
-    <div className="lg:hidden sticky top-16 z-30 border-b border-sidebar-border bg-white/95 backdrop-blur">
-      <div className="px-4 py-3 space-y-3">
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+    <div className="lg:hidden sticky top-16 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
+      <div className="px-3 py-2.5">
+        <div className="flex gap-1 overflow-x-auto no-scrollbar">
           {navItems.map((item) => {
-            const active = pathname === item.key;
-
+            const active = isActivePath(pathname, item.key);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.key}
                 href={item.key}
-                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${active
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-zinc-900"
-                  }`}
+                className={`relative shrink-0 whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                  active ? "bg-zinc-950 text-white" : "text-slate-500 hover:text-zinc-900"
+                }`}
               >
+                <Icon className="w-3.5 h-3.5" />
                 {item.label}
               </Link>
             );
@@ -247,44 +304,52 @@ function MobileNav({
 }
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
+  // Fetch auth once on mount — do NOT depend on pathname,
+  // otherwise the layout would flicker/refetch on every navigation.
   useEffect(() => {
+    let cancelled = false;
     async function checkAuth() {
       const currentUser = await getCurrentUser();
+      if (cancelled) return;
       if (!currentUser) {
         router.push("/signin");
         return;
       }
-
       const userRole = (currentUser.accountType?.toLowerCase() ?? "traveler") as "traveler" | "transporter";
       setUser({ ...currentUser, userRole });
-
-      // Enforce role-based access
-      const pathRole = roleFromPath(pathname, userRole);
-      if (pathRole !== userRole) {
-        router.push(userRole === "transporter" ? "/dashboard/overview" : "/dashboard");
-      }
-
       setLoading(false);
     }
     checkAuth();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Refetch user data on focus
-    const handleFocus = () => checkAuth();
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [pathname, router]);
+  // Enforce role-based access on path changes without re-fetching user.
+  useEffect(() => {
+    if (!user) return;
+    const pathRole = roleFromPath(pathname, user.userRole);
+    if (pathRole !== user.userRole) {
+      router.push(user.userRole === "transporter" ? "/dashboard/overview" : "/dashboard");
+    }
+  }, [pathname, user, router]);
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-zinc-500">Loading...</div>
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-2 text-slate-500">
+          <motion.span
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-4 h-4 border-2 border-slate-300 border-t-emerald-600 rounded-full"
+          />
+          <span className="text-sm">Loading your dashboard...</span>
+        </div>
       </div>
     );
   }
@@ -294,17 +359,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const title = titles[pathname] ?? "Dashboard";
 
   return (
-    <TooltipProvider>
-      <div className="min-h-dvh flex bg-slate-50/50">
-        <Sidebar pathname={pathname} role={role} onRoleSwitch={() => { }} />
-        <div className="flex-1 lg:ml-62.5 flex flex-col min-h-dvh">
-          <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} />
-          <MobileNav pathname={pathname} role={role} onRoleSwitch={() => { }} />
-          <main className="flex-1 p-4 lg:p-8 pb-24 lg:pb-8">
+    <div className="h-[100dvh] flex bg-[#fafafa] overflow-hidden">
+      <Sidebar pathname={pathname} role={role} />
+      <div className="flex-1 lg:ml-64 flex flex-col h-[100dvh] overflow-hidden">
+        <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} />
+        <MobileNav pathname={pathname} role={role} />
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-10">
             {children}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
-    </TooltipProvider>
+    </div>
   );
 }
