@@ -616,31 +616,35 @@ const routes = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function Hero() {
-  const [isClient, setIsClient] = useState(false);
-  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [posterReady, setPosterReady] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const posterRef = useRef<HTMLImageElement>(null);
 
+  // Cache-hit guards: events won't re-fire if the browser already has the asset on mount.
   useEffect(() => {
-    setIsClient(true);
+    const img = posterRef.current;
+    if (img?.complete && img.naturalWidth > 0) setPosterReady(true);
+    const v = videoRef.current;
+    if (v && v.readyState >= 4) setVideoReady(true);
   }, []);
 
+  // Kick off playback the instant the video is marked fully buffered.
   useEffect(() => {
-    if (!isClient || !videoLoaded) {
-      return;
-    }
+    if (!videoReady) return;
+    videoRef.current?.play().catch(() => {
+      /* autoplay blocked — poster stays visible */
+    });
+  }, [videoReady]);
 
-    const video = videoRef.current;
-    if (!video) {
-      return;
-    }
-
-    const playPromise = video.play();
-    if (playPromise) {
-      playPromise.catch(() => {
-        // Autoplay can still be blocked in some browsers; the poster/fallback remains visible.
-      });
-    }
-  }, [isClient, videoLoaded]);
+  // Fires on every byte-range load; mark ready once the whole clip is buffered.
+  const handleVideoProgress = () => {
+    const v = videoRef.current;
+    if (!v || !v.duration || v.duration === Infinity) return;
+    const buffered =
+      v.buffered.length > 0 ? v.buffered.end(v.buffered.length - 1) : 0;
+    if (buffered >= v.duration - 0.25) setVideoReady(true);
+  };
 
   return (
     <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
@@ -710,27 +714,40 @@ function Hero() {
             transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             <div className="relative">
               <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-12px_rgba(0,0,0,0.1)] border border-slate-200/60">
-                <div
-                  className="relative bg-gradient-to-br from-slate-50 to-emerald-50/40 aspect-[4/3]"
+                <motion.div
+                  layout
+                  transition={{ layout: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
+                  className={`relative overflow-hidden bg-gradient-to-br from-slate-50 to-emerald-50/40 ${posterReady ? "aspect-[16/10]" : ""}`}
                 >
-                  {/* Your uploaded car-in-motion video */}
+                  {/* Poster — mounted eagerly so it downloads; kept invisible until onLoad fires */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    ref={posterRef}
+                    src="/car.png"
+                    alt=""
+                    onLoad={() => setPosterReady(true)}
+                    className={`absolute inset-0 w-full h-full object-contain object-center transition-opacity duration-300 ${posterReady ? "opacity-100" : "opacity-0"}`}
+                  />
+
+                  {/* Video — height fills the container; width keeps its native aspect and may overflow (clipped by parent) */}
                   <video
                     ref={videoRef}
-                    autoPlay
                     loop
                     muted
                     playsInline
                     preload="auto"
-                    poster="/car.png"
-                    onLoadedData={() => setVideoLoaded(true)}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    onCanPlayThrough={() => setVideoReady(true)}
+                    onProgress={handleVideoProgress}
+                    className={`absolute top-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 transition-opacity duration-300 ${videoReady ? "opacity-100" : "opacity-0"}`}
                   >
                     <source src="/car.mp4" type="video/mp4" />
                   </video>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none transition-opacity duration-500 ${posterReady ? "opacity-100" : "opacity-0"}`}
+                  />
 
-                  {/* Live route overlay */}
-                  <div className="absolute bottom-5 left-5 right-5 z-10">
+                  {/* Live route overlay — inline (dictates compact height) while media loads, absolute once poster is ready */}
+                  <div className={posterReady ? "absolute bottom-5 left-5 right-5 z-10" : "relative z-10 p-5"}>
                     <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-white/50">
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">
@@ -760,7 +777,7 @@ function Hero() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               </div>
 
               {/* Floating badges */}
