@@ -346,6 +346,11 @@ export async function getTransporterProfile(transporterId: string): Promise<any>
   return apiGet<any>(`/review/transporter/${transporterId}/profile`);
 }
 
+/** Latest reviews across the platform — used by the marketing Testimonials section. */
+export async function getRecentReviews(limit: number = 6): Promise<{ reviews: any[] }> {
+  return apiGet<{ reviews: any[] }>(`/review/recent?limit=${limit}`);
+}
+
 // Vehicle
 export async function createVehicle(data: {
   name: string;

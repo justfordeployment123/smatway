@@ -83,6 +83,39 @@ export class ReviewService {
     };
   }
 
+  /**
+   * Recent reviews across the platform — public, safe to expose.
+   * Used by the marketing homepage Testimonials section.
+   * Only returns reviews with a non-empty `feedback` string, so empty
+   * star-only ratings don't render as blank quote bubbles.
+   */
+  async getRecentPlatformReviews(limit: number = 6) {
+    const cappedLimit = Math.min(Math.max(limit, 1), 20);
+    const reviews = await this.prisma.review.findMany({
+      where: { feedback: { not: null } },
+      include: {
+        traveler: { select: { id: true, name: true, country: true } },
+        transporter: { select: { id: true, name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: cappedLimit,
+    });
+
+    // Scrub empty-string feedback client-filter just in case a blank slipped through
+    return {
+      reviews: reviews
+        .filter(r => r.feedback && r.feedback.trim().length > 0)
+        .map(r => ({
+          id: r.id,
+          rating: r.rating,
+          feedback: r.feedback,
+          createdAt: r.createdAt,
+          traveler: r.traveler,
+          transporter: r.transporter,
+        })),
+    };
+  }
+
   async getTransporterFullProfile(transporterId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: transporterId },

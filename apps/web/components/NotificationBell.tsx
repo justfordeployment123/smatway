@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useChat } from "@/hooks/useChat";
@@ -254,6 +255,8 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   const router = useRouter();
   const { notifications, requestNotificationPermission } = useChat(userId ?? null);
   const [open, setOpen] = useState(false);
+  const [portalReady, setPortalReady] = useState(false);
+  useEffect(() => setPortalReady(true), []);
 
   // Persist readIds across page reloads.
   const [readIds, setReadIds] = useState<Set<string>>(() => {
@@ -296,19 +299,33 @@ export function NotificationBell({ userId }: NotificationBellProps) {
   }
 
   function handleOpen() {
-    if (!open) {
+    const next = !open;
+    if (next) {
       requestNotificationPermission();
       markAllRead();
+      // Signal sibling dropdowns (UserNav avatar menu) to close
+      window.dispatchEvent(new CustomEvent("smatway:menu-open", { detail: "notifications" }));
     }
-    setOpen(o => !o);
+    setOpen(next);
   }
 
+  // Close on outside click
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
     window.addEventListener("click", close);
     return () => window.removeEventListener("click", close);
   }, [open]);
+
+  // Close when any other topbar dropdown opens
+  useEffect(() => {
+    const onOtherOpen = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail !== "notifications") setOpen(false);
+    };
+    window.addEventListener("smatway:menu-open", onOtherOpen);
+    return () => window.removeEventListener("smatway:menu-open", onOtherOpen);
+  }, []);
 
   function handleNotificationClick(notif: any) {
     const type = notif.type as string;
@@ -361,14 +378,16 @@ export function NotificationBell({ userId }: NotificationBellProps) {
         </AnimatePresence>
       </motion.button>
 
+      {portalReady && createPortal(
       <AnimatePresence>
         {open && (
           <motion.div
+            onClick={e => e.stopPropagation()}
             initial={{ opacity: 0, y: -6, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.97 }}
             transition={{ type: "spring", stiffness: 420, damping: 32 }}
-            className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl border border-slate-200/80 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.15)] overflow-hidden z-50"
+            className="fixed right-3 top-[68px] sm:right-4 lg:right-8 w-[min(20rem,calc(100vw-1.5rem))] bg-white rounded-2xl border border-slate-200/80 shadow-[0_20px_40px_-15px_rgba(15,23,42,0.15)] overflow-hidden z-50"
           >
             {/* Header */}
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
@@ -428,7 +447,9 @@ export function NotificationBell({ userId }: NotificationBellProps) {
             )}
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
     </div>
   );
 }

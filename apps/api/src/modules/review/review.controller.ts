@@ -38,4 +38,10 @@ export class ReviewController {
   getFullProfile(@Param('transporterId') transporterId: string) {
     return this.reviewService.getTransporterFullProfile(transporterId);
   }
+
+  /** Public — latest platform-wide reviews for the marketing homepage Testimonials section. */
+  @Get('recent')
+  getRecent(@Query('limit') limit: string = '6') {
+    return this.reviewService.getRecentPlatformReviews(parseInt(limit, 10) || 6);
+  }
 }

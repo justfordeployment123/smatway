@@ -359,33 +359,36 @@ export function TabFilter<T extends string>({
   counts?: Partial<Record<T, number>>;
 }) {
   return (
-    <div className="inline-flex items-center gap-0.5 p-1 bg-slate-100/80 rounded-xl">
-      {tabs.map((tab) => {
-        const active = tab === value;
-        return (
-          <button
-            key={tab}
-            onClick={() => onChange(tab)}
-            className="relative px-3.5 py-1.5 text-xs font-semibold transition-colors"
-          >
-            {active && (
-              <motion.span
-                layoutId="tab-active"
-                className="absolute inset-0 bg-white rounded-lg shadow-sm"
-                transition={spring}
-              />
-            )}
-            <span className={`relative flex items-center gap-1.5 ${active ? "text-zinc-900" : "text-slate-500 hover:text-slate-700"}`}>
-              {tab}
-              {counts?.[tab] !== undefined && (
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
-                  {counts[tab]}
-                </span>
+    // Outer scroll container — horizontally scrollable on narrow screens without a visible scrollbar
+    <div className="relative -mx-1 overflow-x-auto no-scrollbar">
+      <div className="inline-flex min-w-full items-center gap-0.5 p-1 mx-1 bg-slate-100/80 rounded-xl w-max">
+        {tabs.map((tab) => {
+          const active = tab === value;
+          return (
+            <button
+              key={tab}
+              onClick={() => onChange(tab)}
+              className="relative shrink-0 whitespace-nowrap px-3 py-1.5 sm:px-3.5 text-xs font-semibold transition-colors"
+            >
+              {active && (
+                <motion.span
+                  layoutId="tab-active"
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                  transition={spring}
+                />
               )}
-            </span>
-          </button>
-        );
-      })}
+              <span className={`relative flex items-center gap-1.5 ${active ? "text-zinc-900" : "text-slate-500 hover:text-slate-700"}`}>
+                {tab}
+                {counts?.[tab] !== undefined && (
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
+                    {counts[tab]}
+                  </span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

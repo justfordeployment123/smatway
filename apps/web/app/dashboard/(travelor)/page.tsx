@@ -436,7 +436,7 @@ function TransporterProfileModalInner({ loading, profile, onClose }: { loading: 
         exit={{ opacity: 0, y: 8, scale: 0.98 }}
         transition={spring}
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] overflow-y-auto shadow-2xl"
+        className="bg-white rounded-2xl w-full max-w-md max-h-[85vh] overflow-y-auto shadow-2xl"
       >
         <div className="sticky top-0 bg-white border-b border-slate-100 px-5 py-3 flex items-center justify-between">
           <p className="text-[13px] font-semibold text-zinc-950">Transporter profile</p>

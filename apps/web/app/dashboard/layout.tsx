@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, memo } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
+import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 import {
   MapPinIcon, DashboardIcon, CarIcon,
   BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, LogOutIcon,
@@ -182,6 +183,24 @@ const UserNav = memo(
       return () => window.removeEventListener("click", close);
     }, [dropdownOpen]);
 
+    // Close when any sibling topbar dropdown (notifications) opens
+    useEffect(() => {
+      const onOtherOpen = (e: Event) => {
+        const detail = (e as CustomEvent).detail;
+        if (detail !== "user-menu") setDropdownOpen(false);
+      };
+      window.addEventListener("smatway:menu-open", onOtherOpen);
+      return () => window.removeEventListener("smatway:menu-open", onOtherOpen);
+    }, []);
+
+    const toggleDropdown = () => {
+      const next = !dropdownOpen;
+      if (next) {
+        window.dispatchEvent(new CustomEvent("smatway:menu-open", { detail: "user-menu" }));
+      }
+      setDropdownOpen(next);
+    };
+
     return (
       <div className="flex items-center gap-2">
         <NotificationBell userId={userId} />
@@ -190,7 +209,7 @@ const UserNav = memo(
 
         <div className="relative" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={() => setDropdownOpen((o) => !o)}
+            onClick={toggleDropdown}
             className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-100/70 pl-1 pr-2.5 py-1.5 rounded-xl transition-colors"
           >
             <Avatar className="h-8 w-8 rounded-xl ring-2 ring-white">
@@ -254,16 +273,25 @@ const UserNav = memo(
 );
 
 // ─── Topbar (title swaps on nav; UserNav stays mounted & stable) ──────────────
-function Topbar({ title, role, userName, avatarUrl, userId }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string; userId?: string }) {
+function Topbar({ title, role, userName, avatarUrl, userId, onOpenDrawer }: { title: string; role: "traveler" | "transporter"; userName?: string; avatarUrl?: string; userId?: string; onOpenDrawer: () => void }) {
   return (
-    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/70 px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
-      <div className="flex items-center gap-3 min-w-0">
+    <header className="bg-white/80 backdrop-blur-xl border-b border-slate-200/70 px-3 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 h-16">
+      <div className="flex items-center gap-2 min-w-0">
+        {/* Mobile hamburger — matches the marketing navbar: Lucide icon in a circular pill */}
+        <button
+          type="button"
+          onClick={onOpenDrawer}
+          aria-label="Open menu"
+          className="lg:hidden relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200/80 bg-white/70 text-zinc-900 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 hover:bg-white hover:border-zinc-300"
+        >
+          <MenuIcon className="h-[18px] w-[18px]" strokeWidth={2.25} absoluteStrokeWidth />
+        </button>
         <motion.h2
           key={title}
           initial={{ opacity: 0, x: -4 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.2 }}
-          className="text-[15px] font-semibold text-zinc-950 tracking-tight hidden sm:block"
+          className="text-[15px] font-semibold text-zinc-950 tracking-tight truncate"
         >
           {title}
         </motion.h2>
@@ -274,31 +302,146 @@ function Topbar({ title, role, userName, avatarUrl, userId }: { title: string; r
   );
 }
 
+// ─── Mobile drawer — full-height sidebar that slides in from the left ─────────
+function MobileDrawer({
+  open, onClose, pathname, role,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pathname: string;
+  role: "traveler" | "transporter";
+}) {
+  const navItems = role === "transporter" ? transporterNav : travelerNav;
+
+  // Lock body scroll while open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 z-50 bg-zinc-950/40 backdrop-blur-sm lg:hidden"
+            aria-hidden
+          />
+          {/* Drawer */}
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            className="fixed inset-y-0 left-0 z-50 w-[82%] max-w-[300px] bg-white flex flex-col shadow-[0_10px_40px_-10px_rgba(0,0,0,0.3)] lg:hidden"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Logo row */}
+            <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100">
+              <Link href="/dashboard" onClick={onClose} className="flex items-center gap-2.5 group">
+                <div className="bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-2 rounded-xl shadow-sm ring-1 ring-emerald-600/20">
+                  <MapPinIcon className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <span className="text-[15px] font-semibold text-zinc-950 tracking-tight">SmatWay</span>
+                  <p className="text-[10px] text-slate-400 font-medium tracking-wide capitalize -mt-0.5">{role} Hub</p>
+                </div>
+              </Link>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Close menu"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:text-zinc-900 hover:bg-slate-100 transition-colors"
+              >
+                <CloseIcon className="h-[18px] w-[18px]" strokeWidth={2.25} absoluteStrokeWidth />
+              </button>
+            </div>
+
+            <p className="px-6 pt-5 pb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Menu</p>
+
+            <nav className="flex-1 overflow-y-auto px-3 pb-4">
+              <ul className="space-y-0.5">
+                {navItems.map((item) => {
+                  const active = isActivePath(pathname, item.key);
+                  const Icon = item.icon;
+                  return (
+                    <li key={item.key}>
+                      <Link
+                        href={item.key}
+                        onClick={onClose}
+                        className={`flex items-center gap-3 px-3 py-2.5 text-[13px] font-medium rounded-xl transition-colors ${
+                          active ? "bg-zinc-950 text-white" : "text-slate-600 hover:text-zinc-950 hover:bg-slate-100/60"
+                        }`}
+                      >
+                        <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-slate-400"}`} />
+                        {item.label}
+                        {active && (
+                          <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)]" />
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </nav>
+
+            <div className="px-3 pb-5 shrink-0 border-t border-slate-100 pt-3">
+              <button
+                onClick={async () => {
+                  onClose();
+                  await logout();
+                  window.location.href = "/signin";
+                }}
+                className="flex items-center gap-3 w-full px-3 py-2.5 text-[13px] font-medium text-slate-500 hover:text-red-600 hover:bg-red-50/60 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOutIcon className="w-[18px] h-[18px]" />
+                Sign out
+              </button>
+            </div>
+          </motion.aside>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // ─── Mobile Nav ───────────────────────────────────────────────────────────────
 function MobileNav({ pathname, role }: { pathname: string; role: "traveler" | "transporter" }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
 
   return (
     <div className="lg:hidden sticky top-16 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
-      <div className="px-3 py-2.5">
-        <div className="flex gap-1 overflow-x-auto no-scrollbar">
-          {navItems.map((item) => {
-            const active = isActivePath(pathname, item.key);
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.key}
-                href={item.key}
-                className={`relative shrink-0 whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
-                  active ? "bg-zinc-950 text-white" : "text-slate-500 hover:text-zinc-900"
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                {item.label}
-              </Link>
-            );
-          })}
-        </div>
+      {/* Padding lives INSIDE the scroll container (and on the scroll-padding prop)
+          so the first and last pill always have breathing room, even when swiped
+          to the extreme ends of the horizontal overflow. */}
+      <div
+        className="flex gap-1 overflow-x-auto no-scrollbar py-2.5 px-4"
+        style={{ scrollPaddingInline: "1rem" }}
+      >
+        {navItems.map((item) => {
+          const active = isActivePath(pathname, item.key);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.key}
+              href={item.key}
+              className={`relative shrink-0 whitespace-nowrap flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition-colors ${
+                active ? "bg-zinc-950 text-white" : "text-slate-500 hover:text-zinc-900"
+              }`}
+            >
+              <Icon className="w-3.5 h-3.5" />
+              {item.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );
@@ -310,6 +453,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Auto-close drawer on navigation
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
 
   // Fetch auth once on mount — do NOT depend on pathname,
   // otherwise the layout would flicker/refetch on every navigation.
@@ -375,8 +522,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <div className="h-[100dvh] flex bg-[#fafafa] overflow-hidden">
       <Sidebar pathname={pathname} role={role} />
+      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} pathname={pathname} role={role} />
       <div className="flex-1 lg:ml-64 flex flex-col h-[100dvh] overflow-hidden">
-        <Topbar title={title} role={role} userName={user?.name} avatarUrl={user?.avatarUrl} userId={user?.id} />
+        <Topbar
+          title={title}
+          role={role}
+          userName={user?.name}
+          avatarUrl={user?.avatarUrl}
+          userId={user?.id}
+          onOpenDrawer={() => setDrawerOpen(true)}
+        />
         <MobileNav pathname={pathname} role={role} />
         <main className="flex-1 overflow-y-auto overflow-x-hidden">
           <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6 lg:py-8 pb-24 lg:pb-10">

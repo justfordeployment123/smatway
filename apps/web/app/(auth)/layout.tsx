@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RequireLoggedOut } from "@/app/_components/RequireLoggedOut";
 
 function CheckIcon({ className = "w-4 h-4" }: { className?: string }) {
   return (
@@ -218,6 +219,7 @@ function LeftPanel() {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
+    <RequireLoggedOut>
     <div className="relative flex h-[100dvh] overflow-hidden">
       <LeftPanel />
 
@@ -249,5 +251,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
       </div>
     </div>
+    </RequireLoggedOut>
   );
 }

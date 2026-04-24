@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
+import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
+import { RequireLoggedOut } from "@/app/_components/RequireLoggedOut";
 
 function MapPinIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -108,8 +110,23 @@ function LanguageDropdown() {
 
 function Navbar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Close mobile menu when navigating
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMobileOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileOpen]);
 
   return (
+    <>
     <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-xl z-50 border-b border-slate-200/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16 md:h-20">
@@ -123,7 +140,7 @@ function Navbar() {
             </span>
           </Link>
 
-          {/* Nav links */}
+          {/* Desktop nav links */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => {
               const active = pathname === link.href;
@@ -145,8 +162,8 @@ function Navbar() {
             })}
           </div>
 
-          {/* Right side: Language + CTA */}
-          <div className="flex items-center gap-2">
+          {/* Right side: Language + CTA (desktop) + Hamburger (mobile) */}
+          <div className="flex items-center gap-1 sm:gap-2">
             <LanguageDropdown />
             <Link
               href="/signin"
@@ -155,10 +172,95 @@ function Navbar() {
               Get Started
               <ArrowRightIcon />
             </Link>
+            {/* Mobile hamburger — uses real Lucide icon so strokes stay pixel-perfect at any resolution */}
+            <button
+              type="button"
+              onClick={() => setMobileOpen((v) => !v)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+              className={`md:hidden relative inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200 ${
+                mobileOpen
+                  ? "bg-zinc-950 border-zinc-950 text-white shadow-[0_8px_24px_-8px_rgba(15,23,42,0.35)]"
+                  : "bg-white/70 border-zinc-200/80 text-zinc-900 hover:bg-white hover:border-zinc-300 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
+              }`}
+            >
+              <MenuIcon
+                className={`h-[18px] w-[18px] transition-all duration-200 ${mobileOpen ? "scale-0 opacity-0 rotate-90 absolute" : "scale-100 opacity-100 rotate-0"}`}
+                strokeWidth={2.25}
+                absoluteStrokeWidth
+              />
+              <CloseIcon
+                className={`h-[18px] w-[18px] transition-all duration-200 ${mobileOpen ? "scale-100 opacity-100 rotate-0" : "scale-0 opacity-0 -rotate-90 absolute"}`}
+                strokeWidth={2.25}
+                absoluteStrokeWidth
+              />
+            </button>
           </div>
         </div>
       </div>
     </nav>
+
+    {/*
+      Mobile menu — compact popover anchored top-right, NOT a full-page takeover.
+      Kept as a sibling of <nav> (not a child) because the nav's backdrop-blur
+      creates a containing block that would trap a `position: fixed` element.
+    */}
+    {/* Transparent click-away backdrop — dismisses on outside tap without greying the page */}
+    <button
+      type="button"
+      aria-hidden={!mobileOpen}
+      tabIndex={-1}
+      onClick={() => setMobileOpen(false)}
+      className={`md:hidden fixed inset-0 top-16 z-30 cursor-default bg-transparent transition-opacity duration-200 ${mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+    />
+    <div
+      className={`md:hidden fixed right-3 top-[68px] z-40 w-[84vw] max-w-[300px] origin-top-right transition-all duration-200 ${mobileOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"}`}
+      aria-hidden={!mobileOpen}
+    >
+      <div className="rounded-2xl border border-zinc-200/80 bg-white shadow-[0_16px_48px_-12px_rgba(15,23,42,0.18),0_6px_16px_-8px_rgba(15,23,42,0.08)] overflow-hidden">
+        <div className="p-1.5">
+          {navLinks.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium transition-colors ${active
+                  ? "bg-emerald-50 text-emerald-700 font-semibold"
+                  : "text-zinc-800 hover:bg-zinc-50"
+                  }`}
+              >
+                <span>{link.label}</span>
+                {active && (
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-zinc-100 p-1.5">
+          <Link
+            href="/signin"
+            className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium text-zinc-800 hover:bg-zinc-50 transition-colors"
+          >
+            <span>Sign in</span>
+            <ArrowRightIcon />
+          </Link>
+        </div>
+
+        <div className="border-t border-zinc-100 p-1.5">
+          <Link
+            href="/signin"
+            className="flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-4 py-2.5 text-[13px] font-semibold text-white transition-all active:scale-[0.98]"
+          >
+            Get started
+            <ArrowRightIcon />
+          </Link>
+        </div>
+      </div>
+    </div>
+    </>
   );
 }
 
@@ -252,10 +354,12 @@ function Footer() {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-gray-50" style={{ scrollBehavior: "smooth" }}>
-      <Navbar />
-      {children}
-      <Footer />
-    </div>
+    <RequireLoggedOut>
+      <div className="min-h-[100dvh] bg-gray-50" style={{ scrollBehavior: "smooth" }}>
+        <Navbar />
+        {children}
+        <Footer />
+      </div>
+    </RequireLoggedOut>
   );
 }

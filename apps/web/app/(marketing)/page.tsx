@@ -530,28 +530,28 @@ const features = [
     icon: <ShieldIcon className="w-7 h-7" />,
     title: "Verified & Safe",
     description: "Every transporter undergoes identity verification, license checks, and vehicle inspection before their first trip.",
-    image: "https://images.unsplash.com/photo-1590012314607-cda9d9b699ae?w=600&h=400&fit=crop&q=80",
+    image: "/images/home/vehicle-1.jpg",
     imageAlt: "Driver identity verification process",
   },
   {
     icon: <CreditCardIcon className="w-7 h-7" />,
     title: "Secure Payments",
     description: "Funds held in escrow until your journey completes. Multiple payment methods, zero hidden fees.",
-    image: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=600&h=400&fit=crop&q=80",
+    image: "/images/home/vehicle-2.jpg",
     imageAlt: "Secure mobile payment transaction",
   },
   {
     icon: <ClockIcon className="w-7 h-7" />,
     title: "Real-Time Tracking",
     description: "Monitor your journey live. Share your trip link with family so they always know where you are.",
-    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=600&h=400&fit=crop&q=80",
+    image: "/images/home/vehicle-3.jpg",
     imageAlt: "Real-time GPS tracking dashboard",
   },
   {
     icon: <UsersIcon className="w-7 h-7" />,
     title: "Community Driven",
     description: "Ratings and verified reviews from real passengers give you the clarity to choose confidently.",
-    image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=600&h=400&fit=crop&q=80",
+    image: "/images/home/vehicle-4.jpg",
     imageAlt: "Community of people collaborating",
   },
 ];
@@ -561,21 +561,21 @@ const steps = [
     num: "01",
     title: "Create your account",
     description: "Sign up with your phone or email in under a minute. Choose traveler or transporter.",
-    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=500&h=600&fit=crop&q=80",
+    image: "/images/home/story-1.jpg",
     imageAlt: "Person signing up on mobile phone",
   },
   {
     num: "02",
     title: "Find or post routes",
     description: "Search available routes by city and date. Transporters post schedules and set fares.",
-    image: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=500&h=600&fit=crop&q=80",
+    image: "/images/home/story-2.jpg",
     imageAlt: "Map showing travel routes between cities",
   },
   {
     num: "03",
     title: "Travel with confidence",
     description: "Book, pay securely, track in real time. Rate your experience when you arrive.",
-    image: "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=500&h=600&fit=crop&q=80",
+    image: "/images/home/story-3.jpg",
     imageAlt: "Happy travelers on an open road trip",
   },
 ];
@@ -586,29 +586,29 @@ const testimonials = [
     role: "Frequent Traveler",
     text: "SmatWay changed intercity travel for me — verified drivers, real-time tracking, and I always know exactly what I'm paying.",
     rating: 5,
-    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80",
+    avatar: "/images/home/avatar-1.jpg",
   },
   {
     name: "Ahmed R.",
     role: "Fleet Owner",
     text: "Managing my fleet through SmatWay has been seamless. The booking system fills seats consistently, payments always on time.",
     rating: 5,
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&q=80",
+    avatar: "/images/home/avatar-2.jpg",
   },
   {
     name: "Maria L.",
     role: "Daily Commuter",
     text: "The real-time tracking gives my family peace of mind. I share my trip link every morning. That's priceless.",
     rating: 5,
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&q=80",
+    avatar: "/images/home/avatar-3.jpg",
   },
 ];
 
 const routes = [
-  { from: "Lahore", to: "Islamabad", price: "PKR 1,500", time: "4h 30m", image: "https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?w=400&h=250&fit=crop&q=80" },
-  { from: "Karachi", to: "Hyderabad", price: "PKR 800", time: "2h 45m", image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=400&h=250&fit=crop&q=80" },
-  { from: "Islamabad", to: "Peshawar", price: "PKR 600", time: "2h 15m", image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop&q=80" },
-  { from: "Multan", to: "Lahore", price: "PKR 1,200", time: "5h 00m", image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=250&fit=crop&q=80" },
+  { from: "Lahore", to: "Islamabad", price: "PKR 1,500", time: "4h 30m", image: "/images/home/route-lahore-islamabad.jpg" },
+  { from: "Karachi", to: "Hyderabad", price: "PKR 800", time: "2h 45m", image: "/images/home/route-karachi-hyderabad.jpg" },
+  { from: "Islamabad", to: "Peshawar", price: "PKR 600", time: "2h 15m", image: "/images/home/route-islamabad-peshawar.jpg" },
+  { from: "Multan", to: "Lahore", price: "PKR 1,200", time: "5h 00m", image: "/images/home/route-multan-lahore.jpg" },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -647,7 +647,7 @@ function Hero() {
   };
 
   return (
-    <section className="relative overflow-hidden bg-[#fafaf8] pt-32 pb-24 lg:pt-40 lg:pb-32">
+    <section className="relative overflow-hidden bg-[#fafaf8] pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-40 lg:pb-32">
       <div className="absolute inset-0 grain" />
       <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/80 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none" />
@@ -657,9 +657,9 @@ function Hero() {
       />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+        <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-24 items-center">
           {/* Left — content */}
-          <div className="space-y-10">
+          <div className="space-y-6 sm:space-y-8 lg:space-y-10">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
               className="inline-flex items-center gap-2.5 bg-white/80 backdrop-blur-sm border border-emerald-200/50 px-4 py-2 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
               <span className="relative flex h-2 w-2">
@@ -670,7 +670,7 @@ function Hero() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}>
-              <h1 className="font-[var(--font-display)] text-[3.5rem] sm:text-[4.25rem] lg:text-[5rem] leading-[1.02] tracking-[-0.03em] text-zinc-900">
+              <h1 className="font-[var(--font-display)] text-[2.5rem] xs:text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] leading-[1.02] tracking-[-0.03em] text-zinc-900">
                 Travel the way<br />
                 <span className="relative inline-block">
                   <span className="text-emerald-600">it should be.</span>
@@ -683,7 +683,7 @@ function Hero() {
             </motion.div>
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[17px] text-slate-500 leading-[1.7] max-w-[44ch]">
+              className="text-[15px] sm:text-[17px] text-slate-500 leading-[1.65] sm:leading-[1.7] max-w-[44ch]">
               Connect with verified transporters. Book affordable routes across the world — safely, instantly, with full visibility every step of the way.
             </motion.p>
 
@@ -747,74 +747,73 @@ function Hero() {
                   />
 
                   {/* Live route overlay — inline (dictates compact height) while BOTH media are loading; absolute as soon as either lands */}
-                  <div className={posterReady || videoReady ? "absolute bottom-5 left-5 right-5 z-10" : "relative z-10 p-5"}>
-                    <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-white/50">
-                      <div className="flex items-center justify-between mb-2.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Live Trip</span>
+                  <div className={posterReady || videoReady ? "absolute bottom-3 left-3 right-3 sm:bottom-5 sm:left-5 sm:right-5 z-10" : "relative z-10 p-4"}>
+                    <div className="bg-white/95 backdrop-blur-md rounded-xl sm:rounded-2xl p-2.5 sm:p-4 shadow-lg border border-white/50">
+                      {/* Header row */}
+                      <div className="flex items-center justify-between mb-1.5 sm:mb-2.5">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[10px] sm:text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Live Trip</span>
                         </div>
-                        <span className="text-[11px] text-slate-400 font-medium">ETA 2h 15m</span>
+                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium">ETA 2h 15m</span>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col items-center gap-0.5">
-                          <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 border-2 border-white shadow" />
-                          <div className="w-px h-5 bg-emerald-300" />
-                          <div className="w-2.5 h-2.5 rounded-full border-2 border-emerald-400 bg-white" />
+
+                      {/* Compact horizontal route — Lahore [bar] Islamabad on one row, with 62% at end */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Lahore</span>
+                        <div className="relative h-1 sm:h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
+                          <motion.div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "62%" }}
+                            transition={{ duration: 2, delay: 1.2, ease: "easeOut" }}
+                          />
                         </div>
-                        <div className="flex-1">
-                          <div className="text-xs font-bold text-zinc-900">Lahore</div>
-                          <div className="w-full h-1.5 bg-slate-100 rounded-full my-1.5 overflow-hidden">
-                            <motion.div className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
-                              initial={{ width: "0%" }} animate={{ width: "62%" }} transition={{ duration: 2, delay: 1.2, ease: "easeOut" }} />
-                          </div>
-                          <div className="text-xs font-bold text-zinc-900">Islamabad</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-base font-bold text-zinc-900">62%</div>
-                          <div className="text-[10px] text-slate-400">complete</div>
-                        </div>
+                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Islamabad</span>
+                        <span className="text-[11px] sm:text-sm font-bold text-zinc-900 tabular-nums shrink-0 ml-1">62%</span>
                       </div>
                     </div>
                   </div>
                 </motion.div>
               </div>
 
-              {/* Floating badges */}
-              <motion.div className="absolute -top-5 right-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-5 py-3.5 flex items-center gap-3 z-20"
+              {/* Floating badges — compact on mobile, roomy on desktop */}
+              <motion.div className="absolute -top-4 right-3 sm:-top-5 sm:right-6 bg-white rounded-xl sm:rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-3 py-2 sm:px-5 sm:py-3.5 flex items-center gap-2 sm:gap-3 z-20"
                 animate={{ y: [0, -6, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}>
-                <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <CheckCircleIcon className="w-5 h-5 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                  <CheckCircleIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-zinc-900">Verified</div>
-                  <div className="text-xs text-slate-400 font-medium">Licensed & Inspected</div>
+                  <div className="text-xs sm:text-sm font-bold text-zinc-900 leading-tight">Verified</div>
+                  <div className="text-[10px] sm:text-xs text-slate-400 font-medium leading-tight">Licensed &amp; Inspected</div>
                 </div>
               </motion.div>
 
-              <motion.div className="absolute -bottom-5 left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-5 py-3.5 flex items-center gap-3 z-20"
+              {/* 4.9/5 badge — hidden on mobile, it overlapped the compact Live Trip card at the bottom */}
+              <motion.div className="hidden sm:flex absolute sm:-bottom-5 sm:left-6 bg-white rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-slate-100 px-5 py-3.5 items-center gap-3 z-20"
                 animate={{ y: [0, -6, 0] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}>
-                <div className="flex -space-x-1.5">
-                  {[1, 2, 3, 4, 5].map((i) => <StarIcon key={i} className="w-4 h-4 text-amber-400" />)}
+                <div className="flex -space-x-1 sm:-space-x-1.5">
+                  {[1, 2, 3, 4, 5].map((i) => <StarIcon key={i} className="w-3 h-3 sm:w-4 sm:h-4 text-amber-400" />)}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-zinc-900">4.9/5</div>
-                  <div className="text-xs text-slate-400 font-medium">12K+ reviews</div>
+                  <div className="text-xs sm:text-sm font-bold text-zinc-900 leading-tight">4.9/5</div>
+                  <div className="text-[10px] sm:text-xs text-slate-400 font-medium leading-tight">12K+ reviews</div>
                 </div>
               </motion.div>
 
-              <div className="absolute top-1/2 -translate-y-1/2 -left-4 z-20">
+              {/* Active-travelers card — hidden on mobile since -left-4 overflows the narrow media box and looks cramped next to the other badges */}
+              <div className="absolute top-1/2 -translate-y-1/2 -left-4 z-20 hidden sm:block">
                 <motion.div
                   className="bg-white rounded-xl shadow-lg border border-slate-100 px-4 py-2.5 flex items-center gap-2 will-change-transform"
                   animate={{ y: [0, -8, 0] }}
                   transition={{ duration: 4.2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
                 >
                   <div className="flex -space-x-2">
-                    {["https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=32&h=32&fit=crop&q=60",
-                      "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=32&h=32&fit=crop&q=60",
-                      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=32&h=32&fit=crop&q=60"
+                    {["/images/home/avatar-1.jpg",
+                      "/images/home/avatar-2.jpg",
+                      "/images/home/avatar-3.jpg"
                     ].map((src, i) => (
-                      <SmartImage key={i} src={src} fallbackSrc="https://picsum.photos/seed/smatway-avatar-fallback/64/64" alt="Active traveler" className="w-7 h-7 rounded-full border-2 border-white object-cover" />
+                      <SmartImage key={i} src={src} fallbackSrc="/images/home/avatar-1.jpg" alt="Active traveler" className="w-7 h-7 rounded-full border-2 border-white object-cover" />
                     ))}
                   </div>
                   <div className="text-xs">
@@ -867,25 +866,25 @@ const routesBento = [
   {
     from: "Lahore", to: "Islamabad", price: "1,500", time: "4h 30m", seats: 7,
     hue: "from-emerald-500/80 via-emerald-700/60 to-teal-900/90",
-    image: "https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?w=1000&h=800&fit=crop&q=80",
+    image: "/images/home/route-lahore-islamabad.jpg",
     vehicle: "Sedan + Van", next: "8 min", featured: true,
   },
   {
     from: "Karachi", to: "Hyderabad", price: "800", time: "2h 45m", seats: 14,
     hue: "from-amber-500/70 via-orange-700/60 to-rose-900/90",
-    image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&h=600&fit=crop&q=80",
+    image: "/images/home/route-karachi-hyderabad.jpg",
     vehicle: "Coach", next: "22 min",
   },
   {
     from: "Islamabad", to: "Peshawar", price: "600", time: "2h 15m", seats: 24,
     hue: "from-sky-500/70 via-indigo-700/60 to-violet-900/90",
-    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=600&fit=crop&q=80",
+    image: "/images/home/route-islamabad-peshawar.jpg",
     vehicle: "Sedan", next: "47 min",
   },
   {
     from: "Multan", to: "Lahore", price: "1,200", time: "5h 00m", seats: 4,
     hue: "from-rose-500/70 via-fuchsia-700/60 to-purple-900/90",
-    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=600&fit=crop&q=80",
+    image: "/images/home/route-multan-lahore.jpg",
     vehicle: "Van", next: "1h 12m",
   },
 ];
@@ -2459,14 +2458,14 @@ function SafetyBanner() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                  className={`flex items-center justify-between px-5 py-4 ${i !== ledgerRows.length - 1 ? "border-b border-zinc-100" : ""}`}
+                  className={`flex items-center justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4 ${i !== ledgerRows.length - 1 ? "border-b border-zinc-100" : ""}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-[11px] text-zinc-400 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                    <span className="text-[14px] font-medium text-zinc-700">{row.label}</span>
+                  <div className="flex flex-1 min-w-0 items-center gap-2.5 sm:gap-3">
+                    <span className="font-mono text-[11px] text-zinc-400 tabular-nums shrink-0">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="text-[13px] sm:text-[14px] font-medium text-zinc-700 leading-snug">{row.label}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-lg font-semibold tabular-nums text-zinc-950">
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-mono text-base sm:text-lg font-semibold tabular-nums text-zinc-950">
                       <CountUp to={row.to} suffix={row.suffix} duration={1500 + i * 100} />
                     </span>
                     <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
@@ -2514,20 +2513,85 @@ const voices = [
 ];
 
 const TESTIMONIAL_INTERVAL = 6500;
+const AVATAR_GRADIENTS = [
+  "from-emerald-500 to-teal-600",
+  "from-amber-500 to-orange-600",
+  "from-rose-500 to-pink-600",
+  "from-sky-500 to-indigo-600",
+  "from-violet-500 to-fuchsia-600",
+  "from-lime-500 to-emerald-600",
+];
+
+function formatReviewDate(d: string | Date) {
+  const date = new Date(d);
+  return date.toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" });
+}
+
+function firstSentence(text: string, max = 90): string {
+  const match = text.match(/^[^.!?]+[.!?]/);
+  const s = (match ? match[0] : text).trim();
+  if (s.length <= max) return s;
+  return s.slice(0, max - 1).trimEnd() + "…";
+}
+
+type Testimonial = {
+  name: string;
+  role: string;
+  initial: string;
+  avatar: string;
+  route: string;
+  date: string;
+  trips?: number;
+  excerpt: string;
+  text: string;
+};
 
 function Testimonials() {
+  const [items, setItems] = useState<Testimonial[]>(voices);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
 
+  // Fetch real reviews once on mount — fall back to `voices` if none / error.
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/api").then(({ getRecentReviews }) =>
+      getRecentReviews(6)
+        .then((res) => {
+          if (cancelled) return;
+          const live = (res?.reviews ?? []).filter((r: any) => r.feedback);
+          if (live.length === 0) return;
+          setItems(
+            live.map((r: any, idx: number) => {
+              const name = (r.traveler?.name as string) || "Traveler";
+              return {
+                name,
+                role: r.traveler?.country ? `Verified traveler · ${r.traveler.country}` : "Verified traveler",
+                initial: name.charAt(0).toUpperCase(),
+                avatar: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
+                route: r.transporter?.name ? `With ${r.transporter.name}` : "Verified trip",
+                date: formatReviewDate(r.createdAt),
+                trips: undefined as number | undefined,
+                excerpt: firstSentence(r.feedback, 90),
+                text: r.feedback,
+              };
+            }),
+          );
+          setI(0);
+        })
+        .catch(() => { /* keep fallback */ }),
+    );
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setI((x) => (x + 1) % voices.length), TESTIMONIAL_INTERVAL);
+    const t = setInterval(() => setI((x) => (x + 1) % items.length), TESTIMONIAL_INTERVAL);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, items.length]);
 
-  const v = voices[i];
-  const next = () => setI((x) => (x + 1) % voices.length);
-  const prev = () => setI((x) => (x - 1 + voices.length) % voices.length);
+  const v = items[i];
+  const next = () => setI((x) => (x + 1) % items.length);
+  const prev = () => setI((x) => (x - 1 + items.length) % items.length);
 
   return (
     <section className="relative bg-[#fafaf7] py-24 lg:py-32 overflow-hidden">
@@ -2571,7 +2635,7 @@ function Testimonials() {
           </Reveal>
           <div className="flex items-center gap-2">
             <div className="mr-2 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500 tabular-nums">
-              {String(i + 1).padStart(2, "0")} / {String(voices.length).padStart(2, "0")}
+              {String(i + 1).padStart(2, "0")} / {String(items.length).padStart(2, "0")}
             </div>
             <button
               onClick={prev}
@@ -2763,7 +2827,7 @@ function Testimonials() {
           </div>
           <div className="mt-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {voices.map((_, idx) => (
+              {items.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setI(idx)}
@@ -2773,7 +2837,7 @@ function Testimonials() {
               ))}
             </div>
             <div className="hidden font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500 sm:block">
-              Reading review <span className="tabular-nums text-zinc-800">{i + 1}</span> of <span className="tabular-nums text-zinc-800">{voices.length}</span>
+              Reading review <span className="tabular-nums text-zinc-800">{i + 1}</span> of <span className="tabular-nums text-zinc-800">{items.length}</span>
             </div>
           </div>
         </div>
@@ -3032,7 +3096,7 @@ export default function Home() {
       <PopularRoutes />
       <Features />
       <AppPreview />
-      <HowItWorks />
+      {/* <HowItWorks /> */}
       <SafetyBanner />
       <Feedback />
       <Testimonials />
