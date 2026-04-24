@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useState, useRef, useEffect } from "react";
 import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 import { RequireLoggedOut } from "@/app/_components/RequireLoggedOut";
+import { useLocale, useT } from "@/lib/i18n/LocaleProvider";
+import { locales as supportedLocales } from "@/lib/i18n/locales";
 
 function MapPinIcon({ className = "w-5 h-5" }: { className?: string }) {
   return (
@@ -42,22 +44,17 @@ function ChevronDownIcon({ className = "w-3.5 h-3.5" }: { className?: string }) 
   );
 }
 
-const navLinks = [
-  { href: "/", label: "Home" },
-  { href: "/how-it-works", label: "How It Works" },
-];
-
-const languages = [
-  { code: "en", label: "English" },
-  { code: "ar", label: "Arabic" },
-  { code: "pt", label: "Portuguese" },
-  { code: "fr", label: "French" },
+// nav links — labels translated at render time via t()
+const navLinks: { href: string; key: string }[] = [
+  { href: "/", key: "nav.home" },
+  { href: "/how-it-works", key: "nav.howItWorks" },
 ];
 
 function LanguageDropdown() {
+  const { locale, setLocale } = useLocale();
   const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState(languages[0]);
   const ref = useRef<HTMLDivElement>(null);
+  const selected = supportedLocales.find(l => l.code === locale) ?? supportedLocales[0];
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -74,27 +71,31 @@ function LanguageDropdown() {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-600 hover:text-zinc-900 hover:bg-slate-50 transition-all duration-200"
+        aria-label="Change language"
       >
         <GlobeIcon className="w-4 h-4" />
-        <span className="hidden sm:inline">{selected.label}</span>
+        <span className="hidden sm:inline">{selected.nativeLabel}</span>
         <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
       </button>
 
       {open && (
-        <div className="animate-dropdown-in absolute right-0 top-full mt-2 w-44 bg-white rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] py-2 z-50">
-          {languages.map((lang) => (
+        <div className="animate-dropdown-in absolute right-0 top-full mt-2 w-52 bg-white rounded-2xl border border-slate-200/80 shadow-[0_12px_40px_rgba(0,0,0,0.08)] py-2 z-50">
+          {supportedLocales.map((lang) => (
             <button
               key={lang.code}
-              onClick={() => {
-                setSelected(lang);
-                setOpen(false);
-              }}
-              className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 flex items-center justify-between ${selected.code === lang.code
+              onClick={() => { setLocale(lang.code); setOpen(false); }}
+              className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 flex items-center justify-between ${
+                selected.code === lang.code
                   ? "text-emerald-600 font-semibold bg-emerald-50/50"
                   : "text-slate-600 hover:bg-slate-50 hover:text-zinc-900"
-                }`}
+              }`}
             >
-              {lang.label}
+              <span className="flex flex-col items-start">
+                <span>{lang.nativeLabel}</span>
+                {lang.label !== lang.nativeLabel && (
+                  <span className="text-[10px] text-slate-400">{lang.label}</span>
+                )}
+              </span>
               {selected.code === lang.code && (
                 <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="m5 12 5 5L20 7" />
@@ -110,6 +111,7 @@ function LanguageDropdown() {
 
 function Navbar() {
   const pathname = usePathname();
+  const t = useT();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   // Close mobile menu when navigating
@@ -153,7 +155,7 @@ function Navbar() {
                       : "text-slate-500 hover:text-zinc-900"
                     }`}
                 >
-                  {link.label}
+                  {t(link.key)}
                   {active && (
                     <span className="absolute bottom-0 left-4 right-4 h-0.5 bg-emerald-600 rounded-full" />
                   )}
@@ -169,14 +171,14 @@ function Navbar() {
               href="/signin"
               className="hidden md:inline-flex items-center gap-2 bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-all duration-200 text-sm active:scale-[0.98]"
             >
-              Get Started
+              {t("nav.getStarted")}
               <ArrowRightIcon />
             </Link>
             {/* Mobile hamburger — uses real Lucide icon so strokes stay pixel-perfect at any resolution */}
             <button
               type="button"
               onClick={() => setMobileOpen((v) => !v)}
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-label={mobileOpen ? t("nav.closeMenu") : t("nav.openMenu")}
               aria-expanded={mobileOpen}
               className={`md:hidden relative inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200 ${
                 mobileOpen
@@ -230,7 +232,7 @@ function Navbar() {
                   : "text-zinc-800 hover:bg-zinc-50"
                   }`}
               >
-                <span>{link.label}</span>
+                <span>{t(link.key)}</span>
                 {active && (
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                 )}
@@ -244,7 +246,7 @@ function Navbar() {
             href="/signin"
             className="flex items-center justify-between rounded-xl px-3 py-2.5 text-[14px] font-medium text-zinc-800 hover:bg-zinc-50 transition-colors"
           >
-            <span>Sign in</span>
+            <span>{t("nav.signIn")}</span>
             <ArrowRightIcon />
           </Link>
         </div>
@@ -254,7 +256,7 @@ function Navbar() {
             href="/signin"
             className="flex items-center justify-center gap-2 rounded-xl bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 px-4 py-2.5 text-[13px] font-semibold text-white transition-all active:scale-[0.98]"
           >
-            Get started
+            {t("nav.getStarted")}
             <ArrowRightIcon />
           </Link>
         </div>
@@ -265,6 +267,7 @@ function Navbar() {
 }
 
 function Footer() {
+  const t = useT();
   return (
     <footer className="bg-zinc-950 text-white">
       {/* Gradient strip */}
@@ -281,19 +284,19 @@ function Footer() {
               <span className="text-xl font-bold tracking-tight">SmatWay</span>
             </div>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              Connecting travelers and transporters across the World. Safe, reliable, affordable.
+              {t("footer.tagline")}
             </p>
           </div>
 
           {/* Company */}
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-300 mb-5">
-              Company
+              {t("footer.company")}
             </h4>
             <ul className="space-y-3">
               <li>
                 <Link href="/how-it-works" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
-                  How It Works
+                  {t("nav.howItWorks")}
                 </Link>
               </li>
             </ul>
@@ -302,7 +305,7 @@ function Footer() {
           {/* Legal */}
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-300 mb-5">
-              Legal
+              {t("footer.legal")}
             </h4>
             <ul className="space-y-3">
               <li>
@@ -311,7 +314,7 @@ function Footer() {
                   target="_blank"
                   className="text-slate-400 hover:text-white transition-colors duration-200 text-sm"
                 >
-                  Privacy Policy
+                  {t("footer.privacy")}
                 </a>
               </li>
               <li>
@@ -320,7 +323,7 @@ function Footer() {
                   target="_blank"
                   className="text-slate-400 hover:text-white transition-colors duration-200 text-sm"
                 >
-                  Terms of Service
+                  {t("footer.terms")}
                 </a>
               </li>
             </ul>
@@ -329,10 +332,9 @@ function Footer() {
           {/* Contact placeholder */}
           <div>
             <h4 className="font-semibold text-sm uppercase tracking-wider text-slate-300 mb-5">
-              Get in Touch
+              {t("footer.contact")}
             </h4>
             <p className="text-slate-400 text-sm leading-relaxed">
-              Questions or feedback?<br />
               <a href="mailto:tellus@smatway.com" className="text-emerald-400 hover:text-emerald-300 transition-colors duration-200">
                 tellus@smatway.com
               </a>
@@ -345,7 +347,7 @@ function Footer() {
 
         {/* Bottom */}
         <div className="pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-slate-500 text-sm">&copy; {new Date().getFullYear()} SmatWay. All rights reserved.</p>
+          <p className="text-slate-500 text-sm">{t("footer.copyright")}</p>
         </div>
       </div>
     </footer>

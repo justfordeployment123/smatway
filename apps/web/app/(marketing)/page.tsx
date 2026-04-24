@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, useInView, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "motion/react";
+import { useT } from "@/lib/i18n/LocaleProvider";
 
 // ─── Reusable scroll-reveal wrapper ──────────────────────────────────────────
 
@@ -616,6 +617,7 @@ const routes = [
 // ═══════════════════════════════════════════════════════════════════════════════
 
 function Hero() {
+  const t = useT();
   const [posterReady, setPosterReady] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -666,14 +668,14 @@ function Hero() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="text-[13px] font-medium text-slate-600 tracking-wide">Trusted by 50,000+ travelers across the world</span>
+              <span className="text-[13px] font-medium text-slate-600 tracking-wide">{t("hero.trustChip")}</span>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}>
               <h1 className="font-[var(--font-display)] text-[2.5rem] xs:text-[2.75rem] sm:text-[3.5rem] md:text-[4.25rem] lg:text-[5rem] leading-[1.02] tracking-[-0.03em] text-zinc-900">
-                Travel the way<br />
+                {t("hero.title.line1")}<br />
                 <span className="relative inline-block">
-                  <span className="text-emerald-600">it should be.</span>
+                  <span className="text-emerald-600">{t("hero.title.line2")}</span>
                   <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none" preserveAspectRatio="none">
                     <motion.path d="M2 8c50-6 100-6 150-2s100 2 146-4" stroke="rgba(16,185,129,0.3)" strokeWidth="3" strokeLinecap="round"
                       initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.2, delay: 0.8, ease: "easeOut" }} />
@@ -684,11 +686,11 @@ function Hero() {
 
             <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="text-[15px] sm:text-[17px] text-slate-500 leading-[1.65] sm:leading-[1.7] max-w-[44ch]">
-              Connect with verified transporters. Book affordable routes across the world — safely, instantly, with full visibility every step of the way.
+              {t("hero.subtitle")}
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }} className="flex flex-wrap gap-x-8 gap-y-3">
-              {["Verified drivers", "Live tracking", "24/7 support"].map((item, i) => (
+              {[t("hero.feature.verified"), t("hero.feature.tracking"), t("hero.feature.support")].map((item, i) => (
                 <motion.div key={item} className="flex items-center gap-2" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.45 + i * 0.08, duration: 0.5 }}>
                   <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                     <CheckCircleIcon className="w-3 h-3 text-emerald-600" />
@@ -700,11 +702,11 @@ function Hero() {
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex flex-wrap items-center gap-4">
               <MagneticLink href="/signin" className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-3.5 rounded-2xl transition-colors duration-200 active:scale-[0.98] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)]">
-                Start for free
+                {t("hero.cta.start")}
                 <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
               </MagneticLink>
               <Link href="/how-it-works" className="inline-flex items-center gap-2 text-zinc-600 font-medium px-2 py-3.5 hover:text-zinc-900 transition-colors duration-200 text-sm">
-                <span className="underline underline-offset-4 decoration-slate-300 hover:decoration-slate-500 transition-colors">See how it works</span>
+                <span className="underline underline-offset-4 decoration-slate-300 hover:decoration-slate-500 transition-colors">{t("hero.cta.howItWorks")}</span>
               </Link>
             </motion.div>
           </div>
@@ -3036,6 +3038,7 @@ function Feedback() {
 // ─── CTA — bold dark editorial close with magnetic ──────────────────────────
 
 function CTA() {
+  const t = useT();
   return (
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
       <LiveAurora tones={["emerald", "cool", "violet"]} intensity={0.55} dark />
@@ -3056,27 +3059,27 @@ function CTA() {
       <div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <Reveal>
           <p className="font-mono text-[12px] font-semibold uppercase tracking-[0.22em] text-emerald-400">
-            ↓ Ready when you are
+            {t("cta.eyebrow")}
           </p>
         </Reveal>
         <Reveal delay={0.1}>
           <h2 className="mt-6 font-[var(--font-display)] text-5xl leading-[1] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
-            Your next trip <span className="italic text-emerald-300">starts here.</span>
+            {t("cta.title.before")} <span className="italic text-emerald-300">{t("cta.title.accent")}</span>
           </h2>
         </Reveal>
         <Reveal delay={0.2}>
           <p className="mx-auto mt-7 max-w-xl text-[17px] leading-relaxed text-zinc-400">
-            Sign up in under sixty seconds. Browse routes, book a seat, and hit the road — with a verified driver and a link to share.
+            {t("cta.subtitle")}
           </p>
         </Reveal>
         <Reveal delay={0.3}>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
             <MagneticLink href="/signup" className="group inline-flex items-center gap-2.5 rounded-2xl bg-white px-7 py-3.5 text-sm font-semibold text-zinc-950 shadow-[0_10px_30px_-10px_rgba(255,255,255,0.4)] transition-colors hover:bg-zinc-100 active:scale-[0.98]">
-              Create free account
+              {t("cta.primary")}
               <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
             </MagneticLink>
             <Link href="/signin" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10">
-              I already have an account
+              {t("cta.secondary")}
             </Link>
           </div>
         </Reveal>

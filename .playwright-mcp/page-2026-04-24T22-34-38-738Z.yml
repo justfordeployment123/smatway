@@ -1,0 +1,703 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "SmatWay" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - img [ref=e8]
+          - generic [ref=e11]: SmatWay
+        - generic [ref=e12]:
+          - link "الرئيسية" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - text: الرئيسية
+          - link "كيف يعمل" [ref=e15] [cursor=pointer]:
+            - /url: /how-it-works
+        - generic [ref=e16]:
+          - button "Change language" [ref=e18]:
+            - img [ref=e19]
+            - generic [ref=e22]: العربية
+            - img [ref=e23]
+          - link "ابدأ الآن" [ref=e25] [cursor=pointer]:
+            - /url: /signin
+            - text: ابدأ الآن
+            - img [ref=e26]
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e37]: موثوق به من قبل أكثر من 50,000 مسافر حول العالم
+        - heading "سافر بالطريقة التي تستحقها." [level=1] [ref=e39]:
+          - text: سافر بالطريقة
+          - generic [ref=e40]:
+            - text: التي تستحقها.
+            - img [ref=e41]
+        - paragraph [ref=e43]: تواصل مع ناقلين موثوقين. احجز مسارات بأسعار معقولة حول العالم — بأمان وفوريّة ورؤية كاملة في كل خطوة.
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - img [ref=e47]
+            - generic [ref=e50]: سائقون موثوقون
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]: تتبع مباشر
+          - generic [ref=e57]:
+            - img [ref=e59]
+            - generic [ref=e62]: دعم على مدار الساعة
+        - generic [ref=e63]:
+          - link "ابدأ مجانًا" [ref=e64] [cursor=pointer]:
+            - /url: /signin
+            - text: ابدأ مجانًا
+            - img [ref=e65]
+          - link "شاهد كيف يعمل" [ref=e67] [cursor=pointer]:
+            - /url: /how-it-works
+            - generic [ref=e68]: شاهد كيف يعمل
+      - generic [ref=e70]:
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e79]: Live Trip
+            - generic [ref=e80]: ETA 2h 15m
+          - generic [ref=e81]:
+            - generic [ref=e82]: Lahore
+            - generic [ref=e84]: Islamabad
+            - generic [ref=e85]: 62%
+        - generic [ref=e86]:
+          - img [ref=e88]
+          - generic [ref=e91]:
+            - generic [ref=e92]: Verified
+            - generic [ref=e93]: Licensed & Inspected
+        - generic [ref=e94]:
+          - generic [ref=e95]:
+            - img [ref=e96]
+            - img [ref=e98]
+            - img [ref=e100]
+            - img [ref=e102]
+            - img [ref=e104]
+          - generic [ref=e106]:
+            - generic [ref=e107]: 4.9/5
+            - generic [ref=e108]: 12K+ reviews
+        - generic [ref=e110]:
+          - generic [ref=e111]:
+            - img "Active traveler" [ref=e112]
+            - img "Active traveler" [ref=e113]
+            - img "Active traveler" [ref=e114]
+          - generic [ref=e115]:
+            - generic [ref=e116]: +2.4K
+            - generic [ref=e117]: this week
+    - generic [ref=e121]:
+      - generic [ref=e122] [cursor=pointer]:
+        - img [ref=e124]
+        - generic [ref=e129]:
+          - generic [ref=e130]: 0K
+          - text: +
+        - generic [ref=e131]: Active travelers
+      - generic [ref=e132] [cursor=pointer]:
+        - img [ref=e134]
+        - generic [ref=e138]:
+          - generic [ref=e139]: 0K
+          - text: +
+        - generic [ref=e140]: Verified transporters
+      - generic [ref=e141] [cursor=pointer]:
+        - img [ref=e143]
+        - generic [ref=e145]: 0/5
+        - generic [ref=e146]: Average rating
+      - generic [ref=e147] [cursor=pointer]:
+        - img [ref=e149]
+        - generic [ref=e153]: 0%
+        - generic [ref=e154]: On-time arrivals
+    - generic [ref=e155]:
+      - generic [ref=e160]: Live
+      - generic [ref=e161]:
+        - generic [ref=e162]:
+          - generic [ref=e163]: Lahore → Islamabad
+          - generic [ref=e164]: · departing in 8 min
+        - generic [ref=e166]:
+          - generic [ref=e167]: Karachi → Hyderabad
+          - generic [ref=e168]: · 3 seats left
+        - generic [ref=e170]:
+          - generic [ref=e171]: Islamabad → Peshawar
+          - generic [ref=e172]: · 12 booked today
+        - generic [ref=e174]:
+          - generic [ref=e175]: Multan → Lahore
+          - generic [ref=e176]: · departing in 22 min
+        - generic [ref=e178]:
+          - generic [ref=e179]: Faisalabad → Karachi
+          - generic [ref=e180]: · 5 seats left
+        - generic [ref=e182]:
+          - generic [ref=e183]: Quetta → Karachi
+          - generic [ref=e184]: · departing in 47 min
+        - generic [ref=e186]:
+          - generic [ref=e187]: Sialkot → Lahore
+          - generic [ref=e188]: · 9 booked today
+        - generic [ref=e190]:
+          - generic [ref=e191]: Rawalpindi → Murree
+          - generic [ref=e192]: · 2 seats left
+        - generic [ref=e194]:
+          - generic [ref=e195]: Lahore → Islamabad
+          - generic [ref=e196]: · departing in 8 min
+        - generic [ref=e198]:
+          - generic [ref=e199]: Karachi → Hyderabad
+          - generic [ref=e200]: · 3 seats left
+        - generic [ref=e202]:
+          - generic [ref=e203]: Islamabad → Peshawar
+          - generic [ref=e204]: · 12 booked today
+        - generic [ref=e206]:
+          - generic [ref=e207]: Multan → Lahore
+          - generic [ref=e208]: · departing in 22 min
+        - generic [ref=e210]:
+          - generic [ref=e211]: Faisalabad → Karachi
+          - generic [ref=e212]: · 5 seats left
+        - generic [ref=e214]:
+          - generic [ref=e215]: Quetta → Karachi
+          - generic [ref=e216]: · departing in 47 min
+        - generic [ref=e218]:
+          - generic [ref=e219]: Sialkot → Lahore
+          - generic [ref=e220]: · 9 booked today
+        - generic [ref=e222]:
+          - generic [ref=e223]: Rawalpindi → Murree
+          - generic [ref=e224]: · 2 seats left
+    - generic [ref=e226]:
+      - img
+      - generic [ref=e228]:
+        - generic [ref=e229]:
+          - generic [ref=e230]:
+            - generic [ref=e235]: Most-booked · live this week
+            - heading "Where will you go next?" [level=2] [ref=e236]
+          - link "Browse all routes" [ref=e237] [cursor=pointer]:
+            - /url: /signup
+            - text: Browse all routes
+            - img [ref=e238]
+        - generic [ref=e240]:
+          - link "Lahore to Islamabad 0 seats left From Lahore To Islamabad Sedan + Van · Next 8 min PKR 1,500 4h 30m" [ref=e242] [cursor=pointer]:
+            - /url: /signup
+            - img "Lahore to Islamabad" [ref=e243]
+            - generic [ref=e250]:
+              - generic [ref=e251]:
+                - generic [ref=e256]: 0 seats left
+                - img [ref=e257]
+              - img [ref=e260]
+              - generic [ref=e270]:
+                - generic [ref=e271]:
+                  - generic [ref=e272]:
+                    - generic [ref=e273]: From
+                    - generic [ref=e274]: Lahore
+                  - generic [ref=e275]:
+                    - generic [ref=e276]: To
+                    - generic [ref=e277]: Islamabad
+                - generic [ref=e278]:
+                  - generic [ref=e279]:
+                    - generic [ref=e280]:
+                      - img [ref=e281]
+                      - generic [ref=e285]: Sedan + Van
+                    - generic [ref=e286]: ·
+                    - generic [ref=e291]: Next 8 min
+                  - generic [ref=e292]:
+                    - generic [ref=e293]: PKR 1,500
+                    - generic [ref=e294]: 4h 30m
+          - link "Karachi to Hyderabad 0 seats left Karachi Hyderabad Coach · Next 22 min PKR 800 2h 45m" [ref=e296] [cursor=pointer]:
+            - /url: /signup
+            - img "Karachi to Hyderabad" [ref=e297]
+            - generic [ref=e304]:
+              - generic [ref=e305]:
+                - generic [ref=e310]: 0 seats left
+                - img [ref=e311]
+              - generic [ref=e313]:
+                - generic [ref=e314]:
+                  - generic [ref=e315]:
+                    - generic [ref=e316]: Karachi
+                    - generic [ref=e317]: Hyderabad
+                  - img [ref=e319]
+                - generic [ref=e329]:
+                  - generic [ref=e330]:
+                    - generic [ref=e331]:
+                      - img [ref=e332]
+                      - generic [ref=e336]: Coach
+                    - generic [ref=e337]: ·
+                    - generic [ref=e342]: Next 22 min
+                  - generic [ref=e343]:
+                    - generic [ref=e344]: PKR 800
+                    - generic [ref=e345]: 2h 45m
+          - link "Islamabad to Peshawar 0 seats left Islamabad Peshawar Sedan · Next 47 min PKR 600 2h 15m" [ref=e347] [cursor=pointer]:
+            - /url: /signup
+            - img "Islamabad to Peshawar" [ref=e348]
+            - generic [ref=e355]:
+              - generic [ref=e356]:
+                - generic [ref=e361]: 0 seats left
+                - img [ref=e362]
+              - generic [ref=e364]:
+                - generic [ref=e365]:
+                  - generic [ref=e366]:
+                    - generic [ref=e367]: Islamabad
+                    - generic [ref=e368]: Peshawar
+                  - img [ref=e370]
+                - generic [ref=e380]:
+                  - generic [ref=e381]:
+                    - generic [ref=e382]:
+                      - img [ref=e383]
+                      - generic [ref=e387]: Sedan
+                    - generic [ref=e388]: ·
+                    - generic [ref=e393]: Next 47 min
+                  - generic [ref=e394]:
+                    - generic [ref=e395]: PKR 600
+                    - generic [ref=e396]: 2h 15m
+          - link "Multan to Lahore 0 seats left Multan Lahore Van · Next 1h 12m PKR 1,200 5h 00m" [ref=e398] [cursor=pointer]:
+            - /url: /signup
+            - img "Multan to Lahore" [ref=e399]
+            - generic [ref=e406]:
+              - generic [ref=e407]:
+                - generic [ref=e412]: 0 seats left
+                - img [ref=e413]
+              - generic [ref=e415]:
+                - generic [ref=e416]:
+                  - generic [ref=e417]:
+                    - generic [ref=e418]: Multan
+                    - generic [ref=e419]: Lahore
+                  - img [ref=e421]
+                - generic [ref=e431]:
+                  - generic [ref=e432]:
+                    - generic [ref=e433]:
+                      - img [ref=e434]
+                      - generic [ref=e438]: Van
+                    - generic [ref=e439]: ·
+                    - generic [ref=e444]: Next 1h 12m
+                  - generic [ref=e445]:
+                    - generic [ref=e446]: PKR 1,200
+                    - generic [ref=e447]: 5h 00m
+    - generic [ref=e450]:
+      - generic [ref=e451]:
+        - generic [ref=e452]:
+          - generic [ref=e457]: Why SmatWay
+          - heading "Built around the four things that actually matter." [level=2] [ref=e458]
+        - generic [ref=e459]: 04 / 04 · pillars
+      - generic [ref=e460]:
+        - generic [ref=e462]:
+          - generic: "01"
+          - generic [ref=e464]:
+            - generic [ref=e465]:
+              - generic [ref=e468]: Trust
+              - heading "Drivers we'd trust with our family." [level=3] [ref=e469]
+              - paragraph [ref=e470]: Every transporter clears identity, license, and vehicle inspection. Anyone showing red flags loses access — automatically and permanently.
+              - generic [ref=e471]:
+                - generic [ref=e472]: Learn more
+                - img [ref=e473]
+            - generic [ref=e477]:
+              - img [ref=e480]
+              - generic [ref=e483]:
+                - img [ref=e484]
+                - text: License
+              - generic [ref=e486]:
+                - img [ref=e487]
+                - text: ID match
+              - generic [ref=e489]:
+                - img [ref=e490]
+                - text: Insurance
+              - generic [ref=e492]:
+                - img [ref=e493]
+                - text: Vehicle audit
+          - generic: 01 / 04
+        - generic [ref=e496]:
+          - generic: "02"
+          - generic [ref=e498]:
+            - generic [ref=e499]:
+              - generic [ref=e502]: Money
+              - heading "The price you see is the price you pay." [level=3] [ref=e503]
+              - paragraph [ref=e504]: No surge, no hidden fees, no curb-side bargaining. Your fare sits in escrow until you arrive. Refunds happen the same day.
+              - generic [ref=e505]:
+                - generic [ref=e506]: Learn more
+                - img [ref=e507]
+            - generic [ref=e511]:
+              - generic [ref=e515]:
+                - generic [ref=e516]:
+                  - generic [ref=e517]: SmatWay · Escrow
+                  - img [ref=e518]
+                - generic [ref=e521]: 4729 · 8810 · ····
+                - generic [ref=e522]:
+                  - generic [ref=e523]:
+                    - generic [ref=e524]: Trip hold
+                    - generic [ref=e525]: PKR 1,500.00
+                  - generic [ref=e526]: Held
+              - generic [ref=e527]:
+                - generic [ref=e528]: + 0 fees
+                - generic [ref=e529]: No surge
+              - generic [ref=e530]: Released to driver in 2h
+          - generic: 02 / 04
+        - generic [ref=e532]:
+          - generic: "03"
+          - generic [ref=e534]:
+            - generic [ref=e535]:
+              - generic [ref=e538]: Visibility
+              - heading "Live tracking — for you and the people who care." [level=3] [ref=e539]
+              - paragraph [ref=e540]: Watch your trip update to the meter. Generate a one-tap share link and your family follows along until you arrive safely.
+              - generic [ref=e541]:
+                - generic [ref=e542]: Learn more
+                - img [ref=e543]
+            - generic [ref=e547]:
+              - generic [ref=e555]: Lahore → Islamabad
+              - generic [ref=e557]: ETA 2h 15m
+              - generic [ref=e559]: Sharing live
+          - generic: 03 / 04
+        - generic [ref=e564]:
+          - generic: "04"
+          - generic [ref=e566]:
+            - generic [ref=e567]:
+              - generic [ref=e570]: Voice
+              - heading "Reviews that actually mean something." [level=3] [ref=e571]
+              - paragraph [ref=e572]: Only verified passengers can leave reviews. Drivers below 4.5 get coached. Below 4.0 get suspended. The standard stays high.
+              - generic [ref=e573]:
+                - generic [ref=e574]: Learn more
+                - img [ref=e575]
+            - generic [ref=e579]:
+              - generic [ref=e581]:
+                - generic [ref=e582]:
+                  - generic [ref=e583]: A
+                  - generic [ref=e584]:
+                    - generic [ref=e585]: Amna F.
+                    - generic [ref=e586]:
+                      - img [ref=e587]
+                      - img [ref=e589]
+                      - img [ref=e591]
+                      - img [ref=e593]
+                      - img [ref=e595]
+                - generic [ref=e597]: Driver was 5 min early. Smooth ride.
+              - generic [ref=e598]:
+                - generic [ref=e599]:
+                  - generic [ref=e600]: B
+                  - generic [ref=e601]:
+                    - generic [ref=e602]: Bilal Q.
+                    - generic [ref=e603]:
+                      - img [ref=e604]
+                      - img [ref=e606]
+                      - img [ref=e608]
+                      - img [ref=e610]
+                      - img [ref=e612]
+                - generic [ref=e614]: Cleanest van I've taken. AC perfect.
+              - generic [ref=e615]:
+                - generic [ref=e616]:
+                  - generic [ref=e617]: S
+                  - generic [ref=e618]:
+                    - generic [ref=e619]: Sara M.
+                    - generic [ref=e620]:
+                      - img [ref=e621]
+                      - img [ref=e623]
+                      - img [ref=e625]
+                      - img [ref=e627]
+                      - img [ref=e629]
+                - generic [ref=e631]: Tracking link kept my mum at ease.
+              - generic [ref=e632]:
+                - generic [ref=e633]: "4.9"
+                - generic [ref=e634]: avg rating
+          - generic: 04 / 04
+    - generic [ref=e635]:
+      - img
+      - generic [ref=e637]:
+        - generic [ref=e639]:
+          - generic [ref=e643]:
+            - img [ref=e644]
+            - generic [ref=e646]:
+              - generic [ref=e647]: Launching
+              - generic [ref=e648]: Coming Soon
+          - generic [ref=e649]:
+            - generic [ref=e1130]:
+              - generic [ref=e1132]: 9:41
+              - generic [ref=e1137]:
+                - generic [ref=e1138]: My Bookings
+                - heading "Trip in progress" [level=2] [ref=e1139]
+              - generic [ref=e1140]:
+                - generic [ref=e1141]:
+                  - generic [ref=e1142]: En route
+                  - generic [ref=e1146]: ETA 2h 15m
+                - generic [ref=e1147]:
+                  - generic [ref=e1152]:
+                    - generic [ref=e1153]: Lahore
+                    - generic [ref=e1157]: Islamabad
+                  - generic [ref=e1158]:
+                    - generic [ref=e1159]: 62%
+                    - generic [ref=e1160]: complete
+              - generic [ref=e1161]:
+                - generic [ref=e1162]: K
+                - generic [ref=e1163]:
+                  - generic [ref=e1164]: Kamran A.
+                  - generic [ref=e1165]:
+                    - img [ref=e1166]
+                    - text: 4.9 · Sedan · F-HY 100
+                - generic [ref=e1168]:
+                  - button [ref=e1169]:
+                    - img [ref=e1170]
+                  - button [ref=e1172]:
+                    - img [ref=e1173]
+              - generic [ref=e1176]:
+                - generic [ref=e1177]:
+                  - generic [ref=e1178]: Share live trip
+                  - generic [ref=e1179]: smatway.app/t/0482
+                - button "Copy" [ref=e1180]
+            - generic [ref=e709]: Live Trip
+          - generic [ref=e1181]:
+            - img [ref=e1183]
+            - generic [ref=e1185]:
+              - generic [ref=e1186]: ETA updated
+              - generic [ref=e1187]: just now
+          - generic [ref=e725]:
+            - generic [ref=e726]: Family link active
+            - generic [ref=e727]: 2 viewers
+        - generic [ref=e728]:
+          - generic [ref=e729]:
+            - generic [ref=e735]: Coming Soon · iOS + Android
+            - paragraph [ref=e736]: In your pocket
+            - heading "Everything you need, in one tap." [level=2] [ref=e737]
+            - paragraph [ref=e738]: Search routes, lock seats, watch the trip update live, and rate when you arrive. The whole journey lives on one screen.
+          - generic [ref=e740]:
+            - generic [ref=e741]:
+              - img [ref=e743]
+              - generic [ref=e745]:
+                - generic [ref=e746]: Instant notifications
+                - generic [ref=e747]: Booking, driver assignment, ETA updates — all real-time.
+            - generic [ref=e748]:
+              - img [ref=e750]
+              - generic [ref=e752]:
+                - generic [ref=e753]: Offline tickets
+                - generic [ref=e754]: Download confirmation. Works even without signal.
+            - generic [ref=e755]:
+              - img [ref=e757]
+              - generic [ref=e759]:
+                - generic [ref=e760]: Family share
+                - generic [ref=e761]: One link, your loved ones see your trip until you arrive.
+          - generic [ref=e763]:
+            - generic [ref=e764]: Launching later this year
+            - generic [ref=e765]:
+              - generic [ref=e766]:
+                - img [ref=e767]
+                - generic [ref=e769]:
+                  - generic [ref=e770]: Coming soon to
+                  - generic [ref=e771]: App Store
+              - generic [ref=e772]:
+                - img [ref=e773]
+                - generic [ref=e775]:
+                  - generic [ref=e776]: Coming soon to
+                  - generic [ref=e777]: Google Play
+              - link "Notify me at launch" [ref=e778] [cursor=pointer]:
+                - /url: "#notify"
+                - img [ref=e780]
+                - generic [ref=e783]: Notify me at launch
+                - img [ref=e784]
+            - generic [ref=e786]:
+              - generic [ref=e787]: "0"
+              - text: already on the waitlist · no spam, one launch-day email
+    - generic [ref=e790]:
+      - generic [ref=e791]:
+        - paragraph [ref=e792]: Audited daily
+        - heading "Trust isn't a slogan. It's a ledger." [level=2] [ref=e793]
+        - paragraph [ref=e794]: Every safety check, every screening, every policy — counted, dated, and visible. Here's what happened on the platform today.
+        - generic [ref=e799]: Live · updated every minute
+      - generic [ref=e802]:
+        - generic [ref=e803]:
+          - generic [ref=e804]:
+            - generic [ref=e805]: "01"
+            - generic [ref=e806]: Drivers verified today
+          - generic [ref=e808]: "0"
+        - generic [ref=e810]:
+          - generic [ref=e811]:
+            - generic [ref=e812]: "02"
+            - generic [ref=e813]: Background checks completed
+          - generic [ref=e815]: "0"
+        - generic [ref=e817]:
+          - generic [ref=e818]:
+            - generic [ref=e819]: "03"
+            - generic [ref=e820]: Vehicles inspected this week
+          - generic [ref=e822]: "0"
+        - generic [ref=e824]:
+          - generic [ref=e825]:
+            - generic [ref=e826]: "04"
+            - generic [ref=e827]: Insurance policies active
+          - generic [ref=e829]: "0"
+        - generic [ref=e831]:
+          - generic [ref=e832]:
+            - generic [ref=e833]: "05"
+            - generic [ref=e834]: Trips with share-link enabled
+          - generic [ref=e837]: 0%
+    - generic [ref=e840]:
+      - generic [ref=e841]:
+        - generic [ref=e846]: What riders say
+        - heading "12,438 verified ratings. One number." [level=2] [ref=e847]
+      - generic [ref=e848]:
+        - generic [ref=e849]:
+          - generic [ref=e851]: "0"
+          - generic [ref=e852]:
+            - img [ref=e853]
+            - img [ref=e855]
+            - img [ref=e857]
+            - img [ref=e859]
+            - img [ref=e861]
+            - generic [ref=e863]: out of 5
+          - generic [ref=e864]: Across 12,438 verified trips · last 30 days
+          - generic [ref=e865]:
+            - generic [ref=e866]:
+              - generic [ref=e867]: On-time
+              - generic [ref=e869]: 0%
+            - generic [ref=e870]:
+              - generic [ref=e871]: Would rebook
+              - generic [ref=e873]: 0%
+        - generic [ref=e874]:
+          - generic [ref=e875]:
+            - generic [ref=e876]: Rating distribution
+            - generic [ref=e877]: Last 30d
+          - generic [ref=e878]:
+            - generic [ref=e880]:
+              - generic [ref=e881]:
+                - text: "5"
+                - img [ref=e882]
+              - generic [ref=e885]: 86%
+            - generic [ref=e887]:
+              - generic [ref=e888]:
+                - text: "4"
+                - img [ref=e889]
+              - generic [ref=e892]: 11%
+            - generic [ref=e894]:
+              - generic [ref=e895]:
+                - text: "3"
+                - img [ref=e896]
+              - generic [ref=e899]: 2%
+            - generic [ref=e901]:
+              - generic [ref=e902]:
+                - text: "2"
+                - img [ref=e903]
+              - generic [ref=e906]: 1%
+            - generic [ref=e908]:
+              - generic [ref=e909]:
+                - text: "1"
+                - img [ref=e910]
+              - generic [ref=e913]: 0%
+          - generic [ref=e914]:
+            - generic [ref=e915]: Most-mentioned
+            - generic [ref=e916]:
+              - generic [ref=e917]:
+                - text: On-time
+                - generic [ref=e918]: "0"
+              - generic [ref=e919]:
+                - text: Clean vehicle
+                - generic [ref=e920]: "0"
+              - generic [ref=e921]:
+                - text: Friendly driver
+                - generic [ref=e922]: "0"
+              - generic [ref=e923]:
+                - text: Easy booking
+                - generic [ref=e924]: "0"
+              - generic [ref=e925]:
+                - text: Safe trip
+                - generic [ref=e926]: "0"
+              - generic [ref=e927]:
+                - text: Good value
+                - generic [ref=e928]: "0"
+    - generic [ref=e929]:
+      - generic: “
+      - generic: ”
+      - generic [ref=e931]:
+        - generic [ref=e932]:
+          - generic [ref=e933]:
+            - generic [ref=e938]: In their words
+            - heading "Receipts from real riders." [level=2] [ref=e939]
+          - generic [ref=e940]:
+            - generic [ref=e941]: 01 / 01
+            - button "Previous testimonial" [ref=e942]:
+              - img [ref=e943]
+            - button "Pause" [ref=e945]:
+              - img [ref=e946]
+            - button "Next testimonial" [ref=e949]:
+              - img [ref=e950]
+        - generic [ref=e952]:
+          - generic [ref=e1188]:
+            - generic [ref=e1189]:
+              - img [ref=e1190]
+              - img [ref=e1192]
+              - img [ref=e1194]
+              - img [ref=e1196]
+              - img [ref=e1198]
+              - generic [ref=e1200]: 5.0 · verified trip
+            - blockquote [ref=e1201]: “TO much questions”
+            - generic [ref=e1202]:
+              - generic [ref=e1203]: H
+              - generic [ref=e1204]:
+                - generic [ref=e1205]: Hamza
+                - generic [ref=e1206]: Verified traveler · Pakistan
+              - generic [ref=e1207]:
+                - img [ref=e1208]
+                - generic [ref=e1211]: trips
+          - generic [ref=e1216]:
+            - generic [ref=e1217]:
+              - generic [ref=e1218]:
+                - generic [ref=e1219]: SmatWay
+                - generic [ref=e1220]: "Trip review · #0001"
+              - generic [ref=e1221]:
+                - img [ref=e1222]
+                - generic [ref=e1225]: Verified
+            - generic [ref=e1227]:
+              - generic [ref=e1228]: With Hasaam
+              - generic [ref=e1229]: Apr 24, 2026
+            - generic [ref=e1231]:
+              - generic [ref=e1232]: H
+              - generic [ref=e1233]:
+                - generic [ref=e1234]: Hamza
+                - generic [ref=e1235]: Verified traveler · Pakistan
+              - generic [ref=e1236]:
+                - generic [ref=e1237]:
+                  - img [ref=e1238]
+                  - img [ref=e1240]
+                  - img [ref=e1242]
+                  - img [ref=e1244]
+                  - img [ref=e1246]
+                - generic [ref=e1248]: 5.0 / 5
+            - generic [ref=e1249]:
+              - img [ref=e1250]
+              - paragraph [ref=e1252]: “TO much questions”
+            - generic [ref=e1253]:
+              - generic [ref=e1255]: Trips taken
+              - generic [ref=e1257]:
+                - generic [ref=e1258]: Member since
+                - generic [ref=e1259]: "2024"
+            - generic [ref=e1262]:
+              - generic [ref=e1263]: Signed by verified rider
+              - generic [ref=e1264]: Authentic ✓
+            - generic [ref=e1294]: SW · H2026
+        - generic [ref=e1067]:
+          - button "Show testimonial 1" [ref=e1069]
+          - generic [ref=e1072]: Reading review 1 of 1
+    - generic [ref=e1073]:
+      - img
+      - generic [ref=e1074]:
+        - paragraph [ref=e1076]: ↓ جاهز عندما تكون مستعدًا
+        - heading "رحلتك القادمة تبدأ هنا." [level=2] [ref=e1078]
+        - paragraph [ref=e1080]: سجّل في أقل من ستين ثانية. استعرض المسارات، احجز مقعدًا، وانطلق — مع سائق موثوق ورابط للمشاركة.
+        - generic [ref=e1082]:
+          - link "إنشاء حساب مجاني" [ref=e1083] [cursor=pointer]:
+            - /url: /signup
+            - text: إنشاء حساب مجاني
+            - img [ref=e1084]
+          - link "لديّ حساب بالفعل" [ref=e1086] [cursor=pointer]:
+            - /url: /signin
+    - contentinfo [ref=e1087]:
+      - generic [ref=e1089]:
+        - generic [ref=e1090]:
+          - generic [ref=e1091]:
+            - generic [ref=e1092]:
+              - img [ref=e1094]
+              - generic [ref=e1097]: SmatWay
+            - paragraph [ref=e1098]: نربط بين المسافرين والناقلين في جميع أنحاء العالم. آمن، موثوق، وبأسعار معقولة.
+          - generic [ref=e1099]:
+            - heading "الشركة" [level=4] [ref=e1100]
+            - list [ref=e1101]:
+              - listitem [ref=e1102]:
+                - link "كيف يعمل" [ref=e1103] [cursor=pointer]:
+                  - /url: /how-it-works
+          - generic [ref=e1104]:
+            - heading "قانوني" [level=4] [ref=e1105]
+            - list [ref=e1106]:
+              - listitem [ref=e1107]:
+                - link "سياسة الخصوصية" [ref=e1108] [cursor=pointer]:
+                  - /url: https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf
+              - listitem [ref=e1109]:
+                - link "شروط الخدمة" [ref=e1110] [cursor=pointer]:
+                  - /url: https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf
+          - generic [ref=e1111]:
+            - heading "تواصل معنا" [level=4] [ref=e1112]
+            - paragraph [ref=e1113]:
+              - link "tellus@smatway.com" [ref=e1114] [cursor=pointer]:
+                - /url: mailto:tellus@smatway.com
+        - paragraph [ref=e1117]: © 2026 سمات واي. جميع الحقوق محفوظة.
+  - button "Open Next.js Dev Tools" [ref=e1123] [cursor=pointer]:
+    - img [ref=e1124]
+  - alert [ref=e1127]
