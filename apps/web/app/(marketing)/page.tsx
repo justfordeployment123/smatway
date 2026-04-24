@@ -944,7 +944,7 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
       href="/signup"
       whileHover={{ y: -6 }}
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-      className={`group relative block h-full overflow-hidden rounded-3xl bg-zinc-950 text-white shadow-[0_30px_70px_-25px_rgba(16,185,129,0.25),0_18px_40px_-20px_rgba(0,0,0,0.4)] ring-1 ring-white/10 ${large ? "p-8" : "p-6"}`}
+      className={`group relative block h-full overflow-hidden rounded-3xl bg-zinc-950 text-white shadow-[0_30px_70px_-25px_rgba(16,185,129,0.25),0_18px_40px_-20px_rgba(0,0,0,0.4)] ring-1 ring-white/10 ${large ? "p-5 sm:p-7 md:p-8" : "p-4 sm:p-5 md:p-6"}`}
     >
       {/* Background image */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -973,9 +973,9 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
         style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.5) 0.5px, transparent 0.5px)", backgroundSize: "20px 20px" }}
       />
 
-      <div className="relative flex h-full flex-col">
+      <div className="relative flex h-full min-w-0 flex-col">
         {/* Top: live chip + arrow */}
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           <div className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 px-2.5 py-1 backdrop-blur">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-80" />
@@ -999,21 +999,21 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
         <div className={`mt-auto ${large ? "" : ""}`}>
           {/* Cities */}
           {large ? (
-            <div className="flex items-end justify-between gap-6">
-              <div>
+            <div className="flex items-end justify-between gap-3 sm:gap-6">
+              <div className="min-w-0">
                 <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">From</div>
-                <div className="mt-0.5 font-semibold tracking-tight text-4xl md:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
+                <div className="mt-0.5 truncate font-semibold tracking-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
               </div>
-              <div className="text-right">
+              <div className="min-w-0 text-right">
                 <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">To</div>
-                <div className="mt-0.5 font-semibold tracking-tight text-4xl md:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
+                <div className="mt-0.5 truncate font-semibold tracking-tight text-2xl sm:text-3xl md:text-4xl lg:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
               </div>
             </div>
           ) : (
             <div>
               <div className="flex items-baseline justify-between gap-2">
-                <div className="font-semibold tracking-tight text-xl leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
-                <div className="font-semibold tracking-tight text-xl leading-none text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
+                <div className="min-w-0 truncate font-semibold tracking-tight text-lg sm:text-xl leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
+                <div className="min-w-0 truncate text-right font-semibold tracking-tight text-lg sm:text-xl leading-none text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
               </div>
               <div className="-my-1">
                 <RouteArc index={index} />
@@ -1022,13 +1022,13 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
           )}
 
           {/* Footer row: vehicle, departure, fare, time */}
-          <div className={`${large ? "mt-6" : "mt-4"} flex items-end justify-between border-t border-white/15 pt-4`}>
-            <div className="flex items-center gap-3">
+          <div className={`${large ? "mt-6" : "mt-4"} flex flex-wrap items-end justify-between gap-x-3 gap-y-2 border-t border-white/15 pt-4`}>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:gap-3">
               <div className="inline-flex items-center gap-1.5 text-[11px] text-white/85">
                 <VehicleIcon kind={r.vehicle} />
                 <span className="font-medium">{r.vehicle}</span>
               </div>
-              <span className="text-white/30">·</span>
+              <span className="hidden text-white/30 sm:inline">·</span>
               <div className="inline-flex items-center gap-1.5 text-[11px] text-emerald-200">
                 <span className="relative flex h-1 w-1">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-80" />
@@ -1037,8 +1037,8 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
                 <span className="font-mono">Next {r.next}</span>
               </div>
             </div>
-            <div className="text-right">
-              <div className="font-mono text-base font-semibold tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">PKR {r.price}</div>
+            <div className="ml-auto text-right">
+              <div className="font-mono text-sm sm:text-base font-semibold tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">PKR {r.price}</div>
               <div className="mt-1 font-mono text-[10px] tabular-nums text-white/60">{r.time}</div>
             </div>
           </div>
@@ -1082,7 +1082,7 @@ function PopularRoutes() {
 
         <div className="grid gap-4 md:grid-cols-4 md:auto-rows-[230px]">
           {routesBento.map((r, i) => (
-            <Reveal key={`${r.from}-${r.to}`} delay={i * 0.08} className={r.featured ? "md:col-span-2 md:row-span-2" : ""}>
+            <Reveal key={`${r.from}-${r.to}`} delay={i * 0.08} className={`min-w-0 ${r.featured ? "md:col-span-2 md:row-span-2" : ""}`}>
               <RouteTile r={r} large={r.featured} index={i} />
             </Reveal>
           ))}
