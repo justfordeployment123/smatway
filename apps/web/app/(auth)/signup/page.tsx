@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { clearAuthData, setAuthToken } from "@/lib/auth";
 
@@ -14,9 +13,17 @@ function ArrowLeftIcon() {
   );
 }
 
+function ArrowRightIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
 function UserIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
     </svg>
   );
@@ -24,7 +31,7 @@ function UserIcon() {
 
 function MailIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </svg>
   );
@@ -32,7 +39,7 @@ function MailIcon() {
 
 function PhoneIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
     </svg>
   );
@@ -40,7 +47,7 @@ function PhoneIcon() {
 
 function GlobeIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" /><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" /><path d="M2 12h20" />
     </svg>
   );
@@ -48,7 +55,7 @@ function GlobeIcon() {
 
 function LockIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
@@ -56,7 +63,7 @@ function LockIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
       <line x1="1" y1="1" x2="23" y2="23" />
@@ -66,7 +73,7 @@ function EyeOffIcon() {
 
 function EyeIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
     </svg>
   );
@@ -74,14 +81,48 @@ function EyeIcon() {
 
 function ChevronDownIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m6 9 6 6 6-6" />
     </svg>
   );
 }
 
+function TravelerIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10V7a2 2 0 0 0-2-2h-3" /><path d="M4 14v3a2 2 0 0 0 2 2h3" /><path d="M15 19h3a2 2 0 0 0 2-2v-3" />
+      <path d="M9 5H6a2 2 0 0 0-2 2v3" /><circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function TruckIcon({ className = "w-5 h-5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M10 17h4V6H2v11h3" /><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h2" />
+      <circle cx="7.5" cy="17.5" r="2.5" /><circle cx="17.5" cy="17.5" r="2.5" />
+    </svg>
+  );
+}
+
+function passwordStrength(pw: string): { score: 0 | 1 | 2 | 3 | 4; label: string; color: string } {
+  if (!pw) return { score: 0, label: "Empty", color: "bg-zinc-200" };
+  let s = 0;
+  if (pw.length >= 8) s++;
+  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) s++;
+  if (/\d/.test(pw)) s++;
+  if (/[^A-Za-z0-9]/.test(pw)) s++;
+  const map: Record<number, { label: string; color: string }> = {
+    0: { label: "Too short", color: "bg-red-500" },
+    1: { label: "Weak", color: "bg-orange-500" },
+    2: { label: "Okay", color: "bg-amber-500" },
+    3: { label: "Good", color: "bg-emerald-500" },
+    4: { label: "Strong", color: "bg-emerald-600" },
+  };
+  return { score: s as 0 | 1 | 2 | 3 | 4, ...map[s] };
+}
+
 export default function SignUpPage() {
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -92,7 +133,8 @@ export default function SignUpPage() {
     password: "",
     confirmPassword: "",
     phoneNumber: "",
-    country: "",    agreedToTerms: false,
+    country: "",
+    agreedToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -113,17 +155,13 @@ export default function SignUpPage() {
     const { id, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      // Handle checkbox separately from text inputs
       [id]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [id]: value,
-    }));
+    setFormData(prev => ({ ...prev, [id]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -132,19 +170,15 @@ export default function SignUpPage() {
     setIsLoading(true);
 
     try {
-      // Avoid sending stale bearer tokens from previous sessions.
       clearAuthData();
 
-      // Validate form
       if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
         throw new Error("Please fill in all fields");
       }
-
       if (formData.password !== formData.confirmPassword) {
         throw new Error("Passwords do not match");
       }
 
-      // Submit to /auth/register with all collected fields
       const result = await api.post<RegisterResponse>("/auth/register", {
         name: formData.name,
         email: formData.email,
@@ -157,13 +191,10 @@ export default function SignUpPage() {
       if (result?.accessToken) {
         setAuthToken(result.accessToken, 15 * 60);
       }
-
       await api.get("/auth/me");
-
       window.location.assign("/dashboard");
     } catch (err) {
       if (err instanceof ApiError) {
-        // Display the specific message from the server if it exists
         setError(err.response?.message || "Registration succeeded but session validation failed. Please sign in again.");
       } else {
         setError(err instanceof Error ? err.message : "An unexpected error occurred");
@@ -173,234 +204,259 @@ export default function SignUpPage() {
     }
   };
 
+  const strength = passwordStrength(formData.password);
+  const inputBase =
+    "w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 text-[14px] text-zinc-900 placeholder:text-zinc-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200";
+
   return (
     <div className="w-full animate-fade-in-up" suppressHydrationWarning>
-
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
-        <ArrowLeftIcon /><span>Back to Home</span>
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900 mb-8 transition-colors group">
+        <ArrowLeftIcon />
+        <span className="transition-transform group-hover:-translate-x-0.5">Back to home</span>
       </Link>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Create your account</h1>
-        <p className="text-slate-500">Join SmatWay and start your journey today</p>
+      {/* Mobile brand */}
+      <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-[0_8px_24px_-8px_rgba(16,185,129,0.5)]">
+          <span className="font-[var(--font-display)] text-base font-bold text-white">S</span>
+        </div>
+        <span className="font-[var(--font-display)] text-lg font-semibold tracking-tight text-zinc-950">SmatWay</span>
       </div>
 
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        {/* Full Name */}
-        <div className="animate-fade-in-up [animation-delay:100ms]">
-          <label htmlFor="name" className="text-sm font-medium text-zinc-900 mb-1.5 block">Full Name</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <UserIcon />
-            </span>
-            <input
-              id="name"
-              type="text"
-              placeholder="Your full name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-          </div>
+      <div className="mb-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-white/70 px-3 py-1 backdrop-blur">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-80" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          </span>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">New account</span>
         </div>
+        <h1 className="mt-4 font-[var(--font-display)] text-4xl font-semibold leading-[1.05] tracking-tight text-zinc-950">
+          Start your <span className="italic text-emerald-700">journey.</span>
+        </h1>
+        <p className="mt-2 text-[14px] text-zinc-500">Sixty seconds. Two fields, then the road.</p>
+      </div>
 
-        {/* Email */}
-        <div className="animate-fade-in-up [animation-delay:150ms]">
-          <label htmlFor="email" className="text-sm font-medium text-zinc-900 mb-1.5 block">Email</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <MailIcon />
-            </span>
-            <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-          </div>
+      {/* Account type — premium segmented picker */}
+      <div className="mb-5">
+        <label className="mb-2 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">I&apos;m signing up as</label>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setAccountType("traveler")}
+            className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-200 ${
+              accountType === "traveler"
+                ? "border-emerald-500 bg-emerald-50/80 shadow-[0_6px_16px_-8px_rgba(16,185,129,0.35)]"
+                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/60"
+            }`}
+          >
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${accountType === "traveler" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-600"}`}>
+              <TravelerIcon />
+            </div>
+            <div className={`mt-2.5 text-[13px] font-semibold ${accountType === "traveler" ? "text-emerald-900" : "text-zinc-900"}`}>Traveler</div>
+            <div className="text-[11px] text-zinc-500">Book seats, track trips</div>
+            {accountType === "traveler" && (
+              <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setAccountType("transporter")}
+            className={`group relative overflow-hidden rounded-xl border p-3.5 text-left transition-all duration-200 ${
+              accountType === "transporter"
+                ? "border-emerald-500 bg-emerald-50/80 shadow-[0_6px_16px_-8px_rgba(16,185,129,0.35)]"
+                : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/60"
+            }`}
+          >
+            <div className={`flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${accountType === "transporter" ? "bg-emerald-500 text-white" : "bg-zinc-100 text-zinc-600"}`}>
+              <TruckIcon />
+            </div>
+            <div className={`mt-2.5 text-[13px] font-semibold ${accountType === "transporter" ? "text-emerald-900" : "text-zinc-900"}`}>Transporter</div>
+            <div className="text-[11px] text-zinc-500">Run fleets, earn daily</div>
+            {accountType === "transporter" && (
+              <div className="absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white">
+                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              </div>
+            )}
+          </button>
         </div>
+      </div>
 
-        {/* Phone Number */}
-        <div className="animate-fade-in-up [animation-delay:200ms]">
-          <label htmlFor="phoneNumber" className="text-sm font-medium text-zinc-900 mb-1.5 block">Phone Number</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <PhoneIcon />
-            </span>
-            <input
-              id="phoneNumber"
-              type="text"
-              placeholder="+254 712 345 678"
-              value={formData.phoneNumber}
-              onChange={handleInputChange}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-          </div>
-        </div>
-
-        {/* Country */}
-        <div className="animate-fade-in-up [animation-delay:250ms]">
-          <label htmlFor="country" className="text-sm font-medium text-zinc-900 mb-1.5 block">Country</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <GlobeIcon />
-            </span>
-            <select
-              id="country"
-              value={formData.country}
-              onChange={handleSelectChange}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-10 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all appearance-none cursor-pointer"
-            >
-              <option value="" className="text-slate-400">Select your country</option>
-              <option value="KE">Kenya</option>
-              <option value="UG">Uganda</option>
-              <option value="TZ">Tanzania</option>
-              <option value="RW">Rwanda</option>
-              <option value="ET">Ethiopia</option>
-              <option value="NG">Nigeria</option>
-              <option value="GH">Ghana</option>
-              <option value="ZA">South Africa</option>
-              <option value="US">United States</option>
-              <option value="GB">United Kingdom</option>
-            </select>
-            <span className="absolute right-3">
-              <ChevronDownIcon />
-            </span>
-          </div>
-        </div>
-
-        {/* Password */}
-        <div className="animate-fade-in-up [animation-delay:300ms]">
-          <label htmlFor="password" className="text-sm font-medium text-zinc-900 mb-1.5 block">Password</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <LockIcon />
-            </span>
-            <input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              placeholder="Create a password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 focus:outline-none"
-              aria-label={showPassword ? "Hide password" : "Show password"}
-            >
-              {showPassword ? <EyeIcon /> : <EyeOffIcon />}
-            </button>
-          </div>
-        </div>
-
-        {/* Confirm Password */}
-        <div className="animate-fade-in-up [animation-delay:350ms]">
-          <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-900 mb-1.5 block">Confirm Password</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <LockIcon />
-            </span>
-            <input
-              id="confirmPassword"
-              type={showConfirm ? "text" : "password"}
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              required
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm(!showConfirm)}
-              className="absolute right-3 focus:outline-none"
-              aria-label={showConfirm ? "Hide password" : "Show password"}
-            >
-              {showConfirm ? <EyeIcon /> : <EyeOffIcon />}
-            </button>
-          </div>
-        </div>
-
-        {/* Account Type */}
-        <div className="animate-fade-in-up [animation-delay:400ms]">
-          <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Account Type</label>
-          <div className="flex w-full rounded-xl border border-slate-200 overflow-hidden bg-white">
-            <button
-              type="button"
-              onClick={() => setAccountType("traveler")}
-              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 ${accountType === "traveler"
-                ? "bg-zinc-900 text-white"
-                : "text-slate-500 hover:bg-slate-50"
-                }`}
-            >
-              Traveler
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountType("transporter")}
-              className={`w-1/2 py-3 text-sm font-medium transition-all duration-150 border-l border-slate-200 ${accountType === "transporter"
-                ? "bg-zinc-900 text-white"
-                : "text-slate-500 hover:bg-slate-50"
-                }`}
-            >
-              Transporter
-            </button>
-          </div>
-        </div>
-
-        {/* Terms */}
-        <div className="flex items-start gap-2.5 animate-fade-in-up [animation-delay:450ms]">
-          <input
-            type="checkbox"
-            id="agreedToTerms"
-            checked={formData.agreedToTerms}
-            onChange={handleInputChange}
-            className="mt-0.5 cursor-pointer accent-emerald-600 w-4 h-4"
-          />
-          <label htmlFor="terms" className="text-sm text-slate-500 leading-snug">
-            I have read and agree to the{" "}
-            <a
-              href="https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-600 font-medium hover:text-emerald-700 transition-colors underline underline-offset-2"
-            >
-              Terms of Use &amp; Conditions
-            </a>
-          </label>
-        </div>
-
-        {/* Error Message */}
+      {/* Form card */}
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_32px_-12px_rgba(15,23,42,0.08)]">
         {error && (
-          <div className="animate-fade-in-up [animation-delay:475ms] p-3 rounded-xl bg-red-50 border border-red-200">
-            <p className="text-sm text-red-600">{error}</p>
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-[13px] text-red-700">
+            <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
         )}
 
-        {/* Submit */}
-        <div className="animate-fade-in-up [animation-delay:500ms] pt-1">
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:bg-zinc-400 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center block text-sm disabled:cursor-not-allowed"
-          >
-            {isLoading ? "Creating Account..." : "Create Account"}
-          </button>
-        </div>
-      </form>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="name" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Full name</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><UserIcon /></span>
+              <input
+                id="name" type="text" placeholder="Your full name" required
+                value={formData.name} onChange={handleInputChange}
+                className={inputBase}
+              />
+            </div>
+          </div>
 
-      <div className="border-t border-slate-100 my-6" />
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Email</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><MailIcon /></span>
+              <input
+                id="email" type="email" placeholder="you@example.com" required
+                value={formData.email} onChange={handleInputChange}
+                className={inputBase}
+              />
+            </div>
+          </div>
 
-      <div className="text-center animate-fade-in-up [animation-delay:550ms]">
-        <p className="text-sm text-slate-500">
+          {/* Phone + Country in a 2-col grid */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="phoneNumber" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Phone</label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 pointer-events-none"><PhoneIcon /></span>
+                <input
+                  id="phoneNumber" type="text" placeholder="+92 300 1234567"
+                  value={formData.phoneNumber} onChange={handleInputChange}
+                  className={inputBase}
+                />
+              </div>
+            </div>
+            <div>
+              <label htmlFor="country" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Country</label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3.5 pointer-events-none"><GlobeIcon /></span>
+                <select
+                  id="country"
+                  value={formData.country}
+                  onChange={handleSelectChange}
+                  className="w-full appearance-none rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 pr-10 text-[14px] text-zinc-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200 cursor-pointer"
+                >
+                  <option value="">Select country</option>
+                  <option value="PK">Pakistan</option>
+                  <option value="KE">Kenya</option>
+                  <option value="UG">Uganda</option>
+                  <option value="TZ">Tanzania</option>
+                  <option value="RW">Rwanda</option>
+                  <option value="ET">Ethiopia</option>
+                  <option value="NG">Nigeria</option>
+                  <option value="GH">Ghana</option>
+                  <option value="ZA">South Africa</option>
+                  <option value="US">United States</option>
+                  <option value="GB">United Kingdom</option>
+                </select>
+                <span className="absolute right-3.5"><ChevronDownIcon /></span>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="password" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Password</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><LockIcon /></span>
+              <input
+                id="password" type={showPassword ? "text" : "password"} placeholder="Create a strong password" required
+                value={formData.password} onChange={handleInputChange}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 pr-11 text-[14px] text-zinc-900 placeholder:text-zinc-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 focus:outline-none rounded hover:bg-zinc-100 p-1 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>
+                {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+              </button>
+            </div>
+            {/* Strength meter */}
+            {formData.password && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex flex-1 gap-1">
+                  {[1, 2, 3, 4].map((n) => (
+                    <div
+                      key={n}
+                      className={`h-1 flex-1 rounded-full transition-colors duration-300 ${n <= strength.score ? strength.color : "bg-zinc-200"}`}
+                    />
+                  ))}
+                </div>
+                <span className="min-w-[56px] text-right font-mono text-[10px] uppercase tracking-wider text-zinc-500">{strength.label}</span>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="confirmPassword" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Confirm password</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><LockIcon /></span>
+              <input
+                id="confirmPassword" type={showConfirm ? "text" : "password"} placeholder="Repeat your password" required
+                value={formData.confirmPassword} onChange={handleInputChange}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 pr-11 text-[14px] text-zinc-900 placeholder:text-zinc-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200"
+              />
+              <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3.5 focus:outline-none rounded hover:bg-zinc-100 p-1 transition-colors" aria-label={showConfirm ? "Hide password" : "Show password"}>
+                {showConfirm ? <EyeIcon /> : <EyeOffIcon />}
+              </button>
+            </div>
+          </div>
+
+          <label className="flex items-start gap-3 rounded-xl border border-zinc-200 bg-zinc-50/60 p-3 cursor-pointer hover:bg-zinc-50 transition-colors">
+            <input
+              type="checkbox"
+              id="agreedToTerms"
+              checked={formData.agreedToTerms}
+              onChange={handleInputChange}
+              className="mt-0.5 cursor-pointer accent-emerald-600 w-4 h-4"
+            />
+            <span className="text-[12.5px] leading-snug text-zinc-600">
+              I have read and agree to the{" "}
+              <a
+                href="https://res.cloudinary.com/dge3lt4u6/image/upload/v1766858233/Terms_of_use_and_condition_of_service_y3gdjj.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-emerald-700 underline underline-offset-2 decoration-emerald-300 hover:decoration-emerald-500 transition-colors"
+              >
+                Terms of Use &amp; Conditions
+              </a>
+            </span>
+          </label>
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative w-full overflow-hidden rounded-xl bg-zinc-950 px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_10px_24px_-8px_rgba(15,23,42,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:shadow-[0_14px_36px_-10px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.12)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/20 to-emerald-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <span className="relative inline-flex items-center justify-center gap-2">
+                {isLoading ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                    <span>Creating account…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Create account</span>
+                    <ArrowRightIcon />
+                  </>
+                )}
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <div className="mt-7 text-center">
+        <p className="text-[13px] text-zinc-500">
           Already have an account?{" "}
-          <Link href="/signin" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign In</Link>
+          <Link href="/signin" className="font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-2 decoration-emerald-300 hover:decoration-emerald-500 transition-colors">
+            Sign in
+          </Link>
         </p>
       </div>
     </div>

@@ -2015,42 +2015,289 @@ function AppPreview() {
 // ─── HowItWorks — sticky-scroll stepper ─────────────────────────────────────
 
 const stepsNew = [
-  { n: "01", title: "Open the app, tell us where", body: "Pick your city pair and travel date. We surface every verified transporter on that route — with seats, fare, arrival time." },
-  { n: "02", title: "Lock a seat, hold your fare", body: "Pay through the app — your fare moves into escrow. The driver only gets paid when you arrive. No bargaining on the curb." },
-  { n: "03", title: "Track every meter, share if you want", body: "Watch the trip update live. Forward the share link to family. Rate the trip when you step off — it shapes the next traveler's choice." },
+  {
+    n: "01",
+    eyebrow: "Discover",
+    title: "Open the app, tell us where",
+    body: "Pick your city pair and travel date. We surface every verified transporter on that route — with seats, fare, arrival time.",
+    meta: "~30 seconds",
+    visual: "search" as const,
+    accent: { text: "text-emerald-300", chip: "border-emerald-400/30 bg-emerald-500/10 text-emerald-300", dot: "bg-emerald-400", glow: "from-emerald-500/30" },
+  },
+  {
+    n: "02",
+    eyebrow: "Secure",
+    title: "Lock a seat, hold your fare",
+    body: "Pay through the app — your fare moves into escrow. The driver only gets paid when you arrive. No bargaining on the curb.",
+    meta: "0 hidden fees",
+    visual: "escrow" as const,
+    accent: { text: "text-amber-300", chip: "border-amber-400/30 bg-amber-500/10 text-amber-300", dot: "bg-amber-400", glow: "from-amber-500/30" },
+  },
+  {
+    n: "03",
+    eyebrow: "Arrive",
+    title: "Track every meter, share if you want",
+    body: "Watch the trip update live. Forward the share link to family. Rate the trip when you step off — it shapes the next traveler's choice.",
+    meta: "Live · shareable",
+    visual: "track" as const,
+    accent: { text: "text-sky-300", chip: "border-sky-400/30 bg-sky-500/10 text-sky-300", dot: "bg-sky-400", glow: "from-sky-500/30" },
+  },
 ];
+
+function StepSearchVisual() {
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900/80 to-zinc-950/90 p-4 backdrop-blur-sm">
+      {/* Search bar */}
+      <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
+        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Route</div>
+        <div className="mt-1 flex items-center gap-2 text-[12px] text-white">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+          <span className="font-semibold">Lahore</span>
+          <svg className="h-3 w-3 text-zinc-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
+          <span className="font-semibold">Islamabad</span>
+          <motion.span
+            className="ml-auto inline-block h-3 w-[1.5px] bg-emerald-400"
+            animate={{ opacity: [1, 0, 1] }}
+            transition={{ duration: 1, repeat: Infinity }}
+          />
+        </div>
+      </div>
+      {/* Result tiles */}
+      <div className="mt-2 space-y-1.5">
+        {[
+          { op: "Bilal Transport", seats: 3, fare: "1,500", tone: "ring-emerald-400/30 bg-emerald-500/[0.04]" },
+          { op: "ZK Express", seats: 7, fare: "1,200", tone: "ring-white/10 bg-white/[0.03]" },
+          { op: "Fast Motors", seats: 2, fare: "1,800", tone: "ring-white/10 bg-white/[0.03]" },
+        ].map((r, i) => (
+          <motion.div
+            key={r.op}
+            initial={{ opacity: 0, y: 6 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ delay: 0.15 + i * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className={`flex items-center justify-between rounded-lg px-3 py-2 ring-1 ${r.tone}`}
+          >
+            <div>
+              <div className="text-[11px] font-semibold text-white">{r.op}</div>
+              <div className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">{r.seats} seats left</div>
+            </div>
+            <div className="font-mono text-[11px] font-semibold tabular-nums text-emerald-300">PKR {r.fare}</div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StepEscrowVisual() {
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900/80 to-zinc-950/90 p-4 backdrop-blur-sm">
+      {/* Ticket card */}
+      <div className="mx-auto w-[92%] rounded-xl bg-zinc-900 p-4 shadow-[0_20px_40px_-16px_rgba(251,191,36,0.25)] ring-1 ring-amber-400/20">
+        <div className="flex items-start justify-between">
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400">Escrow · locked</div>
+            <div className="mt-0.5 text-[11px] font-semibold text-white">Lahore → Islamabad</div>
+          </div>
+          <motion.div
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15"
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <svg className="h-4 w-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+          </motion.div>
+        </div>
+        <div className="my-3 border-t border-dashed border-white/10" />
+        <div className="flex items-end justify-between">
+          <div>
+            <div className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">Held amount</div>
+            <div className="font-[var(--font-display)] text-xl font-semibold tabular-nums text-white">PKR 1,500</div>
+          </div>
+          <div className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
+            <span className="h-1 w-1 rounded-full bg-emerald-400" />
+            Released on arrival
+          </div>
+        </div>
+      </div>
+      {/* Floating "0 fees" pill */}
+      <motion.div
+        className="absolute bottom-4 right-4 inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.06] px-2.5 py-1 backdrop-blur"
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-white">+ 0 fees</span>
+      </motion.div>
+    </div>
+  );
+}
+
+function StepTrackVisual() {
+  return (
+    <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-zinc-900/80 to-zinc-950/90 p-4 backdrop-blur-sm">
+      {/* Mini map — animated route */}
+      <div className="relative h-[70%] w-full overflow-hidden rounded-xl bg-gradient-to-br from-sky-500/10 via-zinc-900 to-emerald-500/10">
+        {/* Grid lines */}
+        <div
+          className="absolute inset-0 opacity-30"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)," +
+              "linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)",
+            backgroundSize: "20px 20px",
+          }}
+        />
+        {/* Route path */}
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 200 120" preserveAspectRatio="none">
+          <motion.path
+            d="M10 95 C 40 90, 60 40, 110 45 S 180 80, 195 20"
+            fill="none"
+            stroke="rgb(16 185 129)"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeDasharray="0 1"
+            initial={{ pathLength: 0 }}
+            whileInView={{ pathLength: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 2.4, ease: [0.16, 1, 0.3, 1] }}
+          />
+          <motion.path
+            d="M10 95 C 40 90, 60 40, 110 45 S 180 80, 195 20"
+            fill="none"
+            stroke="rgb(125 211 252)"
+            strokeWidth="0.8"
+            strokeDasharray="2 3"
+            initial={{ pathLength: 0 }}
+            whileInView={{ pathLength: 1 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 2.4, delay: 0.2, ease: "linear" }}
+          />
+        </svg>
+        {/* Origin pin */}
+        <div className="absolute bottom-3 left-2 flex items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-semibold text-white backdrop-blur">
+          <span className="h-1 w-1 rounded-full bg-emerald-400" />Lahore
+        </div>
+        {/* Live dot */}
+        <motion.div
+          className="absolute h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400 shadow-[0_0_12px_rgba(56,189,248,0.8)]"
+          animate={{ left: ["10%", "30%", "55%", "80%", "97.5%"], top: ["79%", "42%", "38%", "65%", "17%"] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <span className="absolute inset-0 animate-ping rounded-full bg-sky-400/60" />
+        </motion.div>
+        {/* Dest pin */}
+        <div className="absolute right-2 top-3 flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold text-emerald-300 backdrop-blur">
+          <span className="h-1 w-1 rounded-full bg-emerald-400" />Islamabad
+        </div>
+      </div>
+      {/* Controls below map */}
+      <div className="mt-3 flex items-center justify-between">
+        <div className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-80" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-400" />
+          </span>
+          <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-300">ETA 2h 15m</span>
+        </div>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold text-white ring-1 ring-white/10"
+        >
+          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98" />
+          </svg>
+          Share link
+        </motion.button>
+      </div>
+    </div>
+  );
+}
+
+function StepVisual({ kind }: { kind: typeof stepsNew[number]["visual"] }) {
+  if (kind === "search") return <StepSearchVisual />;
+  if (kind === "escrow") return <StepEscrowVisual />;
+  return <StepTrackVisual />;
+}
 
 function StickyStep({ step, index }: { step: typeof stepsNew[number]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { margin: "-45% 0px -45% 0px" });
+  const inView = useInView(ref, { margin: "-40% 0px -40% 0px" });
   return (
-    <div ref={ref} className="relative pl-20">
+    <motion.div
+      ref={ref}
+      animate={{ opacity: inView ? 1 : 0.55 }}
+      transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+      className="relative"
+    >
+      {/* Timeline dot on the spine */}
       <motion.div
         initial={false}
         animate={{
-          scale: inView ? 1 : 0.85,
+          scale: inView ? 1 : 0.8,
           backgroundColor: inView ? "rgb(16 185 129)" : "rgb(24 24 27)",
+          boxShadow: inView ? "0 0 0 6px rgba(16,185,129,0.15), 0 0 24px rgba(16,185,129,0.45)" : "0 0 0 0 rgba(16,185,129,0)",
         }}
         transition={{ type: "spring", stiffness: 220, damping: 22 }}
-        className="absolute left-2 top-2 flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/40 font-mono text-xs font-semibold text-white"
+        className="absolute -left-[26px] top-8 z-10 hidden h-3 w-3 rounded-full border border-emerald-400/50 lg:block"
+      />
+
+      <motion.div
+        animate={{ y: inView ? 0 : 6 }}
+        transition={{ duration: 0.5 }}
+        className="group relative overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02] p-6 backdrop-blur-sm lg:p-7"
       >
-        {step.n}
+        {/* Top hairline accent — emerald, reacts to active state */}
+        <motion.div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent"
+          animate={{ opacity: inView ? 0.8 : 0.15 }}
+          transition={{ duration: 0.5 }}
+        />
+
+        {/* Ambient accent glow — off-axis */}
+        <motion.div
+          className={`pointer-events-none absolute -right-16 -top-20 h-60 w-60 rounded-full bg-gradient-to-br ${step.accent.glow} to-transparent blur-3xl`}
+          animate={{ opacity: inView ? 0.9 : 0.25, scale: inView ? 1.1 : 1 }}
+          transition={{ duration: 0.7 }}
+        />
+
+        {/* Giant editorial chapter number */}
+        <div aria-hidden className="pointer-events-none absolute -right-2 -top-6 select-none font-[var(--font-display)] text-[140px] font-black leading-none tracking-tighter text-white/[0.04]">
+          {step.n}
+        </div>
+
+        <div className="relative grid gap-6 sm:grid-cols-[1.1fr_1fr] sm:items-center">
+          {/* Text column */}
+          <div>
+            <div className="flex items-center gap-2">
+              <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 backdrop-blur ${step.accent.chip}`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${step.accent.dot}`} />
+                <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em]">{step.eyebrow}</span>
+              </div>
+              <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Step {step.n}</div>
+            </div>
+            <h3 className="mt-3 font-[var(--font-display)] text-2xl tracking-tight sm:text-[26px] leading-[1.15] text-white">
+              {step.title}
+            </h3>
+            <p className="mt-3 text-[14.5px] leading-relaxed text-zinc-400">
+              {step.body}
+            </p>
+            <div className={`mt-5 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.18em] ${step.accent.text}`}>
+              <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="8" cy="8" r="6" /><path d="M8 5v3l2 2" />
+              </svg>
+              <span>{step.meta}</span>
+            </div>
+          </div>
+
+          {/* Visual column */}
+          <div className="w-full">
+            <StepVisual kind={step.visual} />
+          </div>
+        </div>
       </motion.div>
-      <motion.h3
-        animate={{ opacity: inView ? 1 : 0.45 }}
-        transition={{ duration: 0.4 }}
-        className="font-[var(--font-display)] text-2xl tracking-tight sm:text-3xl"
-      >
-        {step.title}
-      </motion.h3>
-      <motion.p
-        animate={{ opacity: inView ? 1 : 0.35 }}
-        transition={{ duration: 0.4 }}
-        className="mt-4 max-w-lg text-[16px] leading-relaxed text-zinc-400"
-      >
-        {step.body}
-      </motion.p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -2058,6 +2305,7 @@ function HowItWorks() {
   const sectionRef = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
   const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const progressHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
   const [active, setActive] = useState(0);
   useEffect(() => {
     const unsub = scrollYProgress.on("change", (v) => setActive(Math.min(stepsNew.length - 1, Math.floor(v * stepsNew.length))));
@@ -2074,31 +2322,74 @@ function HowItWorks() {
       {/* Subtle hairline separator — emerald gradient line, not a hard cut */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
       <div className="absolute inset-0 grain opacity-40" />
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-4 pt-12 pb-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24 lg:px-8 lg:pt-16 lg:pb-32">
+
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-4 pt-14 pb-24 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20 lg:px-8 lg:pt-20 lg:pb-32">
         {/* Sticky left header */}
         <div className="lg:sticky lg:top-32 lg:h-fit">
-          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400">How it works</p>
-          <h2 className="mt-3 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/[0.07] px-3 py-1.5 backdrop-blur">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            </span>
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">How it works</span>
+          </div>
+          <h2 className="mt-5 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.02]">
             Three steps. <span className="italic text-emerald-300">Zero friction.</span>
           </h2>
-          <p className="mt-6 max-w-md text-[16px] leading-relaxed text-zinc-400">
+          <p className="mt-5 max-w-md text-[15.5px] leading-relaxed text-zinc-400">
             From sign-up to safe arrival in under two minutes of your time. Everything else runs on the backend, by design.
           </p>
-          <div className="mt-10 flex items-center gap-3">
-            <div className="font-mono text-sm tabular-nums text-zinc-500">
+
+          {/* Step pill preview — clickable dot indicators showing active step */}
+          <div className="mt-10 space-y-3">
+            {stepsNew.map((s, i) => (
+              <div
+                key={s.n}
+                className={`flex items-center gap-4 rounded-xl border px-3 py-2.5 transition-colors duration-500 ${
+                  active === i
+                    ? "border-emerald-400/40 bg-emerald-500/[0.06]"
+                    : "border-white/[0.06] bg-white/[0.02]"
+                }`}
+              >
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full font-mono text-[11px] font-semibold transition-colors duration-500 ${
+                    active === i ? "bg-emerald-500 text-zinc-950" : "bg-zinc-900 text-zinc-500"
+                  }`}
+                >
+                  {s.n}
+                </div>
+                <div>
+                  <div className={`font-mono text-[9px] uppercase tracking-[0.18em] transition-colors duration-500 ${active === i ? "text-emerald-300" : "text-zinc-600"}`}>
+                    {s.eyebrow}
+                  </div>
+                  <div className={`text-[13px] font-medium transition-colors duration-500 ${active === i ? "text-white" : "text-zinc-500"}`}>
+                    {s.title.split(",")[0]}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Progress meter */}
+          <div className="mt-8 flex items-center gap-3">
+            <div className="font-mono text-[11px] tabular-nums text-zinc-500">
               {String(active + 1).padStart(2, "0")} <span className="text-zinc-700">/</span> {String(stepsNew.length).padStart(2, "0")}
             </div>
-            <div className="relative h-px w-32 overflow-hidden bg-zinc-800">
-              <motion.div className="absolute inset-y-0 left-0 bg-emerald-400" style={{ width: progressWidth }} />
+            <div className="relative h-[2px] flex-1 overflow-hidden rounded-full bg-white/5">
+              <motion.div className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-400 to-emerald-500" style={{ width: progressWidth }} />
             </div>
           </div>
         </div>
 
         {/* Right scroll-pinned steps */}
-        <div className="relative">
-          <div className="pointer-events-none absolute left-7 top-2 bottom-2 w-px bg-zinc-800/80" />
-          <motion.div className="pointer-events-none absolute left-7 top-2 w-px bg-emerald-400" style={{ height: progressWidth }} />
-          <div className="space-y-24">
+        <div className="relative lg:pl-8">
+          {/* Vertical timeline spine */}
+          <div className="pointer-events-none absolute left-0 top-4 bottom-4 hidden w-px bg-white/[0.08] lg:block" />
+          <motion.div
+            className="pointer-events-none absolute left-0 top-4 hidden w-px bg-gradient-to-b from-emerald-400 to-emerald-500/50 lg:block"
+            style={{ height: progressHeight }}
+          />
+          <div className="space-y-8">
             {stepsNew.map((s, i) => <StickyStep key={s.n} step={s} index={i} />)}
           </div>
         </div>

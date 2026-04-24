@@ -13,9 +13,17 @@ function ArrowLeftIcon() {
   );
 }
 
+function ArrowRightIcon() {
+  return (
+    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+    </svg>
+  );
+}
+
 function MailIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
     </svg>
   );
@@ -23,7 +31,7 @@ function MailIcon() {
 
 function LockIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
@@ -31,7 +39,7 @@ function LockIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
       <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
       <line x1="1" y1="1" x2="23" y2="23" />
@@ -41,7 +49,7 @@ function EyeOffIcon() {
 
 function EyeIcon() {
   return (
-    <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg className="w-4 h-4 text-zinc-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
     </svg>
   );
@@ -72,16 +80,12 @@ export default function SignInPage() {
     setError("");
     setLoading(true);
     try {
-      // Avoid sending stale bearer tokens from previous sessions.
       clearAuthData();
-
       const result = await api.post<LoginResponse>("/auth/login", { email, password });
       if (result?.accessToken) {
         setAuthToken(result.accessToken, 15 * 60);
       }
-
       await api.get("/auth/me");
-
       window.location.assign("/dashboard");
     } catch (err) {
       setError(err instanceof ApiError ? err.response?.message || "Sign-in succeeded but session validation failed. Please try again." : "Something went wrong.");
@@ -92,67 +96,106 @@ export default function SignInPage() {
 
   return (
     <div className="w-full animate-fade-in-up" suppressHydrationWarning>
-      <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
-        <ArrowLeftIcon /><span>Back to Home</span>
+      <Link href="/" className="inline-flex items-center gap-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900 mb-8 transition-colors group">
+        <ArrowLeftIcon />
+        <span className="transition-transform group-hover:-translate-x-0.5">Back to home</span>
       </Link>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Welcome back</h1>
-        <p className="text-slate-500">Sign in to your SmatWay account</p>
+      {/* Mobile brand lockup (hidden on desktop since it's in the left panel) */}
+      <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 shadow-[0_8px_24px_-8px_rgba(16,185,129,0.5)]">
+          <span className="font-[var(--font-display)] text-base font-bold text-white">S</span>
+        </div>
+        <span className="font-[var(--font-display)] text-lg font-semibold tracking-tight text-zinc-950">SmatWay</span>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-          {error}
+      <div className="mb-8">
+        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-white/70 px-3 py-1 backdrop-blur">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-80" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          </span>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Sign in</span>
         </div>
-      )}
+        <h1 className="mt-4 font-[var(--font-display)] text-4xl font-semibold leading-[1.05] tracking-tight text-zinc-950">
+          Welcome <span className="italic text-emerald-700">back.</span>
+        </h1>
+        <p className="mt-2 text-[14px] text-zinc-500">Sign in to pick up where you left off.</p>
+      </div>
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email" className="text-sm font-medium text-zinc-900 mb-1.5 block">Email</label>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none"><MailIcon /></span>
-            <input
-              id="email" type="email" placeholder="you@example.com" required
-              value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
+      {/* Form card */}
+      <div className="rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_32px_-12px_rgba(15,23,42,0.08)]">
+        {error && (
+          <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50 px-3.5 py-3 text-[13px] text-red-700">
+            <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            <span>{error}</span>
           </div>
-        </div>
+        )}
 
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-zinc-900 block">Password</label>
-            <Link href="/forgot-password" className="text-sm text-slate-400 hover:text-emerald-600 transition-colors">Forgot password?</Link>
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Email</label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><MailIcon /></span>
+              <input
+                id="email" type="email" placeholder="you@example.com" required
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 text-[14px] text-zinc-900 placeholder:text-zinc-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200"
+              />
+            </div>
           </div>
-          <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none"><LockIcon /></span>
-            <input
-              id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" required
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 pr-11 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 focus:outline-none">
-              {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+
+          <div>
+            <div className="mb-1.5 flex items-center justify-between">
+              <label htmlFor="password" className="text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Password</label>
+              <Link href="/forgot-password" className="text-[12px] font-medium text-zinc-500 hover:text-emerald-700 transition-colors">Forgot?</Link>
+            </div>
+            <div className="relative flex items-center">
+              <span className="absolute left-3.5 pointer-events-none"><LockIcon /></span>
+              <input
+                id="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" required
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 pr-11 text-[14px] text-zinc-900 placeholder:text-zinc-400 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200"
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 focus:outline-none rounded hover:bg-zinc-100 p-1 transition-colors" aria-label={showPassword ? "Hide password" : "Show password"}>
+                {showPassword ? <EyeIcon /> : <EyeOffIcon />}
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <button
+              type="submit" disabled={loading}
+              className="group relative w-full overflow-hidden rounded-xl bg-zinc-950 px-5 py-3.5 text-[14px] font-semibold text-white shadow-[0_10px_24px_-8px_rgba(15,23,42,0.35),inset_0_1px_0_rgba(255,255,255,0.08)] transition-all duration-300 hover:shadow-[0_14px_36px_-10px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.12)] active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="pointer-events-none absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/20 to-emerald-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <span className="relative inline-flex items-center justify-center gap-2">
+                {loading ? (
+                  <>
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.25" /><path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
+                    <span>Signing in…</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Sign in</span>
+                    <ArrowRightIcon />
+                  </>
+                )}
+              </span>
             </button>
           </div>
-        </div>
+        </form>
+      </div>
 
-        <div className="pt-1">
-          <button
-            type="submit" disabled={loading}
-            className="w-full bg-zinc-900 hover:bg-zinc-800 disabled:opacity-60 text-white font-semibold py-3 px-4 rounded-xl active:scale-[0.98] transition-all duration-150 text-center text-sm"
-          >
-            {loading ? "Signing in…" : "Sign In"}
-          </button>
-        </div>
-      </form>
-
-      <div className="border-t border-slate-100 my-6" />
-      <div className="text-center">
-        <p className="text-sm text-slate-500">
+      {/* Divider + footer */}
+      <div className="mt-7 text-center">
+        <p className="text-[13px] text-zinc-500">
           Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-emerald-600 font-semibold hover:text-emerald-700 transition-colors">Sign Up</Link>
+          <Link href="/signup" className="font-semibold text-emerald-700 hover:text-emerald-800 underline underline-offset-2 decoration-emerald-300 hover:decoration-emerald-500 transition-colors">
+            Create one
+          </Link>
         </p>
       </div>
     </div>

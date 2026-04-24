@@ -42,7 +42,6 @@ function ChevronDownIcon({ className = "w-3.5 h-3.5" }: { className?: string }) 
 
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About" },
   { href: "/how-it-works", label: "How It Works" },
 ];
 
@@ -190,11 +189,6 @@ function Footer() {
               Company
             </h4>
             <ul className="space-y-3">
-              <li>
-                <Link href="/about" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
-                  About Us
-                </Link>
-              </li>
               <li>
                 <Link href="/how-it-works" className="text-slate-400 hover:text-white transition-colors duration-200 text-sm">
                   How It Works
