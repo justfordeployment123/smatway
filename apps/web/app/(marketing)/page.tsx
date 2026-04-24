@@ -350,9 +350,7 @@ const routes = [
 function Hero() {
   const [isClient, setIsClient] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
-  const [fallbackImageError, setFallbackImageError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const mediaUnavailable = !videoLoaded && fallbackImageError;
 
   useEffect(() => {
     setIsClient(true);
@@ -440,45 +438,27 @@ function Hero() {
           </div>
 
           {/* Right — Car video hero */}
-          <motion.div className="relative hidden lg:block" initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }}
+          <motion.div className="relative" initial={{ opacity: 0, scale: 0.95, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.9, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             <div className="relative">
               <div className="relative bg-white rounded-[2rem] overflow-hidden shadow-[0_24px_80px_-12px_rgba(0,0,0,0.1)] border border-slate-200/60">
                 <div
-                  className={`relative bg-gradient-to-br from-slate-50 to-emerald-50/40 ${mediaUnavailable ? "min-h-[220px]" : "aspect-[4/3]"}`}
+                  className="relative bg-gradient-to-br from-slate-50 to-emerald-50/40 aspect-[4/3]"
                 >
                   {/* Your uploaded car-in-motion video */}
                   <video
                     ref={videoRef}
+                    autoPlay
                     loop
                     muted
                     playsInline
                     preload="auto"
                     poster="/car.png"
-                    onCanPlayThrough={() => setVideoLoaded(true)}
-                    className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${videoLoaded ? "opacity-100" : "opacity-0"}`}
+                    onLoadedData={() => setVideoLoaded(true)}
+                    className="absolute inset-0 w-full h-full object-cover"
                   >
                     <source src="/car.mp4" type="video/mp4" />
                   </video>
-                  {/* Fallback: your car.png while video loads */}
-                  {!videoLoaded && (
-                    <div className="absolute inset-0 flex items-center justify-center p-6">
-                      {fallbackImageError ? (
-                        <div className="w-full h-full min-h-[180px] rounded-2xl border border-slate-200/70 bg-gradient-to-br from-slate-100 via-white to-emerald-50/60" />
-                      ) : (
-                        <div >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src="/car.png"
-                            alt="SmatWay vehicle"
-                            className="w-full h-full object-contain"
-                            onLoad={() => setFallbackImageError(false)}
-                            onError={() => setFallbackImageError(true)}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
 
                   {/* Live route overlay */}
