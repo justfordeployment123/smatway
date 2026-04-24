@@ -60,12 +60,15 @@ model User {
   passwordHash   String?
   role           Role         @default(USER)
   accountType    AccountType?
+  emailVerified     Boolean   @default(false)
+  emailVerifiedAt   DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   authProviders  AuthProvider[]
   refreshTokens  RefreshToken[]
   passwordResets PasswordResetToken[]
+  verificationOtps EmailVerificationOtp[]
   profile        UserProfile?
   transports     Transport[]
   bookings       Booking[]            @relation("TravelerBookings")
@@ -105,6 +108,19 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model EmailVerificationOtp {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash   String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  attempts   Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 model UserProfile {

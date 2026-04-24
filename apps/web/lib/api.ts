@@ -66,6 +66,8 @@ export async function apiRequest<T = unknown>(
       const isAuthAttempt =
         endpoint.startsWith('/auth/login') ||
         endpoint.startsWith('/auth/register') ||
+        endpoint.startsWith('/auth/verify-email') ||
+        endpoint.startsWith('/auth/resend-otp') ||
         endpoint.startsWith('/auth/forgot-password') ||
         endpoint.startsWith('/auth/reset-password');
 

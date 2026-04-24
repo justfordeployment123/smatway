@@ -717,7 +717,7 @@ function Hero() {
                 <motion.div
                   layout
                   transition={{ layout: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } }}
-                  className={`relative overflow-hidden bg-gradient-to-br from-slate-50 to-emerald-50/40 ${posterReady ? "aspect-[16/10]" : ""}`}
+                  className={`relative overflow-hidden bg-gradient-to-br from-slate-50 to-emerald-50/40 ${posterReady || videoReady ? "aspect-[16/10]" : ""}`}
                 >
                   {/* Poster — mounted eagerly so it downloads; kept invisible until onLoad fires */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -726,7 +726,7 @@ function Hero() {
                     src="/car.png"
                     alt=""
                     onLoad={() => setPosterReady(true)}
-                    className={`absolute inset-0 w-full h-full object-contain object-center transition-opacity duration-300 ${posterReady ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute inset-0 w-full h-full object-contain object-center transition-opacity duration-300 ${posterReady && !videoReady ? "opacity-100" : "opacity-0"}`}
                   />
 
                   {/* Video — height fills the container; width keeps its native aspect and may overflow (clipped by parent) */}
@@ -743,11 +743,11 @@ function Hero() {
                     <source src="/car.mp4" type="video/mp4" />
                   </video>
                   <div
-                    className={`absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none transition-opacity duration-500 ${posterReady ? "opacity-100" : "opacity-0"}`}
+                    className={`absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none transition-opacity duration-500 ${posterReady || videoReady ? "opacity-100" : "opacity-0"}`}
                   />
 
-                  {/* Live route overlay — inline (dictates compact height) while media loads, absolute once poster is ready */}
-                  <div className={posterReady ? "absolute bottom-5 left-5 right-5 z-10" : "relative z-10 p-5"}>
+                  {/* Live route overlay — inline (dictates compact height) while BOTH media are loading; absolute as soon as either lands */}
+                  <div className={posterReady || videoReady ? "absolute bottom-5 left-5 right-5 z-10" : "relative z-10 p-5"}>
                     <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-white/50">
                       <div className="flex items-center justify-between mb-2.5">
                         <div className="flex items-center gap-2">

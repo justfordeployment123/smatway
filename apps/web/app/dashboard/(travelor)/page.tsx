@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
@@ -401,14 +402,33 @@ function TransportCard({ transport }: { transport: any }) {
 }
 
 // ─── Transporter profile modal ────────────────────────────────────────────────
-function TransporterProfileModal({ loading, profile, onClose }: { loading: boolean; profile: any; onClose: () => void }) {
+function TransporterProfileModal(props: { loading: boolean; profile: any; onClose: () => void }) {
+  // Render via a portal on document.body so ancestor `transform`/`filter`/`will-change`
+  // containing blocks (e.g. the parent SurfaceCard uses motion transforms) don't trap
+  // our `position: fixed` overlay inside the route row — which was making it render as
+  // an inline box over one card instead of a full-viewport modal.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return createPortal(<TransporterProfileModalInner {...props} />, document.body);
+}
+
+function TransporterProfileModalInner({ loading, profile, onClose }: { loading: boolean; profile: any; onClose: () => void }) {
+  // Lock body scroll while the modal is open
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]"
     >
       <motion.div
         initial={{ opacity: 0, y: 12, scale: 0.98 }}

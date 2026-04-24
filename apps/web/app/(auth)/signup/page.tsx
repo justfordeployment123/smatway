@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
-import { clearAuthData, setAuthToken } from "@/lib/auth";
+import { clearAuthData } from "@/lib/auth";
 
 function ArrowLeftIcon() {
   return (
@@ -140,7 +140,8 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
 
   type RegisterResponse = {
-    accessToken?: string;
+    email: string;
+    pendingVerification: true;
   };
 
   useEffect(() => {
@@ -179,7 +180,7 @@ export default function SignUpPage() {
         throw new Error("Passwords do not match");
       }
 
-      const result = await api.post<RegisterResponse>("/auth/register", {
+      await api.post<RegisterResponse>("/auth/register", {
         name: formData.name,
         email: formData.email,
         password: formData.password,
@@ -188,11 +189,8 @@ export default function SignUpPage() {
         accountType,
       });
 
-      if (result?.accessToken) {
-        setAuthToken(result.accessToken, 15 * 60);
-      }
-      await api.get("/auth/me");
-      window.location.assign("/dashboard");
+      // Account created; redirect to the verify-email page with the address so the user can enter the OTP.
+      window.location.assign(`/verify-email?email=${encodeURIComponent(formData.email)}`);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.response?.message || "Registration succeeded but session validation failed. Please sign in again.");

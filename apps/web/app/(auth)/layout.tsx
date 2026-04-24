@@ -158,11 +158,16 @@ function LeftPanel() {
             <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-emerald-400">↗ live feed</div>
           </div>
           <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.02] backdrop-blur-sm">
-            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#0a0a0c] to-transparent" />
-            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#0a0a0c] to-transparent" />
-            <div className="flex w-max animate-marquee items-center gap-8 whitespace-nowrap py-3 pl-10">
+            <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-gradient-to-r from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent" />
+            <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-gradient-to-l from-[#0a0a0c] via-[#0a0a0c]/80 to-transparent" />
+            {/*
+              Marquee — content is duplicated so the loop can translate by -50%.
+              Each copy must be structurally identical (no container-level padding)
+              otherwise the loop seam stutters and items appear "stuck" at the edges.
+            */}
+            <div className="flex w-max animate-marquee items-center gap-8 whitespace-nowrap py-3 will-change-transform">
               {[...routes, ...routes].map((r, i) => (
-                <div key={i} className="flex items-center gap-2.5 text-[12px]">
+                <div key={i} className={`flex items-center gap-2.5 text-[12px] ${i === 0 || i === routes.length ? "pl-2" : ""}`}>
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
                   <span className="font-medium text-zinc-200">{r.from} <span className="text-zinc-500">→</span> {r.to}</span>
                   <span className="font-mono text-[10px] uppercase tracking-wider text-emerald-400/80">· {r.note}</span>

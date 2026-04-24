@@ -17,6 +17,8 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { RegisterDto } from './dto/register.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
+import { ResendOtpDto } from './dto/resend-otp.dto';
 import { User } from '@prisma/client';
 
 @Controller('auth')
@@ -24,9 +26,23 @@ export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
   @Post('register')
-  async register(@Body() dto: RegisterDto, @Res({ passthrough: false }) res: Response) {
-    const result = await this.authService.register(dto, res);
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('verify-email')
+  @HttpCode(200)
+  async verifyEmail(@Body() dto: VerifyEmailDto, @Res({ passthrough: false }) res: Response) {
+    const result = await this.authService.verifyEmail(dto, res);
     res.json(result);
+  }
+
+  @Throttle({ default: { limit: 5, ttl: 60000 * 15 } })
+  @Post('resend-otp')
+  @HttpCode(200)
+  async resendOtp(@Body() dto: ResendOtpDto) {
+    return this.authService.resendVerificationOtp(dto.email);
   }
 
   @UseGuards(LocalAuthGuard)

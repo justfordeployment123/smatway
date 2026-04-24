@@ -96,11 +96,11 @@ export class UsersService {
   }
 
   async createEmergencyContact(userId: string, dto: CreateEmergencyContactDto) {
-    const profile = await this.prisma.userProfile.findUnique({
+    const profile = await this.prisma.userProfile.upsert({
       where: { userId },
+      update: {},
+      create: { userId },
     });
-
-    if (!profile) throw new BadRequestException('User profile not found');
 
     return this.prisma.emergencyContact.create({
       data: {
@@ -144,11 +144,11 @@ export class UsersService {
   }
 
   async getNotificationPreferences(userId: string) {
-    const profile = await this.prisma.userProfile.findUnique({
+    const profile = await this.prisma.userProfile.upsert({
       where: { userId },
+      update: {},
+      create: { userId },
     });
-
-    if (!profile) throw new NotFoundException('User profile not found');
 
     let prefs = await this.prisma.notificationPreferences.findUnique({
       where: { profileId: profile.id },
@@ -164,11 +164,11 @@ export class UsersService {
   }
 
   async updateNotificationPreferences(userId: string, dto: UpdateNotificationPreferencesDto) {
-    const profile = await this.prisma.userProfile.findUnique({
+    const profile = await this.prisma.userProfile.upsert({
       where: { userId },
+      update: {},
+      create: { userId },
     });
-
-    if (!profile) throw new BadRequestException('User profile not found');
 
     return this.prisma.notificationPreferences.upsert({
       where: { profileId: profile.id },
