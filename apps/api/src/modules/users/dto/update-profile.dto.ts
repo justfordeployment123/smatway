@@ -24,6 +24,11 @@ export class UpdateProfileDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(3)
+  preferredCurrency?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(500)
   bio?: string;
 

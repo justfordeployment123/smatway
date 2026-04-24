@@ -62,6 +62,7 @@ model User {
   accountType    AccountType?
   emailVerified     Boolean   @default(false)
   emailVerifiedAt   DateTime?
+  preferredCurrency String?   // ISO 4217 code (e.g. "NGN", "GHS", "USD")
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -193,6 +194,7 @@ model Transport {
   transportType      TransportType
 
   price              Decimal         @db.Decimal(10, 2)
+  currency           String          @default("USD") // ISO 4217 code — what the `price` is denominated in
   availableSeats     Int
   departureDateTime  DateTime
   maxReachDateTime   DateTime

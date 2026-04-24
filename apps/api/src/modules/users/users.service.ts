@@ -24,6 +24,7 @@ export class UsersService {
         name: true,
         phoneNumber: true,
         country: true,
+        preferredCurrency: true,
         avatarUrl: true,
         accountType: true,
         role: true,
@@ -65,6 +66,7 @@ export class UsersService {
         name: dto.name,
         phoneNumber: dto.phoneNumber,
         country: dto.country,
+        preferredCurrency: dto.preferredCurrency,
         avatarUrl: dto.avatarUrl,
       },
     });

@@ -39,6 +39,16 @@ export class TransportService {
     if (!vehicle) throw new NotFoundException('Vehicle not found');
     if (vehicle.transporterId !== transporterId) throw new ForbiddenException('Vehicle does not belong to you');
 
+    // Fallback currency resolution: DTO → transporter's preferredCurrency → USD
+    let currency = (dto.currency || '').toUpperCase();
+    if (!currency) {
+      const transporter = await this.prisma.user.findUnique({
+        where: { id: transporterId },
+        select: { preferredCurrency: true },
+      });
+      currency = (transporter?.preferredCurrency || 'USD').toUpperCase();
+    }
+
     return this.prisma.transport.create({
       data: {
         transporterId,
@@ -49,6 +59,7 @@ export class TransportService {
         destinationCity: dto.destinationCity,
         transportType: vehicle.transportType,
         price: dto.price,
+        currency,
         availableSeats: dto.availableSeats,
         departureDateTime: new Date(dto.departureDateTime),
         maxReachDateTime: new Date(dto.maxReachDateTime),

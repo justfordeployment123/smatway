@@ -270,6 +270,7 @@ export async function createTransport(data: {
   destinationCountry: string;
   destinationCity: string;
   price: number;
+  currency?: string;
   availableSeats: number;
   departureDateTime: string;
   maxReachDateTime: string;

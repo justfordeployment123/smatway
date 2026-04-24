@@ -4,6 +4,7 @@ export interface UserProfile {
   name: string | null;
   phoneNumber: string | null;
   country: string | null;
+  preferredCurrency?: string | null;
   avatarUrl: string | null;
   accountType: 'TRAVELER' | 'TRANSPORTER' | null;
   role: string;

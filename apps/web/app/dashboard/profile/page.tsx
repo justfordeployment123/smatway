@@ -14,6 +14,9 @@ import {
   Page, Reveal, PageHeader, Skeleton, PrimaryButton, GhostButton, spring,
 } from "@/app/dashboard/_Components/ui";
 import { emitAvatarChange } from "@/app/dashboard/_Components/events";
+import { countries } from "@/lib/countries";
+import { currencies, defaultCurrencyForCountry } from "@/lib/currencies";
+import { Combobox } from "@/components/Combobox";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -25,11 +28,18 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
+  const [preferredCurrency, setPreferredCurrency] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const [addingContact, setAddingContact] = useState(false);
   const [contactForm, setContactForm] = useState({ name: "", relation: "family", phone: "" });
+
+  // Mirrors the scoped .input style below, but as plain Tailwind so it can be
+  // passed into the Combobox child component (styled-jsx is scoped to this file
+  // and won't reach inside Combobox's own <input>).
+  const comboboxInputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] text-zinc-900 outline-none transition-all duration-150 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10";
 
   useEffect(() => { loadProfile(); }, []);
 
@@ -41,6 +51,7 @@ export default function ProfilePage() {
       setFullName(data.user.name || "");
       setPhone(data.user.phoneNumber || "");
       setCountry(data.user.country || "");
+      setPreferredCurrency((data.user as any).preferredCurrency || "");
       setBio(data.profile?.bio || "");
       setAvatarUrl(data.user.avatarUrl || null);
     } catch (err) {
@@ -71,7 +82,7 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       setError(null);
-      await updateProfile({ name: fullName, phoneNumber: phone, country, bio });
+      await updateProfile({ name: fullName, phoneNumber: phone, country, preferredCurrency: preferredCurrency || undefined, bio });
       setSuccess("Profile updated");
       setTimeout(() => window.location.reload(), 900);
     } catch (err) {
@@ -233,15 +244,31 @@ export default function ProfilePage() {
                 </Field>
               </div>
 
-              <Field label="Country">
-                <input
-                  type="text"
-                  value={country}
-                  onChange={(e) => setCountry(e.target.value)}
-                  placeholder="United States"
-                  className="input"
-                />
-              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="Country">
+                  <Combobox
+                    ariaLabel="Country"
+                    placeholder="Type to search countries…"
+                    options={countries.map(c => ({ value: c.code, label: c.name, hint: c.code }))}
+                    value={country}
+                    onChange={(v) => {
+                      setCountry(v);
+                      if (!preferredCurrency) setPreferredCurrency(defaultCurrencyForCountry(v));
+                    }}
+                    className={comboboxInputClass}
+                  />
+                </Field>
+                <Field label="Preferred currency">
+                  <Combobox
+                    ariaLabel="Preferred currency"
+                    placeholder="Type to search currencies…"
+                    options={currencies.map(c => ({ value: c.code, label: `${c.code} — ${c.name}`, hint: c.symbol, search: [c.name, c.code, c.symbol] }))}
+                    value={preferredCurrency}
+                    onChange={setPreferredCurrency}
+                    className={comboboxInputClass}
+                  />
+                </Field>
+              </div>
 
               <Field label="Bio">
                 <textarea

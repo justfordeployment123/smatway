@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatPrice } from "@/lib/currencies";
 import {
   SearchIcon, CarIcon, MapPinIcon, CalendarIcon, ChevronDownIcon,
   UsersIcon, ArrowRightIcon, XIcon, StarIcon, SparklesIcon,
@@ -100,7 +101,7 @@ export default function SearchRidesPage() {
                       placeholder="Country"
                       value={depCountry}
                       onChange={(e) => setDepCountry(e.target.value)}
-                      className="w-full bg-transparent text-[11px] text-slate-500 placeholder:text-slate-400 focus:outline-none"
+                      className="w-full bg-transparent text-[11px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
                     />
                   </div>
                 </Field>
@@ -119,7 +120,7 @@ export default function SearchRidesPage() {
                       placeholder="Country"
                       value={destCountry}
                       onChange={(e) => setDestCountry(e.target.value)}
-                      className="w-full bg-transparent text-[11px] text-slate-500 placeholder:text-slate-400 focus:outline-none"
+                      className="w-full bg-transparent text-[11px] text-slate-900 placeholder:text-slate-400 focus:outline-none"
                     />
                   </div>
                 </Field>
@@ -351,7 +352,7 @@ function TransportCard({ transport }: { transport: any }) {
           <div className="flex flex-row sm:flex-col items-end sm:items-end justify-between gap-3 sm:min-w-[160px] sm:border-l sm:border-slate-100 sm:pl-5">
             <div className="text-right">
               <p className="text-xl font-semibold text-zinc-950 tabular-nums leading-tight">
-                ${Number(transport.price).toFixed(2)}
+                {formatPrice(transport.price, transport.currency)}
               </p>
               <p className="text-[10px] text-slate-400">per seat</p>
             </div>

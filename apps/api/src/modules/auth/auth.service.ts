@@ -52,6 +52,7 @@ export class AuthService {
             name: dto.name ?? existing.name,
             phoneNumber: dto.phoneNumber ?? existing.phoneNumber,
             country: dto.country ?? existing.country,
+            preferredCurrency: dto.preferredCurrency ?? existing.preferredCurrency,
             passwordHash,
             accountType: this.normalizeAccountType(dto.accountType) ?? existing.accountType,
           },
@@ -75,6 +76,7 @@ export class AuthService {
         name: dto.name,
         phoneNumber: dto.phoneNumber,
         country: dto.country,
+        preferredCurrency: dto.preferredCurrency,
         passwordHash,
         accountType: this.normalizeAccountType(dto.accountType),
         // Auto-create an empty profile so Settings pages work immediately after signup.

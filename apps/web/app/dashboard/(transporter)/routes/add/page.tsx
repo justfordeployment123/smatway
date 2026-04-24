@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createTransport, getMyVehicles } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
+import { currencies, currencyMap } from "@/lib/currencies";
+import { Combobox } from "@/components/Combobox";
 
 type RouteForm = {
   departureCountry: string;
@@ -11,6 +13,7 @@ type RouteForm = {
   destinationCountry: string;
   destinationCity: string;
   price: string;
+  currency: string;
   availableSeats: string;
   departureDateTime: string;
   maxReachDateTime: string;
@@ -29,6 +32,7 @@ export default function AddRoutePage() {
     destinationCountry: "",
     destinationCity: "",
     price: "",
+    currency: "",
     availableSeats: "",
     departureDateTime: "",
     maxReachDateTime: "",
@@ -40,13 +44,13 @@ export default function AddRoutePage() {
       try {
         const user = await getCurrentUser();
         const country = user?.country;
-        if (country) {
-          setForm(f => ({
-            ...f,
-            departureCountry: country,
-            destinationCountry: country,
-          }));
-        }
+        const pref = (user as any)?.preferredCurrency as string | undefined;
+        setForm(f => ({
+          ...f,
+          departureCountry: country ?? f.departureCountry,
+          destinationCountry: country ?? f.destinationCountry,
+          currency: pref ?? f.currency,
+        }));
       } catch (e) {
         // User not loaded
       }
@@ -80,6 +84,7 @@ export default function AddRoutePage() {
         destinationCountry: form.destinationCountry,
         destinationCity: form.destinationCity,
         price: parseFloat(form.price),
+        currency: form.currency || undefined,
         availableSeats: parseInt(form.availableSeats),
         departureDateTime: form.departureDateTime,
         maxReachDateTime: form.maxReachDateTime,
@@ -174,8 +179,23 @@ export default function AddRoutePage() {
               <input required type="number" min={1} placeholder="e.g. 12" value={form.availableSeats} onChange={e => set("availableSeats", e.target.value)} className={inputClass} />
             </div>
             <div>
-              <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Price per Seat ($)</label>
-              <input required type="number" min={0} step="0.01" placeholder="e.g. 15.00" value={form.price} onChange={e => set("price", e.target.value)} className={inputClass} />
+              <label className="text-sm font-medium text-zinc-900 mb-1.5 block">
+                Price per Seat{form.currency ? ` (${form.currency})` : ""}
+              </label>
+              <div className="flex gap-2">
+                <div className="w-36 shrink-0">
+                  <Combobox
+                    ariaLabel="Currency"
+                    placeholder="Currency"
+                    options={currencies.map(c => ({ value: c.code, label: `${c.code} — ${c.name}`, hint: c.symbol, search: [c.name, c.code, c.symbol] }))}
+                    value={form.currency}
+                    onChange={(v) => set("currency", v)}
+                    className={inputClass}
+                  />
+                </div>
+                <input required type="number" min={0} step="0.01" placeholder={`e.g. ${currencyMap.get(form.currency)?.code === "NGN" ? "12500" : "15.00"}`} value={form.price} onChange={e => set("price", e.target.value)} className={`${inputClass} flex-1`} />
+              </div>
+              <p className="mt-1 text-[11px] text-slate-500">Leave currency blank to use your profile default.</p>
             </div>
             <div>
               <label className="text-sm font-medium text-zinc-900 mb-1.5 block">Departure Date & Time</label>

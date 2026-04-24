@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import { getBooking, cancelBooking, updatePaymentMethod, createReview, initChat, getChatByBooking, getMessages, sendMessage, getTransporterProfile } from "@/lib/api";
+import { formatPrice } from "@/lib/currencies";
 
 const paymentMethods = [
   {
@@ -185,7 +186,7 @@ export default function BookingDetailPage() {
           </div>
           <div className="text-right">
             <p className="text-xs text-slate-400">Total</p>
-            <p className="text-xl font-bold text-zinc-900">${Number(booking.totalPrice).toFixed(2)}</p>
+            <p className="text-xl font-bold text-zinc-900">{formatPrice(booking.totalPrice, booking.transport?.currency)}</p>
           </div>
         </div>
       </div>

@@ -4,6 +4,9 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, ApiError } from "@/lib/api";
 import { clearAuthData } from "@/lib/auth";
+import { countries } from "@/lib/countries";
+import { currencies, defaultCurrencyForCountry } from "@/lib/currencies";
+import { Combobox } from "@/components/Combobox";
 
 function ArrowLeftIcon() {
   return (
@@ -134,6 +137,7 @@ export default function SignUpPage() {
     confirmPassword: "",
     phoneNumber: "",
     country: "",
+    preferredCurrency: "",
     agreedToTerms: false,
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -162,7 +166,15 @@ export default function SignUpPage() {
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { id, value } = e.target;
-    setFormData(prev => ({ ...prev, [id]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [id]: value };
+      // Smart default: picking a country auto-suggests the matching currency if the user
+      // hasn't manually chosen one yet. They can still override it.
+      if (id === "country" && !prev.preferredCurrency) {
+        next.preferredCurrency = defaultCurrencyForCountry(value);
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -186,6 +198,7 @@ export default function SignUpPage() {
         password: formData.password,
         phoneNumber: formData.phoneNumber,
         country: formData.country,
+        preferredCurrency: formData.preferredCurrency || undefined,
         accountType,
       });
 
@@ -333,30 +346,37 @@ export default function SignUpPage() {
             </div>
             <div>
               <label htmlFor="country" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Country</label>
-              <div className="relative flex items-center">
-                <span className="absolute left-3.5 pointer-events-none"><GlobeIcon /></span>
-                <select
-                  id="country"
-                  value={formData.country}
-                  onChange={handleSelectChange}
-                  className="w-full appearance-none rounded-xl border border-zinc-200 bg-white px-4 py-3 pl-10 pr-10 text-[14px] text-zinc-900 shadow-[inset_0_1px_2px_rgba(15,23,42,0.03)] focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-[box-shadow,border-color] duration-200 cursor-pointer"
-                >
-                  <option value="">Select country</option>
-                  <option value="PK">Pakistan</option>
-                  <option value="KE">Kenya</option>
-                  <option value="UG">Uganda</option>
-                  <option value="TZ">Tanzania</option>
-                  <option value="RW">Rwanda</option>
-                  <option value="ET">Ethiopia</option>
-                  <option value="NG">Nigeria</option>
-                  <option value="GH">Ghana</option>
-                  <option value="ZA">South Africa</option>
-                  <option value="US">United States</option>
-                  <option value="GB">United Kingdom</option>
-                </select>
-                <span className="absolute right-3.5"><ChevronDownIcon /></span>
-              </div>
+              <Combobox
+                id="country"
+                ariaLabel="Country"
+                placeholder="Type to search countries…"
+                leftIcon={<GlobeIcon />}
+                options={countries.map(c => ({ value: c.code, label: c.name, hint: c.code }))}
+                value={formData.country}
+                onChange={(v) => setFormData(prev => ({
+                  ...prev,
+                  country: v,
+                  preferredCurrency: prev.preferredCurrency || defaultCurrencyForCountry(v),
+                }))}
+                className={inputBase.replace("pl-10 ", "")}
+              />
             </div>
+          </div>
+
+          {/* Preferred currency — defaults based on country selection, user can override */}
+          <div>
+            <label htmlFor="preferredCurrency" className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.1em] text-zinc-700">Preferred currency</label>
+            <Combobox
+              id="preferredCurrency"
+              ariaLabel="Preferred currency"
+              placeholder="Type to search currencies…"
+              leftIcon={<span className="text-zinc-400 font-mono text-[13px] font-semibold">¤</span>}
+              options={currencies.map(c => ({ value: c.code, label: `${c.code} — ${c.name}`, hint: c.symbol, search: [c.name, c.code, c.symbol] }))}
+              value={formData.preferredCurrency}
+              onChange={(v) => setFormData(prev => ({ ...prev, preferredCurrency: v }))}
+              className={inputBase.replace("pl-10 ", "")}
+            />
+            <p className="mt-1 text-[11px] text-zinc-500">Used for route prices. You can change this later in your profile.</p>
           </div>
 
           <div>
