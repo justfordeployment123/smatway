@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { motion, useInView, useScroll, useTransform, AnimatePresence } from "motion/react";
+import { motion, useInView, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "motion/react";
 
 // ─── Reusable scroll-reveal wrapper ──────────────────────────────────────────
 
@@ -34,6 +34,274 @@ function Reveal({
     >
       {children}
     </motion.div>
+  );
+}
+
+// ─── CountUp — number ticks up when scrolled into view ──────────────────────
+
+function CountUp({ to, decimals = 0, suffix = "", prefix = "", duration = 1500 }: {
+  to: number; decimals?: number; suffix?: string; prefix?: string; duration?: number;
+}) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, amount: 0.4 });
+  const [val, setVal] = useState("0");
+
+  useEffect(() => {
+    if (!inView) return;
+    let raf = 0;
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const n = to * eased;
+      setVal(decimals > 0 ? n.toFixed(decimals) : Math.floor(n).toLocaleString());
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inView, to, duration, decimals]);
+
+  return <span ref={ref} className="tabular-nums">{prefix}{val}{suffix}</span>;
+}
+
+// ─── MagneticLink — taste-skill: useMotionValue, never useState ──────────────
+
+function MagneticLink({ href, className, children, strength = 0.18 }: {
+  href: string; className?: string; children: React.ReactNode; strength?: number;
+}) {
+  const ref = useRef<HTMLAnchorElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const sx = useSpring(x, { stiffness: 220, damping: 22, mass: 0.4 });
+  const sy = useSpring(y, { stiffness: 220, damping: 22, mass: 0.4 });
+
+  const onMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const el = ref.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    x.set((e.clientX - (r.left + r.width / 2)) * strength);
+    y.set((e.clientY - (r.top + r.height / 2)) * strength);
+  };
+  const onLeave = () => { x.set(0); y.set(0); };
+
+  return (
+    <motion.a ref={ref} href={href} onMouseMove={onMove} onMouseLeave={onLeave} style={{ x: sx, y: sy }} className={className}>
+      {children}
+    </motion.a>
+  );
+}
+
+// ─── LiveTicker — kinetic horizontal strip showing real-time platform activity
+
+function LiveTicker() {
+  const items = [
+    { city: "Lahore → Islamabad", note: "departing in 8 min" },
+    { city: "Karachi → Hyderabad", note: "3 seats left" },
+    { city: "Islamabad → Peshawar", note: "12 booked today" },
+    { city: "Multan → Lahore", note: "departing in 22 min" },
+    { city: "Faisalabad → Karachi", note: "5 seats left" },
+    { city: "Quetta → Karachi", note: "departing in 47 min" },
+    { city: "Sialkot → Lahore", note: "9 booked today" },
+    { city: "Rawalpindi → Murree", note: "2 seats left" },
+  ];
+  const doubled = [...items, ...items];
+
+  return (
+    <section className="relative overflow-hidden border-y border-zinc-200/70 bg-white py-5">
+      <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-32 bg-gradient-to-r from-white to-transparent" />
+      <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-32 bg-gradient-to-l from-white to-transparent" />
+      <div className="absolute left-4 top-1/2 z-20 hidden -translate-y-1/2 items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 sm:inline-flex">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        </span>
+        <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Live</span>
+      </div>
+      <div className="flex w-max animate-marquee items-center gap-10 whitespace-nowrap pl-32">
+        {doubled.map((d, i) => (
+          <div key={i} className="flex items-center gap-3">
+            <span className="text-[14px] font-semibold tracking-tight text-zinc-900">{d.city}</span>
+            <span className="font-mono text-[12px] text-zinc-500">· {d.note}</span>
+            <span className="h-1 w-1 rounded-full bg-zinc-300" />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─── LivePulse — small "X active now" pulsing chip ──────────────────────────
+
+function LivePulse({ count, label = "active now", className = "" }: { count: number; label?: string; className?: string }) {
+  return (
+    <div className={`inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/90 px-2.5 py-1 backdrop-blur ${className}`}>
+      <span className="relative flex h-1.5 w-1.5">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      </span>
+      <span className="font-mono text-[10px] font-semibold tabular-nums text-emerald-800">
+        <CountUp to={count} duration={1200} /> {label}
+      </span>
+    </div>
+  );
+}
+
+// ─── LiveAurora — flowing mesh blobs that drift continuously ────────────────
+
+type AuroraTone = "emerald" | "warm" | "cool" | "violet" | "rose";
+const auroraColors: Record<AuroraTone, string> = {
+  emerald: "rgba(16,185,129,0.55)",
+  warm: "rgba(251,146,60,0.45)",
+  cool: "rgba(56,189,248,0.45)",
+  violet: "rgba(139,92,246,0.40)",
+  rose: "rgba(244,63,94,0.40)",
+};
+
+function LiveAurora({ tones = ["emerald", "cool"], intensity = 0.5, dark = false }: { tones?: AuroraTone[]; intensity?: number; dark?: boolean }) {
+  const blobs = tones.map((t, i) => {
+    const seed = i * 37;
+    return {
+      color: auroraColors[t],
+      size: 380 + (seed % 220),
+      x: `${(seed * 13) % 70 + 5}%`,
+      y: `${(seed * 19) % 70 + 5}%`,
+      dx: (seed % 2 === 0 ? 1 : -1) * (40 + (seed % 30)),
+      dy: (seed % 3 === 0 ? -1 : 1) * (30 + (seed % 25)),
+      duration: 14 + (i * 3),
+      delay: i * 1.2,
+    };
+  });
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {blobs.map((b, i) => (
+        <motion.div
+          key={i}
+          className="absolute rounded-full blur-[110px] will-change-transform"
+          style={{
+            width: b.size,
+            height: b.size,
+            left: b.x,
+            top: b.y,
+            background: `radial-gradient(circle, ${b.color}, transparent 70%)`,
+            opacity: intensity,
+            mixBlendMode: dark ? "screen" : "normal",
+          }}
+          animate={{
+            x: [0, b.dx, 0, -b.dx * 0.6, 0],
+            y: [0, b.dy, b.dy * 0.4, -b.dy * 0.5, 0],
+            scale: [1, 1.15, 1.05, 0.92, 1],
+          }}
+          transition={{ duration: b.duration, repeat: Infinity, ease: "easeInOut", delay: b.delay }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── LiveDots — floating particles that drift upward ────────────────────────
+
+function LiveDots({ count = 24, dark = false, color = "emerald" }: { count?: number; dark?: boolean; color?: "emerald" | "white" | "amber" }) {
+  const colorMap = { emerald: "bg-emerald-400", white: "bg-white", amber: "bg-amber-400" };
+  // Pre-compute deterministic positions so SSR/CSR match
+  const dots = Array.from({ length: count }).map((_, i) => {
+    const seed = i * 9301 + 49297;
+    const x = (seed % 100);
+    const startY = ((seed * 17) % 100);
+    const size = 2 + (seed % 5);
+    const duration = 16 + ((seed * 11) % 14);
+    const delay = (seed % 8);
+    const driftX = ((seed % 80) - 40);
+    return { x, startY, size, duration, delay, driftX };
+  });
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      {dots.map((d, i) => (
+        <motion.span
+          key={i}
+          className={`absolute rounded-full ${colorMap[color]} will-change-transform`}
+          style={{
+            width: d.size,
+            height: d.size,
+            left: `${d.x}%`,
+            top: `${d.startY}%`,
+            opacity: dark ? 0.35 : 0.55,
+          }}
+          animate={{
+            y: [0, -260, -520],
+            x: [0, d.driftX, 0],
+            opacity: [0, dark ? 0.4 : 0.6, 0],
+          }}
+          transition={{ duration: d.duration, repeat: Infinity, ease: "linear", delay: d.delay }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── LiveGrid — pulsing dot grid background ─────────────────────────────────
+
+function LiveGrid({ dark = false, intensity = 1 }: { dark?: boolean; intensity?: number }) {
+  const fg = dark ? "rgba(255,255,255,0.18)" : "rgba(15,23,42,0.18)";
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(circle, ${fg} 1px, transparent 1px)`,
+          backgroundSize: "32px 32px",
+          opacity: 0.6 * intensity,
+          maskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 75%)",
+          WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 75%)",
+        }}
+      />
+      {/* Sweeping highlight band */}
+      <motion.div
+        className="absolute inset-y-0 -left-1/4 w-1/3 will-change-transform"
+        style={{
+          background: dark
+            ? "linear-gradient(90deg, transparent, rgba(16,185,129,0.10), transparent)"
+            : "linear-gradient(90deg, transparent, rgba(16,185,129,0.18), transparent)",
+        }}
+        animate={{ x: ["0%", "400%"] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
+      />
+    </div>
+  );
+}
+
+// ─── LiveRibbon — animated SVG ribbon path ──────────────────────────────────
+
+function LiveRibbon({ dark = false }: { dark?: boolean }) {
+  const stroke = dark ? "rgba(16,185,129,0.35)" : "rgba(16,185,129,0.28)";
+  return (
+    <svg className="pointer-events-none absolute inset-x-0 top-0 h-full w-full" viewBox="0 0 1440 800" preserveAspectRatio="none" aria-hidden>
+      <defs>
+        <linearGradient id="ribbon-grad" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stopColor="rgba(16,185,129,0)" />
+          <stop offset="50%" stopColor={stroke} />
+          <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+        </linearGradient>
+      </defs>
+      <motion.path
+        d="M-100,420 C200,300 400,540 720,420 C1040,300 1240,540 1540,420"
+        fill="none"
+        stroke="url(#ribbon-grad)"
+        strokeWidth="1.5"
+        strokeDasharray="8 14"
+        animate={{ strokeDashoffset: [0, -88] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+      />
+      <motion.path
+        d="M-100,520 C300,640 500,400 820,520 C1120,640 1240,400 1540,520"
+        fill="none"
+        stroke="url(#ribbon-grad)"
+        strokeWidth="1"
+        strokeDasharray="6 18"
+        animate={{ strokeDashoffset: [0, -96] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "linear" }}
+      />
+    </svg>
   );
 }
 
@@ -250,11 +518,11 @@ function TicketIcon({ className = "w-6 h-6" }: { className?: string }) {
 
 // ─── Data (ALL IMAGE URLs VERIFIED & WORKING) ────────────────────────────────
 
-const stats = [
-  { value: "50K+", label: "Active travelers", icon: <UsersIcon className="w-6 h-6" /> },
-  { value: "12K+", label: "Verified transporters", icon: <RouteIcon className="w-6 h-6" /> },
-  { value: "4.9", label: "Average rating", suffix: "/5", icon: <StarIcon className="w-6 h-6" /> },
-  { value: "98%", label: "On-time arrivals", icon: <ClockIcon className="w-6 h-6" /> },
+const stats: Array<{ to: number; decimals?: number; suffix: string; tail?: string; label: string; icon: React.ReactNode }> = [
+  { to: 50, suffix: "K", tail: "+", label: "Active travelers", icon: <UsersIcon className="w-6 h-6" /> },
+  { to: 12, suffix: "K", tail: "+", label: "Verified transporters", icon: <RouteIcon className="w-6 h-6" /> },
+  { to: 4.9, decimals: 1, suffix: "", tail: "/5", label: "Average rating", icon: <StarIcon className="w-6 h-6" /> },
+  { to: 98, suffix: "%", label: "On-time arrivals", icon: <ClockIcon className="w-6 h-6" /> },
 ];
 
 const features = [
@@ -427,10 +695,10 @@ function Hero() {
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} className="flex flex-wrap items-center gap-4">
-              <Link href="/signin" className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-3.5 rounded-2xl transition-all duration-200 active:scale-[0.98] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)]">
+              <MagneticLink href="/signin" className="group inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white font-semibold px-7 py-3.5 rounded-2xl transition-colors duration-200 active:scale-[0.98] shadow-[0_1px_2px_rgba(0,0,0,0.1),0_4px_12px_rgba(0,0,0,0.08)]">
                 Start for free
                 <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
+              </MagneticLink>
               <Link href="/how-it-works" className="inline-flex items-center gap-2 text-zinc-600 font-medium px-2 py-3.5 hover:text-zinc-900 transition-colors duration-200 text-sm">
                 <span className="underline underline-offset-4 decoration-slate-300 hover:decoration-slate-500 transition-colors">See how it works</span>
               </Link>
@@ -564,7 +832,8 @@ function Stats() {
             <Reveal key={stat.label} delay={i * 0.08} className="group cursor-pointer py-10 md:py-14 px-6 md:px-8 text-center rounded-2xl transition-all duration-300 hover:bg-white/[0.03] hover:-translate-y-1">
               <div className="mb-2 inline-flex items-center justify-center text-emerald-400">{stat.icon}</div>
               <div className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight mb-1.5 group-hover:text-emerald-400 transition-colors duration-300">
-                {stat.value}{stat.suffix && <span className="text-xl text-zinc-500">{stat.suffix}</span>}
+                <CountUp to={stat.to} decimals={stat.decimals} suffix={stat.suffix} duration={1800} />
+                {stat.tail && <span className="text-xl text-zinc-500">{stat.tail}</span>}
               </div>
               <div className="text-sm text-zinc-400 font-medium">{stat.label}</div>
             </Reveal>
@@ -575,50 +844,230 @@ function Stats() {
   );
 }
 
-// ─── Popular Routes ───────────────────────────────────────────────────────────
+// ─── Popular Routes — bento grid (1 big + 3 small) ──────────────────────────
+
+const routesBento = [
+  {
+    from: "Lahore", to: "Islamabad", price: "1,500", time: "4h 30m", seats: 7,
+    hue: "from-emerald-500/80 via-emerald-700/60 to-teal-900/90",
+    image: "https://images.unsplash.com/photo-1587974928442-77dc3e0dba72?w=1000&h=800&fit=crop&q=80",
+    vehicle: "Sedan + Van", next: "8 min", featured: true,
+  },
+  {
+    from: "Karachi", to: "Hyderabad", price: "800", time: "2h 45m", seats: 14,
+    hue: "from-amber-500/70 via-orange-700/60 to-rose-900/90",
+    image: "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=600&h=600&fit=crop&q=80",
+    vehicle: "Coach", next: "22 min",
+  },
+  {
+    from: "Islamabad", to: "Peshawar", price: "600", time: "2h 15m", seats: 24,
+    hue: "from-sky-500/70 via-indigo-700/60 to-violet-900/90",
+    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&h=600&fit=crop&q=80",
+    vehicle: "Sedan", next: "47 min",
+  },
+  {
+    from: "Multan", to: "Lahore", price: "1,200", time: "5h 00m", seats: 4,
+    hue: "from-rose-500/70 via-fuchsia-700/60 to-purple-900/90",
+    image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=600&h=600&fit=crop&q=80",
+    vehicle: "Van", next: "1h 12m",
+  },
+];
+
+function VehicleIcon({ kind, className = "h-3.5 w-3.5" }: { kind: string; className?: string }) {
+  // Generic transport icon — small steering wheel / vehicle silhouette
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 17h14M5 17l1.5-5h11L19 17M5 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2M16 17v2a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-2" />
+      <circle cx="8" cy="14.5" r="0.5" fill="currentColor" />
+      <circle cx="16" cy="14.5" r="0.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+function RouteArc({ large = false, index = 0 }: { large?: boolean; index?: number }) {
+  const pathId = `route-arc-${index}-${large ? "lg" : "sm"}`;
+  const d = large
+    ? "M30,60 C150,10 320,110 470,40"
+    : "M14,32 C70,4 150,60 200,28";
+  const w = large ? 500 : 215;
+  const h = large ? 90 : 50;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="block w-full" aria-hidden>
+      <defs>
+        <path id={pathId} d={d} />
+      </defs>
+      {/* Static dashed track */}
+      <path d={d} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5" fill="none" strokeDasharray="3 6" strokeLinecap="round" />
+      {/* Flowing dashes */}
+      <motion.path
+        d={d} stroke="rgba(255,255,255,0.95)" strokeWidth="2" fill="none" strokeDasharray="10 28" strokeLinecap="round"
+        animate={{ strokeDashoffset: [0, -38] }}
+        transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
+      />
+      {/* Endpoints */}
+      <circle cx={large ? 30 : 14} cy={large ? 60 : 32} r={large ? 5 : 3.5} fill="white" />
+      <circle cx={large ? 30 : 14} cy={large ? 60 : 32} r={large ? 9 : 6} fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1" />
+      <circle cx={large ? 470 : 200} cy={large ? 40 : 28} r={large ? 5 : 3.5} fill="rgb(110,231,183)" />
+      <circle cx={large ? 470 : 200} cy={large ? 40 : 28} r={large ? 9 : 6} fill="none" stroke="rgba(110,231,183,0.6)" strokeWidth="1" />
+      {/* Moving vehicle dot */}
+      <motion.g
+        animate={{ offsetDistance: ["8%", "92%", "8%"] }}
+        transition={{ duration: 5 + index, repeat: Infinity, ease: "easeInOut" }}
+        style={{ offsetPath: `path("${d}")`, offsetRotate: "auto" }}
+      >
+        <circle r={large ? 4 : 3} fill="white" />
+        <circle r={large ? 8 : 6} fill="white" opacity="0.25" />
+      </motion.g>
+    </svg>
+  );
+}
+
+function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[number]; large?: boolean; index?: number }) {
+  return (
+    <motion.a
+      href="/signup"
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className={`group relative block h-full overflow-hidden rounded-3xl bg-zinc-950 text-white shadow-[0_30px_70px_-25px_rgba(16,185,129,0.25),0_18px_40px_-20px_rgba(0,0,0,0.4)] ring-1 ring-white/10 ${large ? "p-8" : "p-6"}`}
+    >
+      {/* Background image */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={r.image}
+        alt={`${r.from} to ${r.to}`}
+        className="absolute inset-0 h-full w-full object-cover scale-105 transition-transform duration-700 group-hover:scale-110"
+      />
+      {/* Hue color overlay */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${r.hue} mix-blend-multiply`} />
+      {/* Vignette */}
+      <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/85 via-zinc-950/15 to-zinc-950/40" />
+      {/* Top-left highlight */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.2),transparent_55%)]" />
+      {/* Animated halo */}
+      <motion.div
+        className="absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl"
+        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.55, 0.3] }}
+        transition={{ duration: 5 + index, repeat: Infinity, ease: "easeInOut" }}
+      />
+      {/* Inner ring */}
+      <div className="absolute inset-0 ring-1 ring-inset ring-white/15" />
+      {/* Subtle dot grid */}
+      <div
+        className="absolute inset-0 opacity-25"
+        style={{ backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.5) 0.5px, transparent 0.5px)", backgroundSize: "20px 20px" }}
+      />
+
+      <div className="relative flex h-full flex-col">
+        {/* Top: live chip + arrow */}
+        <div className="flex items-start justify-between">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/35 px-2.5 py-1 backdrop-blur">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-80" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            </span>
+            <span className="font-mono text-[10px] font-semibold tabular-nums tracking-wider">
+              <CountUp to={r.seats} duration={1300} /> seats left
+            </span>
+          </div>
+          <ArrowRightIcon className="h-4 w-4 text-white/80 transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1" />
+        </div>
+
+        {/* Middle: route arc (only on featured large tile) */}
+        {large && (
+          <div className="my-6">
+            <RouteArc large index={index} />
+          </div>
+        )}
+
+        {/* Bottom area */}
+        <div className={`mt-auto ${large ? "" : ""}`}>
+          {/* Cities */}
+          {large ? (
+            <div className="flex items-end justify-between gap-6">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">From</div>
+                <div className="mt-0.5 font-semibold tracking-tight text-4xl md:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-white/70">To</div>
+                <div className="mt-0.5 font-semibold tracking-tight text-4xl md:text-5xl drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="font-semibold tracking-tight text-xl leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.from}</div>
+                <div className="font-semibold tracking-tight text-xl leading-none text-white/95 drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]">{r.to}</div>
+              </div>
+              <div className="-my-1">
+                <RouteArc index={index} />
+              </div>
+            </div>
+          )}
+
+          {/* Footer row: vehicle, departure, fare, time */}
+          <div className={`${large ? "mt-6" : "mt-4"} flex items-end justify-between border-t border-white/15 pt-4`}>
+            <div className="flex items-center gap-3">
+              <div className="inline-flex items-center gap-1.5 text-[11px] text-white/85">
+                <VehicleIcon kind={r.vehicle} />
+                <span className="font-medium">{r.vehicle}</span>
+              </div>
+              <span className="text-white/30">·</span>
+              <div className="inline-flex items-center gap-1.5 text-[11px] text-emerald-200">
+                <span className="relative flex h-1 w-1">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-80" />
+                  <span className="relative inline-flex h-1 w-1 rounded-full bg-emerald-300" />
+                </span>
+                <span className="font-mono">Next {r.next}</span>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-mono text-base font-semibold tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">PKR {r.price}</div>
+              <div className="mt-1 font-mono text-[10px] tabular-nums text-white/60">{r.time}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.a>
+  );
+}
 
 function PopularRoutes() {
   return (
-    <section className="relative py-20 lg:py-28 bg-zinc-950 overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: "radial-gradient(circle, #fff 2px, transparent 2px)", backgroundSize: "32px 32px" }} />
-      <div className="mesh-1 absolute -top-32 right-[10%] w-[600px] h-[600px] rounded-full pointer-events-none opacity-30 blur-[100px]" style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
-      <div className="mesh-2 absolute -bottom-24 -left-20 w-[500px] h-[500px] rounded-full pointer-events-none opacity-25 blur-[90px]" style={{ background: "radial-gradient(circle, #14b8a6 0%, transparent 70%)" }} />
-      <div className="mesh-3 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none opacity-10 blur-[80px]" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="mb-12">
-          <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">Popular routes</p>
-          <h2 className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight leading-[1.1]">Where will you go next?</h2>
+    <section className="relative bg-zinc-950 py-24 lg:py-32 overflow-hidden text-white">
+      {/* Live backgrounds — turned UP for the dark canvas */}
+      <LiveAurora tones={["emerald", "cool", "violet"]} intensity={0.7} dark />
+      <LiveGrid dark intensity={0.9} />
+      <LiveDots count={36} color="emerald" dark />
+      <LiveRibbon dark />
+      <div className="absolute inset-0 grain opacity-50" />
+      {/* Bottom fade so it blends into next section */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-b from-transparent to-zinc-950" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 backdrop-blur">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Most-booked · live this week</span>
+            </div>
+            <h2 className="mt-4 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.02] text-white">
+              Where will you <span className="italic text-emerald-300">go next?</span>
+            </h2>
+          </div>
+          <Link href="/signup" className="group inline-flex items-center gap-1.5 self-start rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white backdrop-blur transition-colors hover:border-emerald-400/40 hover:bg-white/10 sm:self-end">
+            Browse all routes
+            <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
         </Reveal>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {routes.map((route, i) => (
-            <Reveal key={route.from + route.to} delay={i * 0.08}>
-              <motion.div className="group relative bg-white/5 backdrop-blur-sm rounded-3xl border border-white/8 overflow-hidden cursor-pointer hover:border-emerald-400/30 transition-all duration-300 shadow-sm hover:shadow-xl hover:shadow-emerald-500/5"
-                whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <LazyImageContainer aspectRatio="h-36" className="rounded-t-3xl">
-                  <div className="relative w-full h-full overflow-hidden">
-                    <SmartImage src={route.image} fallbackSrc="https://picsum.photos/seed/smatway-route-fallback/800/500" alt={`${route.from} to ${route.to}`} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent" />
-                    <div className="absolute bottom-3 left-4 flex items-center gap-1.5 text-white text-sm font-bold drop-shadow-md">
-                      {route.from}
-                      <svg className="w-4 h-4 text-white/70" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-                      {route.to}
-                    </div>
-                  </div>
-                </LazyImageContainer>
-                <div className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ClockIcon className="w-4 h-4 text-zinc-500" />
-                      <span className="text-xs text-zinc-400 font-medium">{route.time}</span>
-                    </div>
-                    <span className="text-sm font-bold text-emerald-400">{route.price}</span>
-                  </div>
-                  <div className="mt-3 flex items-center gap-1.5 text-xs text-emerald-400 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    Book now <ArrowRightIcon className="w-3 h-3" />
-                  </div>
-                </div>
-              </motion.div>
+
+        <div className="grid gap-4 md:grid-cols-4 md:auto-rows-[230px]">
+          {routesBento.map((r, i) => (
+            <Reveal key={`${r.from}-${r.to}`} delay={i * 0.08} className={r.featured ? "md:col-span-2 md:row-span-2" : ""}>
+              <RouteTile r={r} large={r.featured} index={i} />
             </Reveal>
           ))}
         </div>
@@ -627,442 +1076,1638 @@ function PopularRoutes() {
   );
 }
 
-// ─── Features ─────────────────────────────────────────────────────────────────
+// ─── Features — zig-zag with animated visuals (no images) ───────────────────
+
+const featurePillars = [
+  {
+    eyebrow: "01 · Trust",
+    title: "Drivers we'd trust with our family.",
+    body: "Every transporter clears identity, license, and vehicle inspection. Anyone showing red flags loses access — automatically and permanently.",
+    visual: "shield" as const,
+  },
+  {
+    eyebrow: "02 · Money",
+    title: "The price you see is the price you pay.",
+    body: "No surge, no hidden fees, no curb-side bargaining. Your fare sits in escrow until you arrive. Refunds happen the same day.",
+    visual: "wallet" as const,
+  },
+  {
+    eyebrow: "03 · Visibility",
+    title: "Live tracking — for you and the people who care.",
+    body: "Watch your trip update to the meter. Generate a one-tap share link and your family follows along until you arrive safely.",
+    visual: "radar" as const,
+  },
+  {
+    eyebrow: "04 · Voice",
+    title: "Reviews that actually mean something.",
+    body: "Only verified passengers can leave reviews. Drivers below 4.5 get coached. Below 4.0 get suspended. The standard stays high.",
+    visual: "voices" as const,
+  },
+];
+
+function ShieldVisual() {
+  const checks = ["License", "ID match", "Insurance", "Vehicle audit"];
+  return (
+    <div className="relative aspect-square w-full max-w-[440px]">
+      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-emerald-50 via-white to-emerald-100/40" />
+      <motion.div
+        className="absolute inset-0 flex items-center justify-center"
+        animate={{ scale: [1, 1.04, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <svg className="h-44 w-44 text-emerald-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z" />
+          <motion.path
+            d="m9 12 2 2 4-4"
+            initial={{ pathLength: 0 }}
+            animate={{ pathLength: [0, 1, 1, 0] }}
+            transition={{ duration: 4, repeat: Infinity, times: [0, 0.4, 0.7, 1] }}
+          />
+        </svg>
+      </motion.div>
+      {checks.map((c, i) => {
+        const positions = [
+          { left: "8%", top: "16%" },
+          { left: "78%", top: "26%" },
+          { left: "8%", top: "70%" },
+          { left: "70%", top: "76%" },
+        ][i];
+        return (
+          <motion.div
+            key={c}
+            initial={{ opacity: 0, scale: 0.85 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5, delay: 0.2 + i * 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="absolute inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-white/95 px-3 py-1 text-[11px] font-medium text-emerald-800 shadow-[0_6px_16px_rgba(16,185,129,0.12)] backdrop-blur"
+            style={positions}
+          >
+            <CheckIcon className="h-3 w-3" />
+            {c}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WalletVisual() {
+  return (
+    <div className="relative aspect-square w-full max-w-[440px]">
+      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-amber-50 via-white to-orange-100/40" />
+      <div className="absolute inset-0 flex items-center justify-center" style={{ perspective: 900 }}>
+        <motion.div
+          className="relative w-[78%]"
+          initial={{ rotateX: -12, rotateY: 8 }}
+          animate={{ rotateX: [-12, -8, -12], rotateY: [8, 14, 8] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          style={{ transformStyle: "preserve-3d" }}
+        >
+          <div className="aspect-[1.6/1] w-full rounded-2xl bg-zinc-950 p-5 text-white shadow-[0_30px_60px_-20px_rgba(0,0,0,0.4)] ring-1 ring-white/10">
+            <div className="flex items-start justify-between">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-400">SmatWay · Escrow</div>
+              <MapPinIcon className="h-4 w-4 text-emerald-400" />
+            </div>
+            <div className="mt-12 font-mono text-[15px] tracking-[0.2em] text-zinc-200">4729 · 8810 · ····</div>
+            <div className="mt-3 flex items-end justify-between">
+              <div>
+                <div className="text-[9px] uppercase tracking-wider text-zinc-500">Trip hold</div>
+                <div className="font-mono text-base font-semibold tabular-nums">PKR 1,500.00</div>
+              </div>
+              <div className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Held</div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+      <motion.div
+        className="absolute right-6 top-6 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[11px] font-medium shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="font-mono text-zinc-950">+ 0 fees</div>
+        <div className="text-[10px] text-zinc-500">No surge</div>
+      </motion.div>
+      <motion.div
+        className="absolute bottom-8 left-6 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-800 shadow-sm"
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        Released to driver in 2h
+      </motion.div>
+    </div>
+  );
+}
+
+function RadarVisual() {
+  return (
+    <div className="relative aspect-square w-full max-w-[440px]">
+      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-sky-50 via-white to-emerald-50/40" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        {[1, 2, 3, 4].map((i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full border border-emerald-300/40"
+            style={{ width: `${i * 22 + 12}%`, height: `${i * 22 + 12}%` }}
+            animate={{ opacity: [0.15, 0.55, 0.15], scale: [0.9, 1.05, 0.9] }}
+            transition={{ duration: 3, delay: i * 0.4, repeat: Infinity, ease: "easeInOut" }}
+          />
+        ))}
+        <div className="absolute h-3 w-3 rounded-full bg-emerald-600 shadow-[0_0_0_6px_rgba(16,185,129,0.18)]" />
+      </div>
+      <motion.div
+        className="absolute left-[68%] top-[26%] flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Lahore → Islamabad
+      </motion.div>
+      <motion.div
+        className="absolute left-[16%] top-[64%] flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+      >
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        ETA 2h 15m
+      </motion.div>
+      <motion.div
+        className="absolute right-6 bottom-6 inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800"
+        animate={{ scale: [1, 1.05, 1] }}
+        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        </span>
+        Sharing live
+      </motion.div>
+    </div>
+  );
+}
+
+function VoicesVisual() {
+  const reviews = [
+    { name: "Amna F.", note: "Driver was 5 min early. Smooth ride.", stars: 5, x: "5%", y: "10%" },
+    { name: "Bilal Q.", note: "Cleanest van I've taken. AC perfect.", stars: 5, x: "55%", y: "32%" },
+    { name: "Sara M.", note: "Tracking link kept my mum at ease.", stars: 5, x: "12%", y: "58%" },
+  ];
+  return (
+    <div className="relative aspect-square w-full max-w-[440px]">
+      <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-br from-rose-50 via-white to-amber-50/40" />
+      {reviews.map((r, i) => (
+        <motion.div
+          key={r.name}
+          initial={{ opacity: 0, y: 20, scale: 0.95 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6, delay: 0.15 + i * 0.18, ease: [0.16, 1, 0.3, 1] }}
+          className="absolute w-[60%] rounded-2xl border border-zinc-200 bg-white p-3.5 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.12)]"
+          style={{ left: r.x, top: r.y }}
+        >
+          <div className="mb-1.5 flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-400 text-[11px] font-bold text-white">
+              {r.name[0]}
+            </div>
+            <div className="flex-1">
+              <div className="text-[11px] font-semibold text-zinc-950">{r.name}</div>
+              <div className="flex gap-0.5 text-amber-400">
+                {Array.from({ length: r.stars }).map((_, s) => <StarIcon key={s} className="h-2.5 w-2.5" />)}
+              </div>
+            </div>
+          </div>
+          <div className="text-[11px] leading-relaxed text-zinc-600">{r.note}</div>
+        </motion.div>
+      ))}
+      <motion.div
+        className="absolute right-5 bottom-5 rounded-2xl border border-zinc-200 bg-zinc-950 px-4 py-3 text-white shadow-[0_10px_30px_-10px_rgba(0,0,0,0.25)]"
+        animate={{ y: [0, -4, 0] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="font-mono text-2xl font-semibold tabular-nums">4.9</div>
+        <div className="text-[10px] uppercase tracking-wider text-zinc-400">avg rating</div>
+      </motion.div>
+    </div>
+  );
+}
+
+function PillarVisual({ kind }: { kind: typeof featurePillars[number]["visual"] }) {
+  if (kind === "shield") return <ShieldVisual />;
+  if (kind === "wallet") return <WalletVisual />;
+  if (kind === "radar") return <RadarVisual />;
+  return <VoicesVisual />;
+}
 
 function Features() {
+  // Per-pillar accent palette — tuned for light editorial cards
+  const accents: Record<typeof featurePillars[number]["visual"], {
+    bar: string; chip: string; num: string; glow: string; dot: string; arrow: string;
+  }> = {
+    shield: {
+      bar: "bg-emerald-500",
+      chip: "text-emerald-800 border-emerald-200 bg-emerald-50/90",
+      num: "text-emerald-600/[0.09]",
+      glow: "from-emerald-300/25",
+      dot: "bg-emerald-500",
+      arrow: "text-emerald-700",
+    },
+    wallet: {
+      bar: "bg-amber-500",
+      chip: "text-amber-900 border-amber-200 bg-amber-50/90",
+      num: "text-amber-600/[0.09]",
+      glow: "from-amber-300/25",
+      dot: "bg-amber-500",
+      arrow: "text-amber-700",
+    },
+    radar: {
+      bar: "bg-sky-500",
+      chip: "text-sky-800 border-sky-200 bg-sky-50/90",
+      num: "text-sky-600/[0.09]",
+      glow: "from-sky-300/25",
+      dot: "bg-sky-500",
+      arrow: "text-sky-700",
+    },
+    voices: {
+      bar: "bg-rose-500",
+      chip: "text-rose-800 border-rose-200 bg-rose-50/90",
+      num: "text-rose-600/[0.09]",
+      glow: "from-rose-300/25",
+      dot: "bg-rose-500",
+      arrow: "text-rose-700",
+    },
+  };
+
   return (
-    <section className="relative py-24 lg:py-32 bg-[#f5f7f4] overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(16,185,129,0.14),transparent_45%),radial-gradient(circle_at_85%_10%,rgba(20,184,166,0.14),transparent_42%),radial-gradient(circle_at_55%_90%,rgba(59,130,246,0.10),transparent_40%)]" />
-      <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.08) 1px, transparent 1px)", backgroundSize: "56px 56px" }} />
+    <section className="relative overflow-hidden py-20 lg:py-28 text-zinc-900"
+      style={{ backgroundColor: "#fafaf8" }}
+    >
+      {/* White → soft emerald gradient base mesh (matches other light sections) */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse 70% 60% at 15% 10%, rgba(16,185,129,0.18), transparent 60%)," +
+            "radial-gradient(ellipse 60% 50% at 85% 15%, rgba(16,185,129,0.12), transparent 65%)," +
+            "radial-gradient(ellipse 80% 50% at 50% 100%, rgba(16,185,129,0.16), transparent 70%)," +
+            "linear-gradient(180deg, #ffffff 0%, #f4faf6 50%, #ecf6ef 100%)",
+        }}
+      />
+      {/* Slow drifting emerald aurora blobs */}
       <motion.div
-        className="absolute -top-44 -right-24 w-[760px] h-[760px] rounded-full pointer-events-none blur-[130px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.22) 0%, rgba(16,185,129,0.05) 42%, transparent 72%)" }}
-        animate={{ x: [0, 24, 0], y: [0, -18, 0], scale: [1, 1.08, 1] }}
+        className="pointer-events-none absolute -top-40 left-[-10%] h-[520px] w-[520px] rounded-full blur-[120px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.30), transparent 70%)" }}
+        animate={{ x: [0, 40, 0], y: [0, -25, 0], scale: [1, 1.08, 1] }}
         transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
-        className="absolute -bottom-28 -left-20 w-[560px] h-[560px] rounded-full pointer-events-none blur-[110px]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.18) 0%, rgba(20,184,166,0.04) 45%, transparent 72%)" }}
-        animate={{ x: [0, -18, 0], y: [0, 16, 0], scale: [1.06, 0.96, 1.06] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        className="pointer-events-none absolute -bottom-40 right-[-10%] h-[460px] w-[460px] rounded-full blur-[110px]"
+        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.25), transparent 70%)" }}
+        animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.05, 0.95, 1.05] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
       />
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="mb-16 max-w-2xl">
-          <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">Why SmatWay</p>
-          <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-zinc-900 tracking-tight leading-[1.1] mb-5">Built for everyone<br />on the road</h2>
-          <p className="text-[17px] text-slate-500 leading-relaxed">Whether you&apos;re heading to the next city or managing a fleet, every feature is designed around your safety and convenience.</p>
+      <LiveDots count={18} color="emerald" />
+      <div className="absolute inset-0 grain opacity-50" />
+      {/* Top + bottom hairline emerald separators to break from neighboring dark sections */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Compact header with side meta */}
+        <Reveal className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-white/70 px-3 py-1.5 backdrop-blur shadow-[0_4px_12px_rgba(16,185,129,0.08)]">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-80" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Why SmatWay</span>
+            </div>
+            <h2 className="mt-4 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.02] text-zinc-950">
+              Built around the <span className="italic text-emerald-700">four things</span> that actually matter.
+            </h2>
+          </div>
+          <div className="hidden text-right text-[11px] font-mono uppercase tracking-[0.18em] text-zinc-500 sm:block">
+            04 / 04 · pillars
+          </div>
         </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {features.map((f, i) => (
-            <Reveal key={f.title} delay={i * 0.1}>
-              <motion.div className="group relative bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300"
-                whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <LazyImageContainer aspectRatio="h-48" className="rounded-t-3xl">
-                  <div className="relative w-full h-full overflow-hidden">
-                    <SmartImage src={f.image} fallbackSrc="https://picsum.photos/seed/smatway-feature-fallback/1000/700" alt={f.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent" />
-                    <div className="absolute -bottom-5 left-8 w-14 h-14 rounded-2xl bg-white shadow-lg border border-slate-100 flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform duration-500">
-                      {f.icon}
+
+        {/* 2×2 editorial light cards */}
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:gap-6">
+          {featurePillars.map((p, i) => {
+            const a = accents[p.visual];
+            const [num, label] = p.eyebrow.split(" · ");
+            return (
+              <Reveal key={p.title} delay={i * 0.07}>
+                <motion.div
+                  whileHover={{ y: -5 }}
+                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                  className="group relative h-full overflow-hidden rounded-3xl border border-zinc-200/80 bg-white p-7 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_28px_-12px_rgba(15,23,42,0.08)] transition-shadow duration-500 hover:shadow-[0_2px_4px_rgba(15,23,42,0.05),0_22px_56px_-18px_rgba(15,23,42,0.14)] lg:p-9"
+                >
+                  {/* Top accent hairline — pops on hover */}
+                  <div className={`absolute inset-x-0 top-0 h-[2px] ${a.bar} opacity-50 transition-opacity duration-500 group-hover:opacity-100`} />
+
+                  {/* Soft paper texture overlay */}
+                  <div
+                    className="pointer-events-none absolute inset-0 opacity-[0.35] mix-blend-multiply"
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at 20% 15%, rgba(15,23,42,0.025), transparent 45%)," +
+                        "radial-gradient(circle at 80% 85%, rgba(15,23,42,0.02), transparent 50%)",
+                    }}
+                  />
+
+                  {/* Giant editorial chapter number behind everything */}
+                  <div
+                    aria-hidden
+                    className={`pointer-events-none absolute -right-3 -top-10 select-none font-[var(--font-display)] text-[180px] font-black leading-none tracking-tighter ${a.num} transition-transform duration-700 ease-out group-hover:-translate-y-1 group-hover:scale-[1.04]`}
+                  >
+                    {num}
+                  </div>
+
+                  {/* Accent ambient glow — appears on hover */}
+                  <div className={`pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-gradient-to-br ${a.glow} to-transparent opacity-0 blur-3xl transition-opacity duration-700 group-hover:opacity-100`} />
+
+                  {/* Content layout */}
+                  <div className="relative grid gap-6 sm:grid-cols-[1.05fr_1fr] sm:items-center">
+                    {/* Text column */}
+                    <div className="order-2 sm:order-1">
+                      <div className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${a.chip}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${a.dot}`} />
+                        <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.18em]">{label}</span>
+                      </div>
+                      <h3 className="mt-3 font-[var(--font-display)] text-2xl tracking-tight text-zinc-950 sm:text-[28px] leading-[1.1]">
+                        {p.title}
+                      </h3>
+                      <p className="mt-3 text-[14px] leading-relaxed text-zinc-600">{p.body}</p>
+
+                      {/* Subtle "learn more" affordance that slides in on hover */}
+                      <div className={`mt-5 flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.14em] ${a.arrow} opacity-0 transition-all duration-500 translate-x-[-4px] group-hover:opacity-100 group-hover:translate-x-0`}>
+                        <span>Learn more</span>
+                        <svg className="h-3 w-3" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 8h10M9 4l4 4-4 4" />
+                        </svg>
+                      </div>
+                    </div>
+
+                    {/* Visual — scaled to fit card */}
+                    <div className="order-1 sm:order-2 flex justify-center sm:justify-end">
+                      <div className="w-full max-w-[260px]">
+                        <PillarVisual kind={p.visual} />
+                      </div>
                     </div>
                   </div>
-                </LazyImageContainer>
-                <div className="p-8 pt-10 lg:p-10 lg:pt-12">
-                  <h3 className="text-xl font-bold text-zinc-900 mb-3 tracking-tight">{f.title}</h3>
-                  <p className="text-slate-500 text-[15px] leading-relaxed">{f.description}</p>
-                  <div className="mt-6 flex items-center gap-2 text-emerald-600 text-sm font-semibold opacity-0 group-hover:opacity-100 transition-all">
-                    Learn more <ArrowRightIcon className="w-3.5 h-3.5" />
+
+                  {/* Bottom-right corner tick — magazine feel */}
+                  <div className="pointer-events-none absolute bottom-5 right-6 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-400">
+                    {String(i + 1).padStart(2, "0")} / 04
                   </div>
-                </div>
-              </motion.div>
-            </Reveal>
-          ))}
+                </motion.div>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
 
-// ─── App Preview (uses car.png in mockup) ─────────────────────────────────────
+// ─── AppPreview — phone screens that mirror the actual dashboard ─────────────
+
+type ScreenKind = "search" | "trip" | "ticket";
+const screenIds: ScreenKind[] = ["search", "trip", "ticket"];
+
+function PhoneSearchScreen() {
+  // Mirrors dashboard/(travelor)/page.tsx — dark hero with white search card
+  return (
+    <div className="absolute inset-0 flex flex-col bg-zinc-50">
+      {/* status bar */}
+      <div className="flex items-center justify-between px-6 pt-3 pb-2">
+        <span className="font-mono text-[9px] font-semibold text-zinc-900">9:41</span>
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-4 rounded-sm border border-zinc-900" />
+        </div>
+      </div>
+
+      {/* dark hero */}
+      <div className="relative mx-3 mt-2 overflow-hidden rounded-[20px] bg-gradient-to-br from-zinc-950 via-zinc-900 to-emerald-950 p-4 text-white">
+        <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-emerald-500/30 blur-2xl" />
+        <div className="relative">
+          <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 ring-1 ring-emerald-400/30">
+            <svg className="h-2 w-2 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 4.5L18 6l-4.5 1.5L12 12l-1.5-4.5L6 6l4.5-1.5L12 0z" /></svg>
+            <span className="text-[7px] font-semibold uppercase tracking-wider text-emerald-200">Trusted transporters</span>
+          </div>
+          <h2 className="mt-2 text-[15px] font-semibold leading-tight tracking-tight">Where are you headed?</h2>
+          <p className="mt-0.5 text-[8px] text-zinc-400">Search verified routes across cities</p>
+        </div>
+      </div>
+
+      {/* white search card */}
+      <div className="mx-3 -mt-3 rounded-[20px] bg-white p-3 shadow-[0_12px_30px_-10px_rgba(0,0,0,0.18)] ring-1 ring-zinc-100">
+        <div className="space-y-2">
+          {[
+            { label: "From", value: "Lahore", sub: "Punjab" },
+            { label: "To", value: "Islamabad", sub: "Federal" },
+            { label: "Date", value: "Tomorrow · 8:00 AM", sub: "" },
+          ].map((f, i) => (
+            <motion.div
+              key={f.label}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 + i * 0.06 }}
+              className="rounded-xl border border-zinc-100 bg-zinc-50/50 px-2.5 py-1.5"
+            >
+              <div className="text-[7px] font-semibold uppercase tracking-wider text-zinc-400">{f.label}</div>
+              <div className="text-[11px] font-semibold text-zinc-950">{f.value}</div>
+              {f.sub && <div className="text-[8px] text-zinc-500">{f.sub}</div>}
+            </motion.div>
+          ))}
+        </div>
+
+        <motion.button
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.35 }}
+          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-zinc-950 py-2 text-[10px] font-semibold text-white"
+        >
+          Search routes
+          <ArrowRightIcon className="h-2.5 w-2.5" />
+        </motion.button>
+      </div>
+
+      {/* result preview */}
+      <div className="mx-3 mt-2 space-y-1.5">
+        {[
+          { driver: "Kamran A.", price: "1,500", time: "4h 30m", seats: 7 },
+          { driver: "Bilal Q.", price: "1,400", time: "4h 45m", seats: 11 },
+        ].map((r, i) => (
+          <motion.div
+            key={r.driver}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.35, delay: 0.45 + i * 0.1 }}
+            className="flex items-center gap-2 rounded-xl border border-zinc-100 bg-white p-2 shadow-sm"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-[9px] font-semibold text-white">
+              {r.driver[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[10px] font-semibold text-zinc-950">{r.driver}</div>
+              <div className="flex items-center gap-1 text-[8px] text-zinc-500">
+                <svg className="h-2 w-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6 14.5 9l6.8.5-5.2 4.4 1.7 6.6L12 16.9l-5.8 3.6 1.7-6.6L2.7 9.5 9.5 9z" /></svg>
+                4.9 · {r.seats} seats · {r.time}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="font-mono text-[10px] font-bold text-zinc-950 tabular-nums">PKR {r.price}</div>
+              <div className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1 py-0 text-[7px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
+                <span className="h-1 w-1 rounded-full bg-emerald-500" />
+                Available
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PhoneTripScreen() {
+  return (
+    <div className="absolute inset-0 flex flex-col bg-zinc-50">
+      <div className="flex items-center justify-between px-6 pt-3 pb-2">
+        <span className="font-mono text-[9px] font-semibold text-zinc-900">9:41</span>
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-4 rounded-sm border border-zinc-900" />
+        </div>
+      </div>
+
+      {/* page header */}
+      <div className="px-4 pt-2">
+        <div className="text-[7px] font-semibold uppercase tracking-[0.15em] text-emerald-700">My Bookings</div>
+        <h2 className="mt-1 text-[15px] font-semibold tracking-tight text-zinc-950">Trip in progress</h2>
+      </div>
+
+      {/* live trip card */}
+      <div className="mx-3 mt-3 overflow-hidden rounded-[20px] bg-white p-3 shadow-[0_12px_30px_-10px_rgba(0,0,0,0.12)] ring-1 ring-zinc-100">
+        <div className="flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-emerald-700 ring-1 ring-inset ring-emerald-200">
+            <span className="relative flex h-1 w-1">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1 w-1 rounded-full bg-emerald-500" />
+            </span>
+            En route
+          </span>
+          <span className="font-mono text-[8px] text-zinc-500">ETA 2h 15m</span>
+        </div>
+
+        <div className="mt-2.5 flex items-center gap-2">
+          <div className="flex flex-col items-center gap-0.5">
+            <div className="h-2 w-2 rounded-full border-2 border-white bg-emerald-500 shadow" />
+            <div className="h-4 w-px bg-emerald-300" />
+            <div className="h-2 w-2 rounded-full border-2 border-emerald-400 bg-white" />
+          </div>
+          <div className="flex-1">
+            <div className="text-[10px] font-bold text-zinc-950">Lahore</div>
+            <div className="relative my-1 h-1 w-full overflow-hidden rounded-full bg-zinc-100">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
+                initial={{ width: 0 }}
+                animate={{ width: "62%" }}
+                transition={{ duration: 1.4, delay: 0.4 }}
+              />
+              <motion.div
+                className="absolute inset-y-0 w-6 bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                animate={{ x: ["-100%", "300%"] }}
+                transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+              />
+            </div>
+            <div className="text-[10px] font-bold text-zinc-950">Islamabad</div>
+          </div>
+          <div className="text-right">
+            <div className="font-mono text-[12px] font-bold tabular-nums text-zinc-950">62%</div>
+            <div className="text-[7px] text-zinc-400">complete</div>
+          </div>
+        </div>
+      </div>
+
+      {/* driver chip */}
+      <div className="mx-3 mt-2 flex items-center gap-2 rounded-2xl bg-white p-2.5 shadow-sm ring-1 ring-zinc-100">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-[12px] font-bold text-white ring-2 ring-white">K</div>
+        <div className="flex-1">
+          <div className="text-[11px] font-semibold text-zinc-950">Kamran A.</div>
+          <div className="flex items-center gap-1 text-[8px] text-zinc-500">
+            <svg className="h-2 w-2 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.6 14.5 9l6.8.5-5.2 4.4 1.7 6.6L12 16.9l-5.8 3.6 1.7-6.6L2.7 9.5 9.5 9z" /></svg>
+            4.9 · Sedan · F-HY 100
+          </div>
+        </div>
+        <div className="flex gap-1">
+          <button className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92V21a1 1 0 0 1-1.11 1A19.86 19.86 0 0 1 2 4.11 1 1 0 0 1 3 3h4.09a1 1 0 0 1 1 .75l.95 3.79a1 1 0 0 1-.27 1L7 10.5a16 16 0 0 0 6.5 6.5l1.96-1.78a1 1 0 0 1 1-.27l3.79.95a1 1 0 0 1 .75 1z" /></svg>
+          </button>
+          <button className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-900 text-white">
+            <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+          </button>
+        </div>
+      </div>
+
+      {/* share link banner */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.5 }}
+        className="mx-3 mt-2 rounded-2xl bg-gradient-to-br from-zinc-950 to-zinc-800 p-2.5 text-white"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[8px] font-semibold uppercase tracking-wider text-emerald-300">Share live trip</div>
+            <div className="mt-0.5 font-mono text-[9px] text-zinc-300">smatway.app/t/0482</div>
+          </div>
+          <button className="rounded-lg bg-white px-2 py-1 text-[9px] font-semibold text-zinc-950">Copy</button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+function PhoneTicketScreen() {
+  return (
+    <div className="absolute inset-0 flex flex-col bg-zinc-50">
+      <div className="flex items-center justify-between px-6 pt-3 pb-2">
+        <span className="font-mono text-[9px] font-semibold text-zinc-900">9:41</span>
+        <div className="flex items-center gap-1">
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-3 rounded-sm bg-zinc-900" />
+          <div className="h-1.5 w-4 rounded-sm border border-zinc-900" />
+        </div>
+      </div>
+
+      <div className="px-4 pt-2">
+        <div className="text-[7px] font-semibold uppercase tracking-[0.15em] text-emerald-700">Booking Confirmed</div>
+        <h2 className="mt-1 text-[15px] font-semibold tracking-tight text-zinc-950">Trip #0482</h2>
+      </div>
+
+      {/* ticket card */}
+      <div className="relative mx-3 mt-3 overflow-hidden rounded-[20px] bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 p-3 text-white shadow-[0_12px_30px_-10px_rgba(16,185,129,0.4)]">
+        <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/15 blur-xl" />
+
+        <div className="relative flex items-center justify-between">
+          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider ring-1 ring-inset ring-white/20">
+            <CheckIcon className="h-2 w-2" />
+            Confirmed
+          </span>
+          <span className="font-mono text-[8px] text-white/80">Tomorrow 8:00 AM</span>
+        </div>
+
+        <div className="relative mt-3 flex items-end justify-between">
+          <div>
+            <div className="text-[8px] uppercase tracking-wider text-white/70">From</div>
+            <div className="text-[16px] font-bold leading-none">Lahore</div>
+          </div>
+          <ArrowRightIcon className="mb-1 h-3 w-3 text-white/80" />
+          <div className="text-right">
+            <div className="text-[8px] uppercase tracking-wider text-white/70">To</div>
+            <div className="text-[16px] font-bold leading-none">Islamabad</div>
+          </div>
+        </div>
+
+        {/* perforation */}
+        <div className="relative my-3 flex items-center gap-1">
+          <div className="h-2 w-2 rounded-full bg-zinc-50" style={{ marginLeft: -16 }} />
+          <div className="flex-1 border-t border-dashed border-white/30" />
+          <div className="h-2 w-2 rounded-full bg-zinc-50" style={{ marginRight: -16 }} />
+        </div>
+
+        <div className="relative flex items-center justify-between">
+          <div>
+            <div className="text-[8px] uppercase tracking-wider text-white/70">Seat</div>
+            <div className="font-mono text-[12px] font-bold tabular-nums">3A</div>
+          </div>
+          <div>
+            <div className="text-[8px] uppercase tracking-wider text-white/70">Vehicle</div>
+            <div className="text-[10px] font-semibold">Sedan</div>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] uppercase tracking-wider text-white/70">Paid</div>
+            <div className="font-mono text-[12px] font-bold tabular-nums">PKR 1,500</div>
+          </div>
+        </div>
+      </div>
+
+      {/* QR mock */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, delay: 0.4 }}
+        className="mx-3 mt-2 flex items-center gap-2.5 rounded-2xl bg-white p-3 shadow-sm ring-1 ring-zinc-100"
+      >
+        <div className="grid h-14 w-14 grid-cols-6 grid-rows-6 gap-px rounded-md bg-zinc-950 p-1">
+          {Array.from({ length: 36 }).map((_, i) => {
+            const seed = (i * 37 + 11) % 100;
+            return <div key={i} className={`rounded-[1px] ${seed > 45 ? "bg-white" : "bg-transparent"}`} />;
+          })}
+        </div>
+        <div className="flex-1">
+          <div className="text-[10px] font-semibold text-zinc-950">Boarding pass</div>
+          <div className="mt-0.5 text-[8px] text-zinc-500">Show this at boarding · works offline</div>
+          <div className="mt-1.5 inline-flex items-center gap-1 text-[8px] font-semibold text-emerald-700">
+            <CheckIcon className="h-2 w-2" />
+            Saved to wallet
+          </div>
+        </div>
+      </motion.div>
+
+      {/* status pills row */}
+      <div className="mx-3 mt-2 flex gap-1.5">
+        {[
+          { tone: "emerald", label: "Escrow held" },
+          { tone: "blue", label: "ID verified" },
+          { tone: "amber", label: "Insured" },
+        ].map((p) => {
+          const tones: Record<string, string> = {
+            emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+            blue: "bg-sky-50 text-sky-700 ring-sky-200",
+            amber: "bg-amber-50 text-amber-700 ring-amber-200",
+          };
+          return (
+            <span key={p.label} className={`flex-1 inline-flex items-center justify-center gap-1 rounded-full px-1.5 py-0.5 text-[8px] font-semibold ring-1 ring-inset ${tones[p.tone]}`}>
+              <span className="h-1 w-1 rounded-full bg-current opacity-70" />
+              {p.label}
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function AppPreview() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], [60, -60]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setIdx((x) => (x + 1) % screenIds.length), 4500);
+    return () => clearInterval(t);
+  }, []);
+  const screenId = screenIds[idx];
+  const screenLabels: Record<ScreenKind, string> = { search: "Search Rides", trip: "Live Trip", ticket: "Ticket" };
 
   return (
-    <section ref={ref} className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0 pointer-events-none opacity-[0.02]" style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-      <div className="mesh-1 absolute top-[-15%] left-[20%] w-[600px] h-[600px] rounded-full pointer-events-none opacity-20 blur-[110px]" style={{ background: "radial-gradient(circle, #10b981 0%, transparent 70%)" }} />
-      <div className="mesh-3 absolute bottom-[-10%] right-[5%] w-[450px] h-[450px] rounded-full pointer-events-none opacity-15 blur-[90px]" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
-          <Reveal>
-            <motion.div className="relative flex justify-center" style={{ y }}>
-              <div className="relative">
-                <div className="relative w-[280px] sm:w-[320px] bg-zinc-900 rounded-[3rem] p-3 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.2)]">
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-7 bg-zinc-900 rounded-b-3xl z-20" />
-                  <div className="relative rounded-[2.3rem] overflow-hidden bg-gradient-to-b from-emerald-50 to-white aspect-[9/19.5]">
-                    <div className="absolute inset-0 p-5 pt-12 flex flex-col">
-                      <div className="text-center mb-4"><div className="text-zinc-400 text-[10px] font-medium">9:41</div></div>
-                      <div className="mb-5">
-                        <div className="text-lg font-bold text-zinc-900 mb-1">Good morning!</div>
-                        <div className="text-xs text-slate-400">Where are you headed today?</div>
-                      </div>
-                      <div className="bg-white rounded-2xl border border-slate-200 p-3.5 mb-4 shadow-sm">
-                        <div className="flex items-center gap-2">
-                          <MapPinIcon className="w-4 h-4 text-emerald-500" />
-                          <span className="text-xs text-slate-300">Search routes...</span>
-                        </div>
-                      </div>
-                      <div className="bg-emerald-600 rounded-2xl p-4 mb-4 text-white">
-                        <div className="text-[10px] font-semibold uppercase tracking-wider opacity-80 mb-2">Upcoming Trip</div>
-                        <div className="text-sm font-bold mb-1">Lahore → Islamabad</div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] opacity-80">Tomorrow, 8:00 AM</span>
-                          <span className="text-xs font-bold bg-white/20 px-2 py-0.5 rounded-lg">PKR 1,500</span>
-                        </div>
-                      </div>
-                      <div className="bg-white rounded-2xl border border-slate-100 p-3 shadow-sm flex items-center gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src="/car.png" alt="Vehicle" className="w-16 h-10 object-contain" />
-                        <div className="flex-1">
-                          <div className="text-[11px] font-bold text-zinc-900">Kamran A.</div>
-                          <div className="flex items-center gap-1">
-                            <StarIcon className="w-2.5 h-2.5 text-amber-400" />
-                            <span className="text-[9px] text-slate-400">4.9 · Sedan</span>
-                          </div>
-                        </div>
-                        <div className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg">Assigned</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <motion.div className="absolute -right-16 top-1/4 bg-white rounded-2xl shadow-xl border border-slate-100 p-4 w-52"
-                  animate={{ y: [0, -8, 0] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center"><CheckCircleIcon className="w-4 h-4 text-emerald-600" /></div>
-                    <div className="text-xs font-bold text-zinc-900">Booking Confirmed</div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/car.png" alt="Vehicle" className="w-10 h-6 object-contain" />
-                    <div>
-                      <div className="text-xs font-medium text-zinc-700">White Sedan</div>
-                      <div className="flex items-center gap-0.5"><StarIcon className="w-3 h-3 text-amber-400" /><span className="text-[10px] text-slate-400">4.9 · 1.2K trips</span></div>
-                    </div>
-                  </div>
-                </motion.div>
-              </div>
-            </motion.div>
-          </Reveal>
+    <section className="relative overflow-hidden bg-zinc-950 pt-24 pb-12 lg:pt-32 lg:pb-16 text-white">
+      {/* Boosted live backgrounds */}
+      <LiveAurora tones={["emerald", "violet", "cool", "rose"]} intensity={0.75} dark />
+      <LiveGrid dark intensity={0.85} />
+      <LiveDots count={48} color="white" dark />
+      <LiveDots count={20} color="emerald" dark />
+      <LiveRibbon dark />
+      <div className="absolute inset-0 grain opacity-50" />
+      {/* Top fade only — bottom flows into HowItWorks */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-zinc-950 to-transparent" />
 
-          <div className="space-y-8">
-            <Reveal>
-              <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">Mobile App</p>
-              <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1] mb-5">Everything in<br />your pocket</h2>
-              <p className="text-[17px] text-zinc-300 leading-relaxed max-w-[44ch]">Book rides, track journeys, manage payments, and rate transporters — all from our intuitive mobile app.</p>
-            </Reveal>
-            <Reveal delay={0.15}>
-              <div className="space-y-4">
-                {[
-                  { title: "Instant Notifications", desc: "Get real-time updates on bookings, driver assignments, and trip status." },
-                  { title: "Offline Tickets", desc: "Download your booking confirmation — works even without internet." },
-                  { title: "Family Sharing", desc: "Share your live trip link so loved ones can track you in real time." },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-4 items-start p-4 rounded-2xl hover:bg-white/5 transition-colors duration-200">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5"><CheckIcon className="w-5 h-5 text-emerald-600" /></div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white mb-1">{item.title}</h4>
-                      <p className="text-sm text-zinc-400 leading-relaxed">{item.desc}</p>
-                    </div>
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-8">
+        {/* Phone */}
+        <div className="flex justify-center lg:justify-start">
+          <div className="relative">
+            <motion.div
+              className="pointer-events-none absolute -inset-16 rounded-[3rem] bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.32),transparent_60%)] blur-3xl"
+              animate={{ opacity: [0.55, 0.95, 0.55], scale: [0.96, 1.05, 0.96] }}
+              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            />
+            {/* Diagonal Coming Soon sticker — top-right of phone */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.6, rotate: -8 }}
+              animate={{ opacity: 1, scale: 1, rotate: 12 }}
+              transition={{ duration: 0.7, delay: 0.25, type: "spring", stiffness: 140, damping: 14 }}
+              className="absolute -right-7 -top-4 z-40 sm:-right-9 sm:-top-6"
+            >
+              <motion.div
+                animate={{ rotate: [12, 15, 12] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="relative overflow-hidden rounded-2xl border border-emerald-300/40 bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 px-3 py-2 shadow-[0_10px_30px_-8px_rgba(16,185,129,0.6)]"
+              >
+                <motion.span
+                  className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut", repeatDelay: 0.8 }}
+                />
+                <div className="relative flex items-center gap-1.5">
+                  <svg className="h-3 w-3 text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l1.5 4.5L18 6l-4.5 1.5L12 12l-1.5-4.5L6 6l4.5-1.5L12 0z M5 14l1 3 3 1-3 1-1 3-1-3-3-1 3-1z M19 15l.8 2.4L22 18l-2.2.6L19 21l-.8-2.4L16 18l2.2-.6z" /></svg>
+                  <div className="leading-none">
+                    <div className="text-[8px] font-bold uppercase tracking-[0.18em] text-white/90">Launching</div>
+                    <div className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-white">Coming Soon</div>
                   </div>
-                ))}
-              </div>
-            </Reveal>
-            <Reveal delay={0.25}>
-              <div className="flex items-center gap-4 pt-4">
-                <Link href="/signup" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" /></svg>
-                  <div className="text-left"><div className="text-[9px] leading-none opacity-70">Download on the</div><div className="text-sm font-semibold leading-tight">App Store</div></div>
-                </Link>
-                <Link href="/signin" className="inline-flex items-center gap-2.5 bg-zinc-900 hover:bg-zinc-800 text-white px-5 py-3 rounded-xl transition-all duration-200 hover:-translate-y-0.5 cursor-pointer">
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor"><path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.7 13.5l2-1.5-2-1.5 1.998-1.992zM5.864 2.658L16.8 8.99l-2.302 2.302-8.634-8.634z" /></svg>
-                  <div className="text-left"><div className="text-[9px] leading-none opacity-70">Get it on</div><div className="text-sm font-semibold leading-tight">Google Play</div></div>
-                </Link>
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── How It Works ─────────────────────────────────────────────────────────────
-
-function HowItWorks() {
-  return (
-    <section className="relative py-24 lg:py-32 bg-[#f4f7f3] overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_12%,rgba(16,185,129,0.18),transparent_44%),radial-gradient(circle_at_84%_22%,rgba(20,184,166,0.14),transparent_40%),radial-gradient(circle_at_55%_88%,rgba(59,130,246,0.10),transparent_42%)]" />
-      <div className="absolute inset-0 opacity-[0.14]" style={{ backgroundImage: "linear-gradient(rgba(15,23,42,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,0.07) 1px, transparent 1px)", backgroundSize: "52px 52px" }} />
-      <motion.div className="absolute top-[8%] left-[4%] w-[320px] h-[320px] rounded-full pointer-events-none opacity-[0.18] blur-[95px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.6), transparent 70%)" }}
-        animate={{ y: [0, -36, 0], x: [0, 24, 0], scale: [1, 1.08, 1] }} transition={{ duration: 11, repeat: Infinity, ease: "easeInOut" }} />
-      <motion.div className="absolute top-[38%] right-[7%] w-[260px] h-[260px] rounded-full pointer-events-none opacity-[0.14] blur-[80px]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.55), transparent 70%)" }}
-        animate={{ y: [0, 28, 0], x: [0, -20, 0], scale: [0.98, 1.08, 0.98] }} transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 1.6 }} />
-      <motion.div className="absolute bottom-[4%] left-[38%] w-[360px] h-[360px] rounded-full pointer-events-none opacity-[0.10] blur-[100px]"
-        style={{ background: "radial-gradient(circle, rgba(59,130,246,0.45), transparent 70%)" }}
-        animate={{ scale: [1, 1.18, 1], x: [0, -26, 0], y: [0, 10, 0] }} transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.8 }} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="mb-16">
-          <p className="text-sm font-semibold text-emerald-600 uppercase tracking-[0.15em] mb-4">How it works</p>
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-            <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-zinc-900 tracking-tight leading-[1.1]">Three steps to go</h2>
-            <Link href="/how-it-works" className="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors whitespace-nowrap group">
-              Full guide <ArrowRightIcon className="w-3.5 h-3.5 transition-transform duration-300 group-hover:translate-x-1" />
-            </Link>
-          </div>
-        </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          <div className="hidden md:block absolute top-[12rem] left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)] h-px z-0 overflow-hidden">
-            <motion.div className="h-full bg-gradient-to-r from-slate-300 via-emerald-300 to-slate-300" initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }}
-              viewport={{ once: true }} transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }} style={{ transformOrigin: "left" }} />
-          </div>
-          {steps.map((step, i) => (
-            <Reveal key={step.num} delay={0.15 + i * 0.15}>
-              <motion.div className="group relative bg-white rounded-3xl border border-slate-200/70 overflow-hidden shadow-sm hover:shadow-2xl transition-all duration-300"
-                whileHover={{ y: -4 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
-                <LazyImageContainer aspectRatio="h-44" className="rounded-t-3xl">
-                  <div className="relative w-full h-full overflow-hidden">
-                    <SmartImage src={step.image} fallbackSrc="https://picsum.photos/seed/smatway-step-fallback/1000/700" alt={step.imageAlt} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-white via-white/30 to-transparent" />
-                    <div className="absolute -bottom-4 left-8 z-10 w-12 h-12 rounded-2xl bg-zinc-950 flex items-center justify-center shadow-lg">
-                      <span className="text-sm font-bold text-white font-mono">{step.num}</span>
-                    </div>
-                  </div>
-                </LazyImageContainer>
-                <div className="p-8 pt-10">
-                  <h3 className="text-lg font-bold text-zinc-900 mb-3 tracking-tight">{step.title}</h3>
-                  <p className="text-slate-500 text-[15px] leading-relaxed">{step.description}</p>
                 </div>
               </motion.div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ─── Safety Banner ────────────────────────────────────────────────────────────
-
-function SafetyBanner() {
-  const ref = useRef(null);
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
-  const bgY = useTransform(scrollYProgress, [0, 1], ["0%", "20%"]);
-
-  return (
-    <section ref={ref} className="relative overflow-hidden">
-      <motion.div className="absolute inset-0" style={{ y: bgY }}>
-        <LazyImageContainer aspectRatio="" className="w-full h-full">
-          <SmartImage src="https://images.unsplash.com/photo-1494515843206-f3117d3f51b7?w=1600&h=600&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-safety-fallback/1920/900" alt="Scenic highway at sunset" className="w-full h-full object-cover scale-110" />
-        </LazyImageContainer>
-      </motion.div>
-      <div className="absolute inset-0 bg-zinc-950/70 backdrop-blur-sm" />
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <Reveal>
-            <div className="space-y-6">
-              <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-4 py-2 rounded-full border border-white/10">
-                <ShieldIcon className="w-4 h-4 text-emerald-400" />
-                <span className="text-xs font-semibold text-emerald-300 uppercase tracking-wider">Safety First</span>
+            </motion.div>
+            <div className="relative w-[280px] rounded-[3rem] bg-zinc-900 p-3 shadow-[0_40px_120px_-20px_rgba(16,185,129,0.35)] ring-1 ring-white/10 sm:w-[320px]">
+              <div className="absolute left-1/2 top-1 z-20 h-7 w-32 -translate-x-1/2 rounded-b-3xl bg-zinc-900" />
+              <div className="relative aspect-[9/19.5] overflow-hidden rounded-[2.3rem] bg-zinc-50">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={screenId}
+                    initial={{ opacity: 0, x: 18 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -18 }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute inset-0"
+                  >
+                    {screenId === "search" && <PhoneSearchScreen />}
+                    {screenId === "trip" && <PhoneTripScreen />}
+                    {screenId === "ticket" && <PhoneTicketScreen />}
+                  </motion.div>
+                </AnimatePresence>
               </div>
-              <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">Your safety is<br />non-negotiable</h2>
-              <p className="text-zinc-300 text-[17px] leading-relaxed max-w-[44ch]">Every transporter on our platform is background-checked, vehicle-inspected, and continuously rated by fellow travelers.</p>
+              {/* Screen indicator dots with active label */}
+              <div className="absolute -bottom-9 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-400">{screenLabels[screenId]}</span>
+                <div className="flex gap-1.5">
+                  {screenIds.map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="h-1.5 rounded-full"
+                      animate={{ width: i === idx ? 22 : 6, backgroundColor: i === idx ? "rgb(16 185 129)" : "rgb(63 63 70)" }}
+                      transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {/* Floating live notification chips */}
+            <motion.div
+              key={`notif-${screenId}`}
+              initial={{ opacity: 0, x: 20, y: -10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute -right-6 top-12 z-30 hidden items-center gap-2 rounded-2xl border border-white/15 bg-zinc-900/80 px-3 py-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.4)] backdrop-blur lg:flex"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">
+                <CheckIcon className="h-3.5 w-3.5" />
+              </div>
+              <div className="leading-tight">
+                <div className="text-[10px] font-semibold text-white">{screenId === "search" ? "Routes loaded" : screenId === "trip" ? "ETA updated" : "Booking confirmed"}</div>
+                <div className="text-[9px] text-zinc-400">just now</div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: -20, y: 10 }}
+              animate={{ opacity: 1, x: 0, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute -left-8 bottom-16 z-30 hidden items-center gap-2 rounded-2xl border border-white/15 bg-zinc-900/80 px-3 py-2 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.4)] backdrop-blur lg:flex"
+            >
+              <div className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </div>
+              <div className="leading-tight">
+                <div className="text-[10px] font-semibold text-white">Family link active</div>
+                <div className="text-[9px] text-zinc-400">2 viewers</div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Right copy */}
+        <div>
+          <Reveal>
+            {/* Coming Soon pill with shimmer */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full border border-emerald-400/30 bg-gradient-to-r from-emerald-500/15 via-emerald-500/10 to-transparent px-3 py-1.5 backdrop-blur"
+            >
+              <motion.span
+                className="absolute inset-y-0 -left-full w-1/2 bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent"
+                animate={{ x: ["0%", "400%"] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", repeatDelay: 1 }}
+              />
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-300" />
+              </span>
+              <span className="relative text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">Coming Soon · iOS + Android</span>
+            </motion.div>
+            <p className="mt-4 text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400">In your pocket</p>
+            <h2 className="mt-3 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]">
+              Everything you need, <span className="italic text-emerald-300">in one tap.</span>
+            </h2>
+            <p className="mt-6 max-w-md text-[16px] leading-relaxed text-zinc-400">
+              Search routes, lock seats, watch the trip update live, and rate when you arrive. The whole journey lives on one screen.
+            </p>
           </Reveal>
-          <Reveal delay={0.15}>
-            <div className="grid grid-cols-2 gap-4">
+
+          <Reveal delay={0.1}>
+            <div className="mt-10 space-y-3">
               {[
-                { num: "100%", label: "Background checks", desc: "CNIC & license verified" },
-                { num: "24/7", label: "Support team", desc: "Always a call away" },
-                { num: "GPS", label: "Live tracking", desc: "Share with family" },
-                { num: "256-bit", label: "Encryption", desc: "Bank-grade security" },
-              ].map((item, i) => (
-                <motion.div key={item.label} className="bg-white/5 backdrop-blur border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all duration-300"
-                  initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 + i * 0.1 }}>
-                  <div className="text-2xl font-bold text-emerald-400 mb-1">{item.num}</div>
-                  <div className="text-sm font-semibold text-white mb-0.5">{item.label}</div>
-                  <div className="text-xs text-zinc-400">{item.desc}</div>
-                </motion.div>
+                { title: "Instant notifications", body: "Booking, driver assignment, ETA updates — all real-time." },
+                { title: "Offline tickets", body: "Download confirmation. Works even without signal." },
+                { title: "Family share", body: "One link, your loved ones see your trip until you arrive." },
+              ].map((row) => (
+                <div key={row.title} className="flex items-start gap-3 border-t border-white/10 pt-4">
+                  <div className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-md bg-emerald-500/15 text-emerald-300">
+                    <CheckIcon className="h-3.5 w-3.5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{row.title}</div>
+                    <div className="text-[13px] text-zinc-400">{row.body}</div>
+                  </div>
+                </div>
               ))}
             </div>
           </Reveal>
-        </div>
-      </div>
-    </section>
-  );
-}
 
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-
-function Testimonials() {
-  return (
-    <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <motion.div className="absolute top-[-20%] left-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)" }}
-        animate={{ x: [0, 30, 0], y: [0, -20, 0] }} transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }} />
-      <div className="absolute inset-0 pointer-events-none opacity-[0.015]" style={{ backgroundImage: "radial-gradient(circle, #fff 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Reveal className="mb-16 max-w-2xl">
-          <p className="text-sm font-semibold text-emerald-400 uppercase tracking-[0.15em] mb-4">What people say</p>
-          <h2 className="font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.1]">Trusted by thousands</h2>
-        </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-fr">
-          {testimonials.map((t, i) => (
-            <Reveal key={t.name} delay={i * 0.12}>
-              <motion.div className="group relative h-full flex flex-col bg-white/[0.04] backdrop-blur-sm rounded-3xl border border-white/[0.06] p-8 lg:p-10 hover:bg-white/[0.07] hover:border-white/[0.1] transition-all duration-300"
-                whileHover={{ y: -4 }} transition={{ duration: 0.3 }}>
-                <QuoteIcon className="w-10 h-10 text-white mb-6" />
-                <p className="text-[15px] text-zinc-300 leading-relaxed mb-8 group-hover:text-zinc-200 transition-colors duration-500 flex-grow">&ldquo;{t.text}&rdquo;</p>
-                <div className="h-px bg-gradient-to-r from-white/10 via-white/5 to-transparent mb-6" />
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <SmartImage src={t.avatar} fallbackSrc="https://picsum.photos/seed/smatway-testimonial-fallback/100/100" alt={t.name} className="w-11 h-11 rounded-2xl object-cover border-2 border-emerald-400/30" />
-                    <div>
-                      <div className="text-sm font-bold text-white">{t.name}</div>
-                      <div className="text-xs text-zinc-500 font-medium">{t.role}</div>
+          <Reveal delay={0.2}>
+            <div className="mt-10">
+              <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Launching later this year</div>
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Disabled store buttons with "Coming soon" badge */}
+                {[
+                  { kind: "ios", top: "Coming soon to", bottom: "App Store", svg: <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" /> },
+                  { kind: "android", top: "Coming soon to", bottom: "Google Play", svg: <path d="M3 20.5V3.5c0-.59.34-1.11.84-1.35L13.69 12 3.84 21.85c-.5-.25-.84-.76-.84-1.35z M14.81 13.12 5.69 22.24l11.5-6.55-2.38-2.57z M14.81 10.88l2.38-2.57-11.5-6.55 9.12 9.12z M20.16 10.81l-2.94-1.69-2.65 2.88 2.65 2.88 3-1.71c.91-.66.91-1.71-.06-2.36z" /> },
+                ].map((b) => (
+                  <div
+                    key={b.kind}
+                    aria-disabled
+                    className="relative inline-flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-3 text-sm font-semibold text-zinc-400"
+                  >
+                    <svg className="h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="currentColor">{b.svg}</svg>
+                    <div className="text-left leading-tight">
+                      <div className="text-[10px] font-medium opacity-60">{b.top}</div>
+                      <div className="text-sm font-semibold text-white/80">{b.bottom}</div>
                     </div>
                   </div>
-                  <div className="flex gap-0.5">{Array.from({ length: t.rating }).map((_, j) => <StarIcon key={j} className="w-3.5 h-3.5 text-amber-400" />)}</div>
-                </div>
-              </motion.div>
-            </Reveal>
-          ))}
+                ))}
+
+                {/* Active Notify-me CTA */}
+                <MagneticLink
+                  href="#notify"
+                  className="group relative inline-flex items-center gap-2 overflow-hidden rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-zinc-950 shadow-[0_10px_30px_-10px_rgba(16,185,129,0.55)] transition-colors hover:bg-emerald-400 active:scale-[0.98]"
+                  strength={0.22}
+                >
+                  <motion.span
+                    className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent"
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", repeatDelay: 1.8 }}
+                  />
+                  <svg className="relative h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10 21a2 2 0 0 0 4 0" />
+                  </svg>
+                  <span className="relative">Notify me at launch</span>
+                  <ArrowRightIcon className="relative h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5" />
+                </MagneticLink>
+              </div>
+              <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-zinc-500">
+                <span className="font-mono tabular-nums text-zinc-300"><CountUp to={2847} duration={1600} /></span>
+                already on the waitlist · no spam, one launch-day email
+              </div>
+            </div>
+          </Reveal>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── Feedback ─────────────────────────────────────────────────────────────────
+// ─── HowItWorks — sticky-scroll stepper ─────────────────────────────────────
+
+const stepsNew = [
+  { n: "01", title: "Open the app, tell us where", body: "Pick your city pair and travel date. We surface every verified transporter on that route — with seats, fare, arrival time." },
+  { n: "02", title: "Lock a seat, hold your fare", body: "Pay through the app — your fare moves into escrow. The driver only gets paid when you arrive. No bargaining on the curb." },
+  { n: "03", title: "Track every meter, share if you want", body: "Watch the trip update live. Forward the share link to family. Rate the trip when you step off — it shapes the next traveler's choice." },
+];
+
+function StickyStep({ step, index }: { step: typeof stepsNew[number]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { margin: "-45% 0px -45% 0px" });
+  return (
+    <div ref={ref} className="relative pl-20">
+      <motion.div
+        initial={false}
+        animate={{
+          scale: inView ? 1 : 0.85,
+          backgroundColor: inView ? "rgb(16 185 129)" : "rgb(24 24 27)",
+        }}
+        transition={{ type: "spring", stiffness: 220, damping: 22 }}
+        className="absolute left-2 top-2 flex h-10 w-10 items-center justify-center rounded-full border border-emerald-400/40 font-mono text-xs font-semibold text-white"
+      >
+        {step.n}
+      </motion.div>
+      <motion.h3
+        animate={{ opacity: inView ? 1 : 0.45 }}
+        transition={{ duration: 0.4 }}
+        className="font-[var(--font-display)] text-2xl tracking-tight sm:text-3xl"
+      >
+        {step.title}
+      </motion.h3>
+      <motion.p
+        animate={{ opacity: inView ? 1 : 0.35 }}
+        transition={{ duration: 0.4 }}
+        className="mt-4 max-w-lg text-[16px] leading-relaxed text-zinc-400"
+      >
+        {step.body}
+      </motion.p>
+    </div>
+  );
+}
+
+function HowItWorks() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ["start start", "end end"] });
+  const progressWidth = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const unsub = scrollYProgress.on("change", (v) => setActive(Math.min(stepsNew.length - 1, Math.floor(v * stepsNew.length))));
+    return () => unsub();
+  }, [scrollYProgress]);
+
+  return (
+    <section ref={sectionRef} className="relative overflow-hidden bg-zinc-950 text-white">
+      {/* Match AppPreview's tones so the dark canvas reads as one continuous surface */}
+      <LiveAurora tones={["emerald", "violet", "cool"]} intensity={0.6} dark />
+      <LiveGrid dark intensity={0.7} />
+      <LiveDots count={28} color="emerald" dark />
+      <LiveDots count={20} color="white" dark />
+      {/* Subtle hairline separator — emerald gradient line, not a hard cut */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+      <div className="absolute inset-0 grain opacity-40" />
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-16 px-4 pt-12 pb-24 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:gap-24 lg:px-8 lg:pt-16 lg:pb-32">
+        {/* Sticky left header */}
+        <div className="lg:sticky lg:top-32 lg:h-fit">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-400">How it works</p>
+          <h2 className="mt-3 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl tracking-tight leading-[1.05]">
+            Three steps. <span className="italic text-emerald-300">Zero friction.</span>
+          </h2>
+          <p className="mt-6 max-w-md text-[16px] leading-relaxed text-zinc-400">
+            From sign-up to safe arrival in under two minutes of your time. Everything else runs on the backend, by design.
+          </p>
+          <div className="mt-10 flex items-center gap-3">
+            <div className="font-mono text-sm tabular-nums text-zinc-500">
+              {String(active + 1).padStart(2, "0")} <span className="text-zinc-700">/</span> {String(stepsNew.length).padStart(2, "0")}
+            </div>
+            <div className="relative h-px w-32 overflow-hidden bg-zinc-800">
+              <motion.div className="absolute inset-y-0 left-0 bg-emerald-400" style={{ width: progressWidth }} />
+            </div>
+          </div>
+        </div>
+
+        {/* Right scroll-pinned steps */}
+        <div className="relative">
+          <div className="pointer-events-none absolute left-7 top-2 bottom-2 w-px bg-zinc-800/80" />
+          <motion.div className="pointer-events-none absolute left-7 top-2 w-px bg-emerald-400" style={{ height: progressWidth }} />
+          <div className="space-y-24">
+            {stepsNew.map((s, i) => <StickyStep key={s.n} step={s} index={i} />)}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── SafetyBanner — trust ledger with live counters ─────────────────────────
+
+const ledgerRows = [
+  { label: "Drivers verified today", to: 47, suffix: "" },
+  { label: "Background checks completed", to: 312, suffix: "" },
+  { label: "Vehicles inspected this week", to: 1284, suffix: "" },
+  { label: "Insurance policies active", to: 12438, suffix: "" },
+  { label: "Trips with share-link enabled", to: 89, suffix: "%" },
+];
+
+function SafetyBanner() {
+  return (
+    <section className="relative bg-[#fafaf7] py-24 lg:py-32 overflow-hidden">
+      <LiveAurora tones={["emerald", "cool"]} intensity={0.4} />
+      <LiveGrid />
+      <div className="absolute inset-0 grain" />
+      <div className="relative z-10 mx-auto grid max-w-7xl grid-cols-1 gap-16 px-4 sm:px-6 lg:grid-cols-[1fr_1.2fr] lg:gap-24 lg:px-8">
+        <Reveal>
+          <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-emerald-700">Audited daily</p>
+          <h2 className="mt-3 font-[var(--font-display)] text-4xl md:text-5xl lg:text-6xl text-zinc-950 tracking-tight leading-[1.05]">
+            Trust isn't a slogan. <span className="italic">It's a ledger.</span>
+          </h2>
+          <p className="mt-6 max-w-md text-[16px] leading-relaxed text-slate-600">
+            Every safety check, every screening, every policy — counted, dated, and visible. Here's what happened on the platform today.
+          </p>
+          <div className="mt-8 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700">Live · updated every minute</span>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.1}>
+          <div className="rounded-3xl border border-zinc-200 bg-white p-2 shadow-[0_18px_40px_-20px_rgba(0,0,0,0.1)]">
+            <div className="overflow-hidden rounded-2xl">
+              {ledgerRows.map((row, i) => (
+                <motion.div
+                  key={row.label}
+                  initial={{ opacity: 0, x: -10 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  className={`flex items-center justify-between px-5 py-4 ${i !== ledgerRows.length - 1 ? "border-b border-zinc-100" : ""}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-[11px] text-zinc-400 tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                    <span className="text-[14px] font-medium text-zinc-700">{row.label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-lg font-semibold tabular-nums text-zinc-950">
+                      <CountUp to={row.to} suffix={row.suffix} duration={1500 + i * 100} />
+                    </span>
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+// ─── Testimonials — editorial rotator ───────────────────────────────────────
+
+const voices = [
+  {
+    name: "Sarah K.", role: "Frequent traveler · Lahore", initial: "S",
+    avatar: "from-emerald-500 to-teal-600",
+    route: "Lahore → Islamabad",
+    date: "14 Mar 2026",
+    trips: 23,
+    excerpt: "Price up-front. Driver verified. Tracking link for my mum.",
+    text: "I stopped negotiating fares with strangers at the bus stand. SmatWay shows the price up-front, the driver verified, and I get a tracking link to send my mum.",
+  },
+  {
+    name: "Ahmed R.", role: "Fleet owner · Karachi", initial: "A",
+    avatar: "from-amber-500 to-orange-600",
+    route: "Karachi → Hyderabad",
+    date: "02 Apr 2026",
+    trips: 147,
+    excerpt: "Four vans booked out by Tuesday. Same-day payouts.",
+    text: "We were running half-empty. Now my four vans book out by Tuesday. Payment hits my account the same day a trip closes — cash flow finally feels predictable.",
+  },
+  {
+    name: "Maria L.", role: "Daily commuter · Islamabad", initial: "M",
+    avatar: "from-rose-500 to-pink-600",
+    route: "Islamabad → Rawalpindi",
+    date: "18 Apr 2026",
+    trips: 62,
+    excerpt: "Family sees me move. They sleep better. So do I.",
+    text: "The share link is the feature I didn't know I needed. My family sees me move. They sleep better. So do I.",
+  },
+];
+
+const TESTIMONIAL_INTERVAL = 6500;
+
+function Testimonials() {
+  const [i, setI] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setInterval(() => setI((x) => (x + 1) % voices.length), TESTIMONIAL_INTERVAL);
+    return () => clearInterval(t);
+  }, [paused]);
+
+  const v = voices[i];
+  const next = () => setI((x) => (x + 1) % voices.length);
+  const prev = () => setI((x) => (x - 1 + voices.length) % voices.length);
+
+  return (
+    <section className="relative bg-[#fafaf7] py-24 lg:py-32 overflow-hidden">
+      <LiveAurora tones={["rose", "warm", "emerald"]} intensity={0.4} />
+      <LiveDots count={14} color="amber" />
+      <div className="absolute inset-0 grain" />
+
+      {/* Giant decorative quote mark bleeding from top-left */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -left-4 -top-20 select-none font-[var(--font-display)] text-[32rem] leading-none text-emerald-200/50"
+        animate={{ opacity: [0.35, 0.55, 0.35], rotate: [0, 1.5, 0] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+      >
+        &ldquo;
+      </motion.div>
+      {/* Secondary soft quote mark bottom-right */}
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-28 right-4 select-none font-[var(--font-display)] text-[24rem] leading-none text-amber-200/45"
+        animate={{ opacity: [0.25, 0.4, 0.25] }}
+        transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+      >
+        &rdquo;
+      </motion.div>
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header row: pulse chip + meta + media controls */}
+        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <Reveal>
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/60 bg-white/70 px-3 py-1.5 backdrop-blur shadow-[0_4px_12px_rgba(16,185,129,0.08)]">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-80" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              </span>
+              <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-700">In their words</span>
+            </div>
+            <h2 className="mt-4 font-[var(--font-display)] text-4xl tracking-tight leading-[1.02] text-zinc-950 sm:text-5xl">
+              Receipts from <span className="italic text-emerald-700">real riders.</span>
+            </h2>
+          </Reveal>
+          <div className="flex items-center gap-2">
+            <div className="mr-2 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500 tabular-nums">
+              {String(i + 1).padStart(2, "0")} / {String(voices.length).padStart(2, "0")}
+            </div>
+            <button
+              onClick={prev}
+              aria-label="Previous testimonial"
+              className="grid h-9 w-9 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-emerald-400 hover:text-emerald-700"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M10 12 6 8l4-4" /></svg>
+            </button>
+            <button
+              onClick={() => setPaused((p) => !p)}
+              aria-label={paused ? "Resume" : "Pause"}
+              className="grid h-9 w-9 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-emerald-400 hover:text-emerald-700"
+            >
+              {paused ? (
+                <svg className="h-4 w-4" viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5v9l7-4.5z" /></svg>
+              ) : (
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="currentColor"><rect x="4" y="3" width="3" height="10" rx="0.5" /><rect x="9" y="3" width="3" height="10" rx="0.5" /></svg>
+              )}
+            </button>
+            <button
+              onClick={next}
+              aria-label="Next testimonial"
+              className="grid h-9 w-9 place-items-center rounded-full border border-zinc-300 bg-white text-zinc-700 transition hover:border-emerald-400 hover:text-emerald-700"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 4l4 4-4 4" /></svg>
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1.25fr_1fr] lg:items-center lg:gap-16">
+          {/* LEFT: editorial featured quote */}
+          <div className="relative min-h-[360px]">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={v.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="flex items-center gap-1 text-amber-500">
+                  {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-5 w-5" />)}
+                  <span className="ml-3 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">5.0 · verified trip</span>
+                </div>
+                <blockquote className="mt-5 font-[var(--font-display)] text-3xl leading-[1.2] tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.75rem]">
+                  <span className="italic text-emerald-700">&ldquo;</span>{v.text}<span className="italic text-emerald-700">&rdquo;</span>
+                </blockquote>
+                <div className="mt-8 flex items-center gap-4">
+                  <div className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${v.avatar} font-semibold text-white text-lg shadow-[0_10px_24px_-8px_rgba(15,23,42,0.2)]`}>
+                    {v.initial}
+                  </div>
+                  <div>
+                    <div className="text-[15px] font-semibold text-zinc-950">{v.name}</div>
+                    <div className="text-[13px] text-zinc-500">{v.role}</div>
+                  </div>
+                  <div className="ml-auto hidden items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50/80 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 sm:inline-flex">
+                    <CheckCircleIcon className="h-3.5 w-3.5" />
+                    <span className="font-mono uppercase tracking-[0.15em]">{v.trips} trips</span>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* RIGHT: branded trip-receipt card */}
+          <div className="relative" style={{ perspective: 1200 }}>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`receipt-${v.name}`}
+                initial={{ opacity: 0, rotateY: -8, y: 24 }}
+                animate={{ opacity: 1, rotateY: -2, y: 0 }}
+                exit={{ opacity: 0, rotateY: 6, y: -16 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="relative mx-auto w-full max-w-[420px]"
+              >
+                {/* Drop shadow behind the paper */}
+                <div className="absolute inset-x-4 -bottom-6 h-6 rounded-full bg-zinc-900/10 blur-2xl" />
+
+                {/* Main receipt paper */}
+                <div
+                  className="relative overflow-hidden bg-white shadow-[0_30px_60px_-20px_rgba(15,23,42,0.18),0_10px_20px_-8px_rgba(15,23,42,0.12)]"
+                  style={{
+                    clipPath:
+                      "polygon(0 8px, 6px 0, 100% 0, 100% calc(100% - 18px), 96% 100%, 92% calc(100% - 8px), 88% 100%, 84% calc(100% - 8px), 80% 100%, 76% calc(100% - 8px), 72% 100%, 68% calc(100% - 8px), 64% 100%, 60% calc(100% - 8px), 56% 100%, 52% calc(100% - 8px), 48% 100%, 44% calc(100% - 8px), 40% 100%, 36% calc(100% - 8px), 32% 100%, 28% calc(100% - 8px), 24% 100%, 20% calc(100% - 8px), 16% 100%, 12% calc(100% - 8px), 8% 100%, 4% calc(100% - 8px), 0 100%)",
+                  }}
+                >
+                  {/* top hairline accent */}
+                  <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-500" />
+
+                  <div className="px-7 pb-10 pt-6">
+                    {/* Receipt header */}
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="font-mono text-[10px] font-bold uppercase tracking-[0.22em] text-emerald-700">SmatWay</div>
+                        <div className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Trip review · #{String(i + 1).padStart(4, "0")}</div>
+                      </div>
+                      <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800">
+                        <CheckCircleIcon className="h-3 w-3" />
+                        <span className="font-mono uppercase tracking-[0.15em]">Verified</span>
+                      </div>
+                    </div>
+
+                    {/* Dashed rule */}
+                    <div className="my-5 border-t border-dashed border-zinc-300" />
+
+                    {/* Route + date row */}
+                    <div className="flex items-baseline justify-between gap-4">
+                      <div className="font-[var(--font-display)] text-lg font-semibold tracking-tight text-zinc-950">
+                        {v.route}
+                      </div>
+                      <div className="shrink-0 font-mono text-[11px] tabular-nums text-zinc-500">{v.date}</div>
+                    </div>
+
+                    {/* Dashed rule */}
+                    <div className="my-5 border-t border-dashed border-zinc-300" />
+
+                    {/* Author block */}
+                    <div className="flex items-center gap-3">
+                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${v.avatar} font-semibold text-white shadow-md`}>
+                        {v.initial}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-sm font-semibold text-zinc-950">{v.name}</div>
+                        <div className="truncate text-[11px] text-zinc-500">{v.role}</div>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <div className="flex items-center gap-0.5 text-amber-500">
+                          {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-3 w-3" />)}
+                        </div>
+                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-zinc-500">5.0 / 5</div>
+                      </div>
+                    </div>
+
+                    {/* Excerpt quote */}
+                    <div className="mt-5 rounded-lg bg-zinc-50 p-3.5">
+                      <QuoteIcon className="h-4 w-4 text-emerald-500" />
+                      <p className="mt-1 text-[13px] leading-relaxed text-zinc-700">&ldquo;{v.excerpt}&rdquo;</p>
+                    </div>
+
+                    {/* Stats row */}
+                    <div className="mt-5 grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Trips taken</div>
+                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">{v.trips}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Member since</div>
+                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">2024</div>
+                      </div>
+                    </div>
+
+                    {/* Signature line */}
+                    <div className="mt-6">
+                      <div className="h-px bg-zinc-300" />
+                      <div className="mt-1.5 flex items-center justify-between">
+                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Signed by verified rider</div>
+                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-emerald-700">Authentic ✓</div>
+                      </div>
+                    </div>
+
+                    {/* Barcode */}
+                    <div className="mt-5 flex h-8 items-center justify-center gap-[1.5px]">
+                      {[2, 1, 3, 1, 2, 1, 1, 3, 2, 1, 2, 3, 1, 1, 2, 1, 3, 1, 2, 2, 1, 3, 1, 2, 1, 1, 3, 2].map((w, idx) => (
+                        <span key={idx} className="h-full bg-zinc-900" style={{ width: `${w}px` }} />
+                      ))}
+                    </div>
+                    <div className="mt-1 text-center font-mono text-[9px] tracking-[0.25em] text-zinc-500">SW · {v.initial}{v.trips}{v.date.slice(-4)}</div>
+                  </div>
+                </div>
+
+                {/* Tiny peek of the next receipt underneath */}
+                <div className="absolute inset-x-8 -bottom-3 -z-10 h-3 rounded-t-sm bg-zinc-200/70" />
+                <div className="absolute inset-x-12 -bottom-5 -z-20 h-3 rounded-t-sm bg-zinc-200/50" />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        {/* Progress bar + dots */}
+        <div className="mt-14">
+          <div className="relative h-[2px] w-full overflow-hidden rounded-full bg-zinc-200">
+            <motion.div
+              key={`progress-${i}-${paused ? "p" : "r"}`}
+              className="absolute inset-y-0 left-0 bg-gradient-to-r from-emerald-500 to-teal-500"
+              initial={{ width: "0%" }}
+              animate={{ width: paused ? "0%" : "100%" }}
+              transition={paused ? { duration: 0 } : { duration: TESTIMONIAL_INTERVAL / 1000, ease: "linear" }}
+            />
+          </div>
+          <div className="mt-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {voices.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setI(idx)}
+                  aria-label={`Show testimonial ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-500 ${idx === i ? "w-10 bg-emerald-600" : "w-3 bg-zinc-300 hover:bg-zinc-400"}`}
+                />
+              ))}
+            </div>
+            <div className="hidden font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500 sm:block">
+              Reading review <span className="tabular-nums text-zinc-800">{i + 1}</span> of <span className="tabular-nums text-zinc-800">{voices.length}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Feedback — rating breakdown + sentiment chips ──────────────────────────
+
+const ratingDist = [
+  { stars: 5, pct: 86 },
+  { stars: 4, pct: 11 },
+  { stars: 3, pct: 2 },
+  { stars: 2, pct: 1 },
+  { stars: 1, pct: 0 },
+];
+const sentimentChips = [
+  { label: "On-time", count: 11842 },
+  { label: "Clean vehicle", count: 9740 },
+  { label: "Friendly driver", count: 8312 },
+  { label: "Easy booking", count: 7129 },
+  { label: "Safe trip", count: 6890 },
+  { label: "Good value", count: 5403 },
+];
 
 function Feedback() {
   return (
-    <section className="relative py-24 lg:py-32 bg-zinc-950 overflow-hidden">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0 bg-[linear-gradient(118deg,rgba(8,10,11,0.98)_0%,rgba(8,10,11,0.95)_34%,rgba(18,35,31,0.9)_48%,rgba(244,244,240,0.96)_56%,rgba(250,249,246,0.98)_100%)]" />
+    <section className="relative overflow-hidden py-24 lg:py-32 text-white"
+      style={{ backgroundColor: "#09090b" }}
+    >
+      {/* Deep navy-tinted base — distinct from CTA's emerald aurora */}
       <div
-        className="absolute inset-0 opacity-[0.28]"
+        className="pointer-events-none absolute inset-0"
         style={{
-          backgroundImage:
-            "radial-gradient(120% 90% at 8% 14%, rgba(16,185,129,0.24) 0%, rgba(16,185,129,0.02) 45%, transparent 70%), radial-gradient(85% 70% at 90% 84%, rgba(248,113,113,0.2) 0%, rgba(248,113,113,0.02) 52%, transparent 76%), linear-gradient(120deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0) 36%), linear-gradient(300deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 42%)",
+          background:
+            "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(16,185,129,0.14), transparent 55%)," +
+            "radial-gradient(ellipse 60% 50% at 95% 100%, rgba(251,191,36,0.10), transparent 60%)," +
+            "linear-gradient(180deg, #0a0a0c 0%, #0b0d10 50%, #09090b 100%)",
         }}
       />
+
+      {/* Data-room blueprint grid — different texture than CTA */}
       <div
-        className="absolute inset-0 opacity-[0.07]"
+        className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.42) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.42) 1px, transparent 1px)",
-          backgroundSize: "44px 44px",
+            "linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px)," +
+            "linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)",
+          backgroundSize: "64px 64px",
+          maskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
+          WebkitMaskImage: "radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 80%)",
         }}
       />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_48%,rgba(9,9,11,0.3)_100%)]" />
+
+      {/* Slow drifting emerald glow, off-axis from CTA */}
       <motion.div
-        className="absolute -top-24 left-[6%] w-[520px] h-[520px] rounded-full pointer-events-none blur-[120px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.28) 0%, rgba(16,185,129,0.08) 44%, transparent 74%)" }}
-        animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.1, 1] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        className="pointer-events-none absolute -top-32 left-[-8%] h-[520px] w-[520px] rounded-full blur-[140px]"
+        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.28), transparent 70%)" }}
+        animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.06, 1] }}
+        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
       />
+      {/* Warm amber counterweight — rating/star warmth */}
       <motion.div
-        className="absolute -bottom-24 right-[6%] w-[540px] h-[540px] rounded-full pointer-events-none blur-[130px]"
-        style={{ background: "radial-gradient(circle, rgba(248,113,113,0.24) 0%, rgba(248,113,113,0.06) 46%, transparent 74%)" }}
-        animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.08, 0.94, 1.08] }}
-        transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+        className="pointer-events-none absolute -bottom-32 right-[-8%] h-[440px] w-[440px] rounded-full blur-[130px]"
+        style={{ background: "radial-gradient(circle, rgba(251,191,36,0.18), transparent 70%)" }}
+        animate={{ x: [0, -20, 0], y: [0, 15, 0], scale: [1.04, 0.96, 1.04] }}
+        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
       />
-      <motion.div
-        className="absolute top-1/2 left-1/2 w-[420px] h-[420px] -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none blur-[110px]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.16) 0%, rgba(20,184,166,0.04) 42%, transparent 74%)" }}
-        animate={{ scale: [0.95, 1.12, 0.95], opacity: [0.5, 0.7, 0.5] }}
-        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}
-      />
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid md:grid-cols-2 gap-6 auto-rows-fr">
-          <Reveal>
-            <motion.div className="group relative h-full rounded-3xl p-[1px] bg-gradient-to-br from-emerald-500/30 via-transparent to-transparent hover:from-emerald-400/60 transition-all duration-500" whileHover={{ y: -6 }}>
-              <div className="relative h-full flex flex-col justify-between rounded-3xl bg-zinc-950/90 backdrop-blur-xl p-10 lg:p-12 overflow-hidden">
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700"><div className="absolute -bottom-20 -right-20 w-[300px] h-[300px] bg-emerald-500/10 blur-[100px] rounded-full" /></div>
-                <div className="relative z-10 w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 flex items-center justify-center mb-8 group-hover:scale-110 transition duration-500">
-                  <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M7 10v12" /><path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" /></svg>
-                </div>
-                <div className="flex-grow">
-                  <h3 className="text-3xl font-semibold text-white mb-4 tracking-tight">Satisfied?</h3>
-                  <p className="text-zinc-400 leading-relaxed mb-8 max-w-[36ch]">Share your experience. A recommendation goes further than any advertisement.</p>
-                </div>
-                <Link href="/signin" className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl transition-all duration-300 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/30">
-                  Share your story <ArrowRightIcon className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+
+      <LiveDots count={22} color="emerald" dark />
+      <div className="grain pointer-events-none absolute inset-0 opacity-40" />
+      {/* Top hairline — breaks from light Testimonials above */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/40 to-transparent" />
+
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <Reveal className="mb-12 max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-500/[0.07] px-3 py-1.5 backdrop-blur">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-80" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">What riders say</span>
+          </div>
+          <h2 className="mt-4 font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.05]">
+            <span className="italic text-emerald-300">12,438</span> verified ratings. One number.
+          </h2>
+        </Reveal>
+
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
+          {/* Big number */}
+          <div className="flex flex-col">
+            <div className="relative">
+              {/* Soft emerald glow under the number */}
+              <div className="pointer-events-none absolute inset-0 -z-10 blur-3xl"
+                style={{ background: "radial-gradient(ellipse 70% 60% at 30% 50%, rgba(16,185,129,0.22), transparent 65%)" }}
+              />
+              <div
+                className="font-[var(--font-display)] text-[8rem] leading-none tracking-tighter md:text-[10rem]"
+                style={{
+                  background: "linear-gradient(180deg, #ffffff 0%, #d4d4d8 100%)",
+                  WebkitBackgroundClip: "text",
+                  backgroundClip: "text",
+                  color: "transparent",
+                  textShadow: "0 0 80px rgba(16,185,129,0.35)",
+                }}
+              >
+                <CountUp to={4.9} decimals={1} duration={1800} />
               </div>
-            </motion.div>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <motion.div className="group relative h-full rounded-3xl p-[1px] bg-gradient-to-br from-red-400/30 via-transparent to-transparent hover:from-red-400/60 transition-all duration-500" whileHover={{ y: -6 }}>
-              <div className="relative h-full flex flex-col justify-between rounded-3xl bg-white p-10 lg:p-12 overflow-hidden">
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition duration-700"><div className="absolute -top-20 -left-20 w-[280px] h-[280px] bg-red-400/10 blur-[90px] rounded-full" /></div>
-                <div className="relative z-10 w-14 h-14 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center mb-8 group-hover:scale-110 transition duration-500">
-                  <svg className="w-6 h-6 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M17 14V2" /><path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" /></svg>
+            </div>
+            <div className="mt-2 flex items-center gap-1 text-amber-400">
+              {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-5 w-5 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]" />)}
+              <span className="ml-2 text-sm text-zinc-400">out of 5</span>
+            </div>
+            <div className="mt-3 text-sm text-zinc-400">Across <span className="font-mono font-semibold text-zinc-200">12,438</span> verified trips · last 30 days</div>
+
+            {/* Data-row micro stats */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">On-time</div>
+                <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">
+                  <CountUp to={97.2} decimals={1} suffix="%" duration={1600} />
                 </div>
-                <div className="flex-grow">
-                  <h3 className="text-3xl font-semibold text-zinc-900 mb-4 tracking-tight">Not satisfied?</h3>
-                  <p className="text-slate-500 leading-relaxed mb-8 max-w-[36ch]">Tell us directly. Every piece of feedback makes the platform better for everyone.</p>
-                </div>
-                <a href="mailto:tellus@smatway.com" className="text-sm font-semibold text-red-500 hover:text-red-600 transition underline underline-offset-4 decoration-red-200 hover:decoration-red-400">tellus@smatway.com</a>
               </div>
-            </motion.div>
-          </Reveal>
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Would rebook</div>
+                <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">
+                  <CountUp to={94} suffix="%" duration={1600} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Distribution + sentiments */}
+          <div>
+            <div className="mb-4 flex items-center justify-between">
+              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Rating distribution</div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-600">Last 30d</div>
+            </div>
+            <div className="space-y-2.5 rounded-2xl border border-white/10 bg-white/[0.02] p-5 backdrop-blur-sm">
+              {ratingDist.map((r, i) => (
+                <Reveal key={r.stars} delay={i * 0.06}>
+                  <div className="flex items-center gap-4">
+                    <div className="flex w-10 items-center gap-1 font-mono text-xs text-zinc-400 tabular-nums">
+                      {r.stars}<StarIcon className="h-3 w-3 text-amber-400" />
+                    </div>
+                    <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${r.pct}%` }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ duration: 1.1, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                        className={`h-full rounded-full ${
+                          r.stars === 5
+                            ? "bg-gradient-to-r from-emerald-400 to-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)]"
+                            : r.stars === 4
+                              ? "bg-emerald-500/70"
+                              : "bg-white/20"
+                        }`}
+                      />
+                    </div>
+                    <div className="w-10 text-right font-mono text-xs tabular-nums text-zinc-300">{r.pct}%</div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+
+            <div className="mt-10">
+              <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-zinc-500">Most-mentioned</div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {sentimentChips.map((c, i) => (
+                  <motion.div
+                    key={c.label}
+                    initial={{ opacity: 0, y: 8 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ duration: 0.4, delay: i * 0.05 }}
+                    whileHover={{ y: -2, borderColor: "rgba(16,185,129,0.4)" }}
+                    className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-zinc-200 backdrop-blur transition-colors hover:bg-white/[0.08]"
+                  >
+                    {c.label}
+                    <span className="font-mono text-[11px] tabular-nums text-emerald-300">
+                      <CountUp to={c.count} duration={1400 + i * 80} />
+                    </span>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// ─── CTA ──────────────────────────────────────────────────────────────────────
+// ─── CTA — bold dark editorial close with magnetic ──────────────────────────
 
 function CTA() {
   return (
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
-      <div className="absolute inset-0 grain" />
-      <div className="absolute inset-0">
-        <LazyImageContainer aspectRatio="" className="w-full h-full">
-          <SmartImage src="https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1600&h=800&fit=crop&q=80" fallbackSrc="https://picsum.photos/seed/smatway-cta-fallback/1920/1080" alt="Open road" className="w-full h-full object-cover opacity-10" />
-        </LazyImageContainer>
-      </div>
-      <motion.div className="absolute right-[-10%] top-[20%] w-[600px] h-[600px] rounded-full blur-[150px] pointer-events-none"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)" }}
-        animate={{ scale: [1, 1.15, 1], x: [0, 20, 0] }} transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }} />
+      <LiveAurora tones={["emerald", "cool", "violet"]} intensity={0.55} dark />
+      <LiveDots count={36} color="emerald" dark />
+      <LiveRibbon dark />
+      <div className="grain pointer-events-none absolute inset-0 opacity-50" />
+      <motion.div
+        className="pointer-events-none absolute -bottom-40 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full bg-emerald-600/30 blur-[140px]"
+        animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.85, 0.6] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="pointer-events-none absolute -top-20 right-[10%] h-[300px] w-[300px] rounded-full bg-teal-500/20 blur-[100px]"
+        animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="max-w-xl">
-          <Reveal><p className="text-emerald-400 text-sm font-semibold uppercase tracking-[0.15em] mb-6">Get started today</p></Reveal>
-          <Reveal delay={0.1}><h2 className="font-[var(--font-display)] text-5xl lg:text-6xl text-white tracking-tight leading-[1.05] mb-6">Ready to travel<br />smarter?</h2></Reveal>
-          <Reveal delay={0.2}><p className="text-[17px] text-zinc-400 leading-relaxed mb-12 max-w-[44ch]">Join thousands of travelers and transporters who moved away from uncertainty and chose a platform that works.</p></Reveal>
-          <Reveal delay={0.3}>
-            <div className="flex flex-wrap items-center gap-4">
-              <Link href="/signin" className="group inline-flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-8 py-4 rounded-2xl transition-all duration-300 active:scale-[0.97] shadow-[0_0_24px_rgba(16,185,129,0.2)] hover:shadow-[0_0_40px_rgba(16,185,129,0.3)]">
-                Create free account <ArrowRightIcon className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-              <Link href="/how-it-works" className="inline-flex items-center gap-2 text-zinc-400 hover:text-white font-medium px-2 py-4 transition-colors duration-300 text-sm group">
-                <span className="underline underline-offset-4 decoration-zinc-700 group-hover:decoration-zinc-500 transition-colors duration-300">Learn how it works</span>
-              </Link>
-            </div>
-          </Reveal>
-        </div>
+      <div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
+        <Reveal>
+          <p className="font-mono text-[12px] font-semibold uppercase tracking-[0.22em] text-emerald-400">
+            ↓ Ready when you are
+          </p>
+        </Reveal>
+        <Reveal delay={0.1}>
+          <h2 className="mt-6 font-[var(--font-display)] text-5xl leading-[1] tracking-[-0.02em] text-white sm:text-6xl lg:text-7xl">
+            Your next trip <span className="italic text-emerald-300">starts here.</span>
+          </h2>
+        </Reveal>
+        <Reveal delay={0.2}>
+          <p className="mx-auto mt-7 max-w-xl text-[17px] leading-relaxed text-zinc-400">
+            Sign up in under sixty seconds. Browse routes, book a seat, and hit the road — with a verified driver and a link to share.
+          </p>
+        </Reveal>
+        <Reveal delay={0.3}>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+            <MagneticLink href="/signup" className="group inline-flex items-center gap-2.5 rounded-2xl bg-white px-7 py-3.5 text-sm font-semibold text-zinc-950 shadow-[0_10px_30px_-10px_rgba(255,255,255,0.4)] transition-colors hover:bg-zinc-100 active:scale-[0.98]">
+              Create free account
+              <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+            </MagneticLink>
+            <Link href="/signin" className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10">
+              I already have an account
+            </Link>
+          </div>
+        </Reveal>
       </div>
     </section>
   );
@@ -1075,13 +2720,14 @@ export default function Home() {
     <>
       <Hero />
       <Stats />
+      <LiveTicker />
       <PopularRoutes />
       <Features />
       <AppPreview />
       <HowItWorks />
       <SafetyBanner />
-      <Testimonials />
       <Feedback />
+      <Testimonials />
       <CTA />
     </>
   );

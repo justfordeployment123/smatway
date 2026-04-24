@@ -10,7 +10,18 @@
       "Bash(npx next:*)",
       "Bash(bash \"C:/Users/HP/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/stop-server.sh\" \"d:/Projects/Markhor Systems Projects/smataway/.superpowers/brainstorm/1565-1775819456\")",
       "Bash(taskkill //f //im chrome.exe)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_resize"
     ]
-  }
+  },
+  "enabledMcpjsonServers": [
+    "code-review-graph",
+    "shadcn",
+    "playwright"
+  ]
 }
