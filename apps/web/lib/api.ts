@@ -61,9 +61,17 @@ export async function apiRequest<T = unknown>(
     const data = await response.json();
 
     if (!response.ok) {
+      // A 401 from an auth endpoint is "bad credentials / bad reset token" —
+      // NOT an expired session — so let it bubble up as a normal ApiError.
+      const isAuthAttempt =
+        endpoint.startsWith('/auth/login') ||
+        endpoint.startsWith('/auth/register') ||
+        endpoint.startsWith('/auth/forgot-password') ||
+        endpoint.startsWith('/auth/reset-password');
+
       // Token expired or invalid — wipe local auth and send to sign-in so the
       // user sees a clean login screen instead of a crash or broken page.
-      if (response.status === 401 && typeof window !== 'undefined') {
+      if (response.status === 401 && !isAuthAttempt && typeof window !== 'undefined') {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_token_expires_at');
         localStorage.removeItem('auth_user');
