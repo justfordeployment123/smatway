@@ -371,7 +371,7 @@ function ChatModal({
   onChangeText: (v: string) => void;
   onSend: () => void;
   onClose: () => void;
-  messagesEndRef: React.RefObject<HTMLDivElement>;
+  messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }) {
   return (
     <motion.div
