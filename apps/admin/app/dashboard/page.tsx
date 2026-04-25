@@ -1,130 +1,170 @@
 "use client";
 
-export default function DashboardPage() {
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Page, PageHeader, Card, Skeleton, ErrorState, StatusPill } from "@/app/_Components/ui";
+import { UsersIcon, MapPinIcon, BookOpenIcon, CashIcon, MessageSquareIcon, MegaphoneIcon } from "@/app/_Components/Icons";
+import { getAdminOverview, AdminOverview } from "@/lib/api";
+import { formatMoney } from "@/lib/format";
+
+export default function OverviewPage() {
+  const [data, setData] = useState<AdminOverview | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  function load() {
+    setLoading(true);
+    setError(null);
+    getAdminOverview()
+      .then(setData)
+      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load overview"))
+      .finally(() => setLoading(false));
+  }
+  useEffect(() => {
+    load();
+  }, []);
+
   return (
-    <div>
-      {/* Page header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">
-          Dashboard
-        </h1>
-        <p className="text-slate-500">Welcome to the SmatWay admin panel</p>
+    <Page className="space-y-8">
+      <PageHeader
+        kicker="Operations"
+        title="Platform overview"
+        subtitle="Live snapshot of users, routes, bookings, and feedback. Numbers are pulled directly from the database."
+      />
+
+      {error && <ErrorState message={error} onRetry={load} />}
+
+      {/* KPI grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiTile loading={loading} label="Total users" value={data?.stats.totalUsers} icon={<UsersIcon />} sub={data ? `${data.stats.travelers} travelers · ${data.stats.transporters} transporters` : undefined} />
+        <KpiTile loading={loading} label="Active routes" value={data?.stats.activeRoutes} icon={<MapPinIcon />} />
+        <KpiTile loading={loading} label="Total bookings" value={data?.stats.totalBookings} icon={<BookOpenIcon />} sub={data ? `${data.stats.completedBookings} completed · ${data.stats.pendingBookings} pending` : undefined} />
+        <KpiTile loading={loading} label="Paid bookings" value={data?.stats.paidBookings} icon={<CashIcon />} />
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Total Users Card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Total Users</p>
-              <p className="text-2xl font-bold text-zinc-900">2,543</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center">
-              <svg className="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.856-1.487M15 6h-1v4m0 0h1m-1 0H9m0 0h1m0 0v4" />
-              </svg>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiTile loading={loading} label="Site feedback" value={data?.stats.siteFeedback} icon={<MessageSquareIcon />} small />
+        <KpiTile loading={loading} label="Trip reviews" value={data?.stats.reviews} icon={<MessageSquareIcon />} small />
+        <KpiTile loading={loading} label="Live announcements" value={data?.stats.publishedAnnouncements} icon={<MegaphoneIcon />} small />
+        <Card className="flex items-center justify-between">
+          <div>
+            <div className="text-xs uppercase tracking-wide text-slate-500 font-medium">Quick links</div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Link href="/dashboard/announcements" className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">New announcement</Link>
+              <Link href="/dashboard/admins" className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200">Manage admins</Link>
             </div>
           </div>
-        </div>
-
-        {/* Active Bookings Card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Active Bookings</p>
-              <p className="text-2xl font-bold text-zinc-900">186</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Revenue Card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Revenue</p>
-              <p className="text-2xl font-bold text-zinc-900">$45,231</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center">
-              <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Support Tickets Card */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-slate-500 mb-1">Support Tickets</p>
-              <p className="text-2xl font-bold text-zinc-900">24</p>
-            </div>
-            <div className="w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
-              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-              </svg>
-            </div>
-          </div>
-        </div>
+        </Card>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
-        <h2 className="text-lg font-semibold text-zinc-900 mb-4">Recent Activity</h2>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-900">New user registration</p>
-                <p className="text-xs text-slate-400">User ID: 12345</p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">5 minutes ago</p>
+      {/* Recent activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-zinc-900">Recent signups</h2>
+            <Link href="/dashboard/users" className="text-xs text-emerald-700 hover:text-emerald-900 font-medium">View all →</Link>
           </div>
+          {loading ? (
+            <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : !data || data.recentSignups.length === 0 ? (
+            <p className="text-sm text-slate-500">No signups yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {data.recentSignups.map((u) => (
+                <li key={u.id} className="py-3 flex items-center justify-between">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-zinc-950 truncate">{u.name || u.email}</div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {u.email}
+                      {u.country ? ` · ${u.country}` : ""}
+                    </div>
+                  </div>
+                  <StatusPill tone={u.accountType === "TRANSPORTER" ? "blue" : "emerald"}>
+                    {u.accountType ?? "—"}
+                  </StatusPill>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
 
-          <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-900">Booking completed</p>
-                <p className="text-xs text-slate-400">Booking ID: 67890</p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">23 minutes ago</p>
+        <Card>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-zinc-900">Recent bookings</h2>
+            <Link href="/dashboard/bookings" className="text-xs text-emerald-700 hover:text-emerald-900 font-medium">View all →</Link>
           </div>
-
-          <div className="flex items-center justify-between py-3 border-b border-slate-100 last:border-0">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-zinc-900">Payment received</p>
-                <p className="text-xs text-slate-400">Amount: $125.00</p>
-              </div>
-            </div>
-            <p className="text-xs text-slate-500">1 hour ago</p>
-          </div>
-        </div>
+          {loading ? (
+            <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
+          ) : !data || data.recentBookings.length === 0 ? (
+            <p className="text-sm text-slate-500">No bookings yet.</p>
+          ) : (
+            <ul className="divide-y divide-slate-100">
+              {data.recentBookings.map((b) => (
+                <li key={b.id} className="py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-zinc-950 truncate">
+                      {b.transport.departureCity} → {b.transport.destinationCity}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      {b.traveler?.name || "—"} · {b.seatsBooked} seat{b.seatsBooked === 1 ? "" : "s"}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-mono font-semibold text-zinc-950">
+                      {formatMoney(b.totalPrice, b.transport.currency)}
+                    </div>
+                    <StatusPill tone={paymentTone(b.paymentStatus)}>{b.paymentStatus}</StatusPill>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
       </div>
-    </div>
+    </Page>
   );
+}
+
+function KpiTile({
+  loading,
+  label,
+  value,
+  icon,
+  sub,
+  small,
+}: {
+  loading: boolean;
+  label: string;
+  value: number | undefined;
+  icon: React.ReactNode;
+  sub?: string;
+  small?: boolean;
+}) {
+  return (
+    <Card className={small ? "" : ""}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-xs uppercase tracking-wide text-slate-500 font-medium">{label}</div>
+          {loading ? (
+            <Skeleton className="h-7 w-20 mt-2" />
+          ) : (
+            <div className={`mt-1 font-semibold tabular-nums text-zinc-950 ${small ? "text-xl" : "text-2xl"}`}>
+              {(value ?? 0).toLocaleString()}
+            </div>
+          )}
+          {sub && <div className="text-[11px] text-slate-400 mt-1 truncate">{sub}</div>}
+        </div>
+        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+          {icon}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function paymentTone(s: string): "emerald" | "yellow" | "red" | "slate" {
+  if (s === "PAID") return "emerald";
+  if (s === "PENDING") return "yellow";
+  if (s === "FAILED") return "red";
+  return "slate";
 }

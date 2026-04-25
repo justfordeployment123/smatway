@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3002";
+import { adminLogin } from "@/lib/api";
+import { setAdminToken, setAdminProfile } from "@/lib/auth";
 
 function ArrowLeftIcon() {
   return (
@@ -13,16 +13,13 @@ function ArrowLeftIcon() {
     </svg>
   );
 }
-
-function MailIcon() {
+function UserIcon() {
   return (
     <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect width="20" height="16" x="2" y="4" rx="2" />
-      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
     </svg>
   );
 }
-
 function LockIcon() {
   return (
     <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -30,7 +27,6 @@ function LockIcon() {
     </svg>
   );
 }
-
 function EyeOffIcon() {
   return (
     <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -40,7 +36,6 @@ function EyeOffIcon() {
     </svg>
   );
 }
-
 function EyeIcon() {
   return (
     <svg className="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +47,7 @@ function EyeIcon() {
 export default function LoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,27 +56,10 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Invalid email or password");
-      }
-
-      const user = await response.json() as { user?: { role?: string } };
-      if (user.user?.role !== "ADMIN") {
-        router.push("/unauthorized");
-        return;
-      }
-
+      const result = await adminLogin(username.trim(), password);
+      setAdminToken(result.accessToken);
+      setAdminProfile(result.admin);
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to sign in");
@@ -92,14 +70,13 @@ export default function LoginPage() {
 
   return (
     <div className="w-full animate-fade-in-up">
-
       <Link href="/" className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-700 mb-10 transition-colors">
         <ArrowLeftIcon /><span>Back to Home</span>
       </Link>
 
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-zinc-900 mb-2">Admin Access</h1>
-        <p className="text-slate-500">Sign in to your SmatWay admin account</p>
+        <p className="text-slate-500">Sign in with your admin username or email.</p>
       </div>
 
       {error && (
@@ -108,35 +85,35 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form className="space-y-5" onSubmit={handleSubmit}>
+      {/* suppressHydrationWarning: password-manager browser extensions (LastPass,
+          1Password, etc.) inject wrapper divs before React hydrates and trip
+          the hydration check. The mismatch is harmless — React reconciles on
+          the client and the form works normally. */}
+      <form className="space-y-5" onSubmit={handleSubmit} suppressHydrationWarning>
         <div className="animate-fade-in-up [animation-delay:100ms]">
-          <label htmlFor="email" className="text-sm font-medium text-zinc-900 mb-1.5 block">Email</label>
+          <label htmlFor="username" className="text-sm font-medium text-zinc-900 mb-1.5 block">Username or email</label>
           <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <MailIcon />
-            </span>
+            <span className="absolute left-3 pointer-events-none"><UserIcon /></span>
             <input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="username"
+              type="text"
+              autoComplete="username"
+              placeholder="superadmin"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 pl-10 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
             />
           </div>
         </div>
 
         <div className="animate-fade-in-up [animation-delay:200ms]">
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-zinc-900 block">Password</label>
-          </div>
+          <label htmlFor="password" className="text-sm font-medium text-zinc-900 mb-1.5 block">Password</label>
           <div className="relative flex items-center">
-            <span className="absolute left-3 pointer-events-none">
-              <LockIcon />
-            </span>
+            <span className="absolute left-3 pointer-events-none"><LockIcon /></span>
             <input
               id="password"
               type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
               placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}

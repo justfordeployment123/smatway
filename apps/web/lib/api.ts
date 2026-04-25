@@ -440,6 +440,23 @@ export async function getSiteFeedbackStats(): Promise<SiteFeedbackStats> {
   return apiGet('/feedback/stats');
 }
 
+// ─── Announcements (public read for the user dashboard) ──────────────────────
+export type AnnouncementAudience = 'ALL' | 'TRAVELERS_ONLY' | 'TRANSPORTERS_ONLY';
+
+export interface PublicAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  audience: AnnouncementAudience;
+  createdAt: string;
+}
+
+export async function getAnnouncements(audience: 'TRAVELER' | 'TRANSPORTER'): Promise<{
+  announcements: PublicAnnouncement[];
+}> {
+  return apiGet(`/announcements?audience=${audience}`);
+}
+
 // Vehicle
 export async function createVehicle(data: {
   name: string;

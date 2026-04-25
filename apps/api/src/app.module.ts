@@ -16,6 +16,7 @@ import { ReviewModule } from './modules/review/review.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { FeedbackModule } from './modules/feedback/feedback.module';
     ChatModule,
     PlatformModule,
     FeedbackModule,
+    AdminModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

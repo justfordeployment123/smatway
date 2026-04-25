@@ -49,6 +49,21 @@ enum PaymentMethod {
   MPAISA
 }
 
+// Admin role tiers. SUPER_ADMIN bypasses all permission checks.
+// Other tiers must have explicit permissions[] entries.
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  MODERATOR
+}
+
+// Audience an announcement is shown to. Public endpoint filters by this.
+enum AnnouncementAudience {
+  ALL
+  TRAVELERS_ONLY
+  TRANSPORTERS_ONLY
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -315,4 +330,103 @@ model Message {
 
   @@index([chatId])
   @@index([senderId])
+}
+
+// ─── Admin domain ────────────────────────────────────────────────────────────
+// Separate from User: admins are platform operators, not travelers/transporters.
+// Authenticated against ADMIN_JWT_SECRET (separate secret from user JWTs).
+
+model Admin {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  role          AdminRole @default(ADMIN)
+
+  // Fine-grained permission strings (e.g. "users:read", "finance:refund").
+  // SUPER_ADMIN ignores this and is allowed everything.
+  permissions   String[]  @default([])
+
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime?
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Self-relation: which admin created this one (null for the bootstrap admin)
+  createdById   String?
+  createdBy     Admin?    @relation("AdminCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAdmins Admin[]   @relation("AdminCreator")
+
+  auditLogs     AdminAuditLog[]
+  inviteTokens  AdminInviteToken[]
+  announcements Announcement[]
+
+  @@index([email])
+  @@index([role])
+}
+
+// Append-only audit trail of admin write actions. Read by the audit log page.
+model AdminAuditLog {
+  id          String   @id @default(uuid())
+
+  // Nullable so the env-bypass SUPER_ADMIN (no DB row) can still log actions.
+  adminId     String?
+  admin       Admin?   @relation(fields: [adminId], references: [id], onDelete: SetNull)
+
+  // Marker for the env-bypass admin so audit rows aren't anonymous when adminId is null.
+  adminLabel  String   // either Admin.username, or "ENV_SUPERADMIN" for env logins
+
+  action      String   // e.g. "user.suspend", "feedback.delete", "admin.create"
+  targetType  String?  // "User" | "Transport" | "Admin" | …
+  targetId    String?
+
+  // Snapshot of payload / before/after / anything useful for forensics.
+  metadata    Json?
+
+  ipAddress   String?
+  userAgent   String?
+
+  createdAt   DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+// One-time tokens issued when an admin invites another admin via email.
+// Used only when OTP_SEND_EMAIL=true; otherwise admins are created with a
+// password directly.
+model AdminInviteToken {
+  id          String    @id @default(uuid())
+  adminId     String
+  admin       Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  token       String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+
+  createdAt   DateTime  @default(now())
+
+  @@index([token])
+  @@index([adminId])
+}
+
+// Platform-wide announcements posted by admins. Surfaced in the user-side
+// /dashboard/announcements pages, filtered by audience.
+model Announcement {
+  id              String                @id @default(uuid())
+  title           String
+  body            String
+  audience        AnnouncementAudience  @default(ALL)
+  isPublished     Boolean               @default(true)
+
+  createdByAdminId String?
+  createdByAdmin   Admin?               @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([audience])
+  @@index([isPublished, createdAt])
 }
