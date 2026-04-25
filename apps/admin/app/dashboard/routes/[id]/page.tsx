@@ -218,13 +218,21 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {route.bookings.map((b) => (
-                      <tr key={b.id}>
-                        <td className="px-5 py-3 text-zinc-700">
+                      <tr key={b.id} className="hover:bg-slate-50/80">
+                        <td className="px-5 py-3">
                           {b.traveler ? (
-                            <Link href={`/dashboard/users/${b.traveler.id}`} className="hover:text-emerald-700">
-                              {b.traveler.name || b.traveler.email}
+                            <Link
+                              href={`/dashboard/users/${b.traveler.id}`}
+                              className="group inline-flex flex-col gap-0.5 min-w-0"
+                            >
+                              <span className="font-semibold text-zinc-950 group-hover:text-emerald-700 truncate">
+                                {b.traveler.name || b.traveler.email}
+                              </span>
+                              <span className="text-[10px] uppercase tracking-wide text-slate-400 group-hover:text-emerald-700">
+                                View profile →
+                              </span>
                             </Link>
-                          ) : "—"}
+                          ) : <span className="text-zinc-700">—</span>}
                         </td>
                         <td className="px-5 py-3"><StatusPill tone={b.status === "COMPLETED" ? "emerald" : b.status === "CONFIRMED" ? "blue" : b.status === "CANCELLED" ? "red" : "yellow"}>{b.status}</StatusPill></td>
                         <td className="px-5 py-3"><StatusPill tone={b.paymentStatus === "PAID" ? "emerald" : b.paymentStatus === "FAILED" ? "red" : "yellow"}>{b.paymentStatus}</StatusPill></td>
