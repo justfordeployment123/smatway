@@ -5,6 +5,55 @@ import Link from "next/link";
 import { motion, useInView, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "motion/react";
 import { useT } from "@/lib/i18n/LocaleProvider";
 
+// ─── useReducedFx — return true on small viewports OR prefers-reduced-motion ─
+// Initial value is `true` (cheap render) so SSR/first paint ships the lightweight
+// version on every device. After mount on a desktop without reduced-motion, it
+// flips to false and the decorative effects upgrade in. This avoids ever paying
+// the cost of animated blurs / particle fields on phones.
+function useReducedFx() {
+  const [reduced, setReduced] = useState(true);
+  useEffect(() => {
+    const mql = window.matchMedia(
+      "(max-width: 768px), (prefers-reduced-motion: reduce)"
+    );
+    const update = () => setReduced(mql.matches);
+    update();
+    mql.addEventListener("change", update);
+    return () => mql.removeEventListener("change", update);
+  }, []);
+  return reduced;
+}
+
+// ─── useHomepageStats — single shared fetch of /platform/overview ───────────
+// Multiple sections (Stats, SafetyBanner, Feedback) need the same numbers.
+// We dedupe across all of them with a module-scope promise so the page makes
+// exactly one network call regardless of how many sections mount.
+import type { PlatformOverview } from "@/lib/api";
+
+let _overviewCache: Promise<PlatformOverview> | null = null;
+function fetchOverviewOnce(): Promise<PlatformOverview> {
+  if (!_overviewCache) {
+    _overviewCache = import("@/lib/api").then(({ getPlatformOverview }) =>
+      getPlatformOverview(0),
+    );
+    // If the fetch fails, clear the cache so the next mount can retry.
+    _overviewCache.catch(() => { _overviewCache = null; });
+  }
+  return _overviewCache;
+}
+
+function useHomepageStats(): PlatformOverview["stats"] | null {
+  const [stats, setStats] = useState<PlatformOverview["stats"] | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchOverviewOnce()
+      .then((d) => { if (!cancelled) setStats(d.stats); })
+      .catch(() => { /* leave null → fall back to seeds */ });
+    return () => { cancelled = true; };
+  }, []);
+  return stats;
+}
+
 // ─── Reusable scroll-reveal wrapper ──────────────────────────────────────────
 
 function Reveal({
@@ -94,17 +143,22 @@ function MagneticLink({ href, className, children, strength = 0.18 }: {
 
 // ─── LiveTicker — kinetic horizontal strip showing real-time platform activity
 
+// Seed data — used until the public activity endpoint returns real entries.
+// Mix of Nigerian + Ghanaian intercity routes so the strip reads as live
+// pan-West-African activity rather than a single-country app.
+const liveTickerSeed = [
+  { city: "Lagos → Abuja", note: "departing in 8 min" },
+  { city: "Accra → Kumasi", note: "3 seats left" },
+  { city: "Ibadan → Lagos", note: "12 booked today" },
+  { city: "Port Harcourt → Lagos", note: "departing in 22 min" },
+  { city: "Cape Coast → Accra", note: "5 seats left" },
+  { city: "Abuja → Kano", note: "departing in 47 min" },
+  { city: "Tamale → Kumasi", note: "9 booked today" },
+  { city: "Takoradi → Accra", note: "2 seats left" },
+];
+
 function LiveTicker() {
-  const items = [
-    { city: "Lahore → Islamabad", note: "departing in 8 min" },
-    { city: "Karachi → Hyderabad", note: "3 seats left" },
-    { city: "Islamabad → Peshawar", note: "12 booked today" },
-    { city: "Multan → Lahore", note: "departing in 22 min" },
-    { city: "Faisalabad → Karachi", note: "5 seats left" },
-    { city: "Quetta → Karachi", note: "departing in 47 min" },
-    { city: "Sialkot → Lahore", note: "9 booked today" },
-    { city: "Rawalpindi → Murree", note: "2 seats left" },
-  ];
+  const items = liveTickerSeed;
   const doubled = [...items, ...items];
 
   return (
@@ -159,6 +213,27 @@ const auroraColors: Record<AuroraTone, string> = {
 };
 
 function LiveAurora({ tones = ["emerald", "cool"], intensity = 0.5, dark = false }: { tones?: AuroraTone[]; intensity?: number; dark?: boolean }) {
+  const reduced = useReducedFx();
+
+  // Mobile / reduced-motion: a single static radial gradient keeps the section
+  // tonally consistent without paying for animated 110px blurs (which thrash
+  // the compositor on phones).
+  if (reduced) {
+    const primary = auroraColors[tones[0] ?? "emerald"];
+    const secondary = auroraColors[tones[1] ?? tones[0] ?? "emerald"];
+    return (
+      <div
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+        aria-hidden
+        style={{
+          background: `radial-gradient(ellipse 70% 60% at 25% 30%, ${primary}, transparent 60%), radial-gradient(ellipse 60% 50% at 80% 70%, ${secondary}, transparent 65%)`,
+          opacity: intensity * 0.7,
+          mixBlendMode: dark ? "screen" : "normal",
+        }}
+      />
+    );
+  }
+
   const blobs = tones.map((t, i) => {
     const seed = i * 37;
     return {
@@ -203,6 +278,10 @@ function LiveAurora({ tones = ["emerald", "cool"], intensity = 0.5, dark = false
 // ─── LiveDots — floating particles that drift upward ────────────────────────
 
 function LiveDots({ count = 24, dark = false, color = "emerald" }: { count?: number; dark?: boolean; color?: "emerald" | "white" | "amber" }) {
+  const reduced = useReducedFx();
+  // Drifting particles are pure decoration. On mobile / reduced-motion, render
+  // nothing — saves ~14–48 motion.span subscriptions per usage.
+  if (reduced) return null;
   const colorMap = { emerald: "bg-emerald-400", white: "bg-white", amber: "bg-amber-400" };
   // Pre-compute deterministic positions so SSR/CSR match
   const dots = Array.from({ length: count }).map((_, i) => {
@@ -243,6 +322,7 @@ function LiveDots({ count = 24, dark = false, color = "emerald" }: { count?: num
 // ─── LiveGrid — pulsing dot grid background ─────────────────────────────────
 
 function LiveGrid({ dark = false, intensity = 1 }: { dark?: boolean; intensity?: number }) {
+  const reduced = useReducedFx();
   const fg = dark ? "rgba(255,255,255,0.18)" : "rgba(15,23,42,0.18)";
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
@@ -256,17 +336,20 @@ function LiveGrid({ dark = false, intensity = 1 }: { dark?: boolean; intensity?:
           WebkitMaskImage: "radial-gradient(ellipse 80% 60% at 50% 50%, black 30%, transparent 75%)",
         }}
       />
-      {/* Sweeping highlight band */}
-      <motion.div
-        className="absolute inset-y-0 -left-1/4 w-1/3 will-change-transform"
-        style={{
-          background: dark
-            ? "linear-gradient(90deg, transparent, rgba(16,185,129,0.10), transparent)"
-            : "linear-gradient(90deg, transparent, rgba(16,185,129,0.18), transparent)",
-        }}
-        animate={{ x: ["0%", "400%"] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
-      />
+      {/* Sweeping highlight band — desktop only; the static dot grid above
+          carries the texture on mobile. */}
+      {!reduced && (
+        <motion.div
+          className="absolute inset-y-0 -left-1/4 w-1/3 will-change-transform"
+          style={{
+            background: dark
+              ? "linear-gradient(90deg, transparent, rgba(16,185,129,0.10), transparent)"
+              : "linear-gradient(90deg, transparent, rgba(16,185,129,0.18), transparent)",
+          }}
+          animate={{ x: ["0%", "400%"] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", repeatDelay: 2 }}
+        />
+      )}
     </div>
   );
 }
@@ -274,7 +357,11 @@ function LiveGrid({ dark = false, intensity = 1 }: { dark?: boolean; intensity?:
 // ─── LiveRibbon — animated SVG ribbon path ──────────────────────────────────
 
 function LiveRibbon({ dark = false }: { dark?: boolean }) {
+  const reduced = useReducedFx();
   const stroke = dark ? "rgba(16,185,129,0.35)" : "rgba(16,185,129,0.28)";
+  // On mobile / reduced-motion, drop the ribbon entirely — it's pure decoration
+  // and the dashed-stroke animation is surprisingly expensive on phones.
+  if (reduced) return null;
   return (
     <svg className="pointer-events-none absolute inset-x-0 top-0 h-full w-full" viewBox="0 0 1440 800" preserveAspectRatio="none" aria-hidden>
       <defs>
@@ -519,11 +606,14 @@ function TicketIcon({ className = "w-6 h-6" }: { className?: string }) {
 
 // ─── Data (ALL IMAGE URLs VERIFIED & WORKING) ────────────────────────────────
 
+// Seed stats — only used when /platform/overview hasn't loaded yet. Tuned to
+// believable early-stage numbers so the homepage never advertises a scale we
+// don't have. Real values from the API replace these the moment they arrive.
 const stats: Array<{ to: number; decimals?: number; suffix: string; tail?: string; label: string; icon: React.ReactNode }> = [
-  { to: 50, suffix: "K", tail: "+", label: "Active travelers", icon: <UsersIcon className="w-6 h-6" /> },
-  { to: 12, suffix: "K", tail: "+", label: "Verified transporters", icon: <RouteIcon className="w-6 h-6" /> },
-  { to: 4.9, decimals: 1, suffix: "", tail: "/5", label: "Average rating", icon: <StarIcon className="w-6 h-6" /> },
-  { to: 98, suffix: "%", label: "On-time arrivals", icon: <ClockIcon className="w-6 h-6" /> },
+  { to: 320, suffix: "", label: "Active travelers", icon: <UsersIcon className="w-6 h-6" /> },
+  { to: 48, suffix: "", label: "Verified transporters", icon: <RouteIcon className="w-6 h-6" /> },
+  { to: 4.7, decimals: 1, suffix: "", tail: "/5", label: "Average rating", icon: <StarIcon className="w-6 h-6" /> },
+  { to: 95, suffix: "%", label: "On-time arrivals", icon: <ClockIcon className="w-6 h-6" /> },
 ];
 
 const features = [
@@ -605,11 +695,14 @@ const testimonials = [
   },
 ];
 
+// Legacy `routes` (no longer rendered — superseded by routesBento). Kept here
+// only to avoid dead-import errors in older builds; feel free to delete once
+// nothing references it.
 const routes = [
-  { from: "Lahore", to: "Islamabad", price: "PKR 1,500", time: "4h 30m", image: "/images/home/route-lahore-islamabad.jpg" },
-  { from: "Karachi", to: "Hyderabad", price: "PKR 800", time: "2h 45m", image: "/images/home/route-karachi-hyderabad.jpg" },
-  { from: "Islamabad", to: "Peshawar", price: "PKR 600", time: "2h 15m", image: "/images/home/route-islamabad-peshawar.jpg" },
-  { from: "Multan", to: "Lahore", price: "PKR 1,200", time: "5h 00m", image: "/images/home/route-multan-lahore.jpg" },
+  { from: "Lagos", to: "Abuja", price: "₦18,000", time: "8h 30m", image: "/images/home/route-lahore-islamabad.jpg" },
+  { from: "Accra", to: "Kumasi", price: "₵120", time: "4h 15m", image: "/images/home/route-karachi-hyderabad.jpg" },
+  { from: "Port Harcourt", to: "Lagos", price: "₦15,000", time: "7h 45m", image: "/images/home/route-islamabad-peshawar.jpg" },
+  { from: "Kumasi", to: "Tamale", price: "₵100", time: "6h 00m", image: "/images/home/route-multan-lahore.jpg" },
 ];
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -631,7 +724,9 @@ function Hero() {
     if (v && v.readyState >= 4) setVideoReady(true);
   }, []);
 
-  // Kick off playback the instant the video is marked fully buffered.
+  // Kick off playback the instant the video is marked fully buffered. Plays
+  // on every device including mobile — the only thing we still defer is the
+  // initial bytes (preload="metadata" below) so the page paints fast.
   useEffect(() => {
     if (!videoReady) return;
     videoRef.current?.play().catch(() => {
@@ -651,8 +746,10 @@ function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#fafaf8] pt-24 pb-16 sm:pt-28 sm:pb-20 lg:pt-40 lg:pb-32">
       <div className="absolute inset-0 grain" />
-      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/80 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none" />
+      {/* Decorative blurred ambient blobs — desktop only. Filter blur on a
+          700px element is the single most expensive paint op on low-end phones. */}
+      <div className="absolute top-0 right-0 w-[700px] h-[700px] bg-emerald-100/80 rounded-full blur-[120px] translate-x-1/4 -translate-y-1/4 pointer-events-none hidden md:block" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-100/30 rounded-full blur-[100px] -translate-x-1/4 translate-y-1/4 pointer-events-none hidden md:block" />
       <div
         className="absolute inset-0 pointer-events-none opacity-[0.03]"
         style={{ backgroundImage: "radial-gradient(circle, #000 1px, transparent 1px)", backgroundSize: "32px 32px" }}
@@ -731,19 +828,22 @@ function Hero() {
                     className={`absolute inset-0 w-full h-full object-contain object-center transition-opacity duration-300 ${posterReady && !videoReady ? "opacity-100" : "opacity-0"}`}
                   />
 
-                  {/* Video — height fills the container; width keeps its native aspect and may overflow (clipped by parent) */}
+                  {/* Video — plays on every device. preload="metadata" keeps
+                      the initial bytes tiny; the browser only fetches the full
+                      clip once the page is interactive. */}
                   <video
                     ref={videoRef}
                     loop
                     muted
                     playsInline
-                    preload="auto"
+                    preload="metadata"
                     onCanPlayThrough={() => setVideoReady(true)}
                     onProgress={handleVideoProgress}
                     className={`absolute top-0 left-1/2 h-full w-auto max-w-none -translate-x-1/2 transition-opacity duration-300 ${videoReady ? "opacity-100" : "opacity-0"}`}
                   >
                     <source src="/car.mp4" type="video/mp4" />
                   </video>
+
                   <div
                     className={`absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none transition-opacity duration-500 ${posterReady || videoReady ? "opacity-100" : "opacity-0"}`}
                   />
@@ -760,9 +860,9 @@ function Hero() {
                         <span className="text-[10px] sm:text-[11px] text-slate-400 font-medium">ETA 2h 15m</span>
                       </div>
 
-                      {/* Compact horizontal route — Lahore [bar] Islamabad on one row, with 62% at end */}
+                      {/* Compact horizontal route — Lagos [bar] Abuja on one row, with 62% at end */}
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Lahore</span>
+                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Lagos</span>
                         <div className="relative h-1 sm:h-1.5 flex-1 rounded-full bg-slate-100 overflow-hidden">
                           <motion.div
                             className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
@@ -771,7 +871,7 @@ function Hero() {
                             transition={{ duration: 2, delay: 1.2, ease: "easeOut" }}
                           />
                         </div>
-                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Islamabad</span>
+                        <span className="text-[11px] sm:text-xs font-bold text-zinc-900 shrink-0">Abuja</span>
                         <span className="text-[11px] sm:text-sm font-bold text-zinc-900 tabular-nums shrink-0 ml-1">62%</span>
                       </div>
                     </div>
@@ -835,18 +935,38 @@ function Hero() {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
 function Stats() {
+  const reduced = useReducedFx();
+  const live = useHomepageStats();
+
+  // Real values when /platform/overview has loaded; otherwise use the seed
+  // marketing numbers so the section never renders a flash of zeros.
+  // For rating/on-time we keep the seed when the API returns null (i.e. no
+  // reviews / no completed trips yet) — showing "0.0/5" reads as broken.
+  const realStats: typeof stats = live
+    ? [
+        { to: live.travelers, suffix: "", tail: live.travelers >= 1000 ? "+" : undefined, label: "Active travelers", icon: <UsersIcon className="w-6 h-6" /> },
+        { to: live.transporters, suffix: "", tail: live.transporters >= 100 ? "+" : undefined, label: "Verified transporters", icon: <RouteIcon className="w-6 h-6" /> },
+        { to: live.avgRating ?? 4.7, decimals: 1, suffix: "", tail: "/5", label: "Average Transporter rating", icon: <StarIcon className="w-6 h-6" /> },
+        { to: Math.round(live.onTimeRate ?? 95), suffix: "%", label: "On-time arrivals", icon: <ClockIcon className="w-6 h-6" /> },
+      ]
+    : stats;
+
   return (
     <section className="relative bg-zinc-950 border-y border-white/[0.06] overflow-hidden">
       <div className="absolute inset-0 grain" />
-      <motion.div className="absolute -top-20 left-[10%] w-[350px] h-[350px] rounded-full pointer-events-none opacity-40 blur-[100px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.5) 0%, transparent 70%)" }}
-        animate={{ x: [0, 40, 0], scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} />
-      <motion.div className="absolute -bottom-16 right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none opacity-30 blur-[90px]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.5) 0%, transparent 70%)" }}
-        animate={{ x: [0, -30, 0], scale: [1.1, 0.9, 1.1] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} />
+      {!reduced && (
+        <>
+          <motion.div className="absolute -top-20 left-[10%] w-[350px] h-[350px] rounded-full pointer-events-none opacity-40 blur-[100px]"
+            style={{ background: "radial-gradient(circle, rgba(16,185,129,0.5) 0%, transparent 70%)" }}
+            animate={{ x: [0, 40, 0], scale: [1, 1.2, 1] }} transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }} />
+          <motion.div className="absolute -bottom-16 right-[15%] w-[300px] h-[300px] rounded-full pointer-events-none opacity-30 blur-[90px]"
+            style={{ background: "radial-gradient(circle, rgba(20,184,166,0.5) 0%, transparent 70%)" }}
+            animate={{ x: [0, -30, 0], scale: [1.1, 0.9, 1.1] }} transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }} />
+        </>
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-white/[0.06]">
-          {stats.map((stat, i) => (
+          {realStats.map((stat, i) => (
             <Reveal key={stat.label} delay={i * 0.08} className="group cursor-pointer py-10 md:py-14 px-6 md:px-8 text-center rounded-2xl transition-all duration-300 hover:bg-white/[0.03] hover:-translate-y-1">
               <div className="mb-2 inline-flex items-center justify-center text-emerald-400">{stat.icon}</div>
               <div className="font-[var(--font-display)] text-3xl md:text-4xl text-white tracking-tight mb-1.5 group-hover:text-emerald-400 transition-colors duration-300">
@@ -864,30 +984,32 @@ function Stats() {
 
 // ─── Popular Routes — bento grid (1 big + 3 small) ──────────────────────────
 
+// Seed routes — mix of Nigerian and Ghanaian corridors with native currencies.
+// Real `routes` from /platform/popular-routes (when wired) override this.
 const routesBento = [
   {
-    from: "Lahore", to: "Islamabad", price: "1,500", time: "4h 30m", seats: 7,
+    from: "Lagos", to: "Abuja", price: "₦18,000", time: "8h 30m", seats: 7,
     hue: "from-emerald-500/80 via-emerald-700/60 to-teal-900/90",
     image: "/images/home/route-lahore-islamabad.jpg",
-    vehicle: "Sedan + Van", next: "8 min", featured: true,
+    vehicle: "Coach + Sedan", next: "8 min", featured: true,
   },
   {
-    from: "Karachi", to: "Hyderabad", price: "800", time: "2h 45m", seats: 14,
+    from: "Accra", to: "Kumasi", price: "₵120", time: "4h 15m", seats: 14,
     hue: "from-amber-500/70 via-orange-700/60 to-rose-900/90",
     image: "/images/home/route-karachi-hyderabad.jpg",
     vehicle: "Coach", next: "22 min",
   },
   {
-    from: "Islamabad", to: "Peshawar", price: "600", time: "2h 15m", seats: 24,
+    from: "Port Harcourt", to: "Lagos", price: "₦15,000", time: "7h 45m", seats: 24,
     hue: "from-sky-500/70 via-indigo-700/60 to-violet-900/90",
     image: "/images/home/route-islamabad-peshawar.jpg",
-    vehicle: "Sedan", next: "47 min",
+    vehicle: "Van", next: "47 min",
   },
   {
-    from: "Multan", to: "Lahore", price: "1,200", time: "5h 00m", seats: 4,
+    from: "Kumasi", to: "Tamale", price: "₵100", time: "6h 00m", seats: 4,
     hue: "from-rose-500/70 via-fuchsia-700/60 to-purple-900/90",
     image: "/images/home/route-multan-lahore.jpg",
-    vehicle: "Van", next: "1h 12m",
+    vehicle: "Coach", next: "1h 12m",
   },
 ];
 
@@ -1040,7 +1162,7 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
               </div>
             </div>
             <div className="ml-auto text-right">
-              <div className="font-mono text-sm sm:text-base font-semibold tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">PKR {r.price}</div>
+              <div className="font-mono text-sm sm:text-base font-semibold tabular-nums leading-none drop-shadow-[0_2px_8px_rgba(0,0,0,0.4)]">{r.price}</div>
               <div className="mt-1 font-mono text-[10px] tabular-nums text-white/60">{r.time}</div>
             </div>
           </div>
@@ -1050,7 +1172,66 @@ function RouteTile({ r, large = false, index = 0 }: { r: typeof routesBento[numb
   );
 }
 
+// Currency code → display symbol. Falls back to the code itself.
+function currencySymbol(code: string): string {
+  switch ((code || "").toUpperCase()) {
+    case "NGN": return "₦";
+    case "GHS": return "₵";
+    case "USD": return "$";
+    case "EUR": return "€";
+    case "GBP": return "£";
+    case "KES": return "KSh ";
+    case "ZAR": return "R";
+    default: return `${code} `;
+  }
+}
+
+function formatNextDeparture(minutes: number | null): string {
+  if (minutes === null) return "Schedule TBD";
+  if (minutes < 60) return `${minutes} min`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 function PopularRoutes() {
+  const [routes, setRoutes] = useState<typeof routesBento>(routesBento);
+
+  // Fetch real top-4 routes by booking count. The seed defines the visual
+  // grid (hue / image / featured slot); we map real route data into those
+  // slots so the bento layout stays stable. Falls back to the Nigerian/
+  // Ghanaian seed if the API returns fewer than 2 routes.
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/api").then(({ getPopularRoutes }) =>
+      getPopularRoutes(4)
+        .then((res) => {
+          if (cancelled) return;
+          const live = res?.routes ?? [];
+          if (live.length < 2) return;
+          const merged = routesBento.map((seed, idx) => {
+            const real = live[idx];
+            if (!real) return seed;
+            const sym = currencySymbol(real.currency);
+            const priceNum = Math.round(real.minPrice).toLocaleString();
+            return {
+              ...seed,
+              from: real.from,
+              to: real.to,
+              price: `${sym}${priceNum}`,
+              time: seed.time, // we don't have a duration on the model
+              seats: real.availableSeats,
+              vehicle: real.vehicle || seed.vehicle,
+              next: formatNextDeparture(real.nextDepartureMinutes),
+            };
+          });
+          setRoutes(merged);
+        })
+        .catch(() => { /* keep seed */ }),
+    );
+    return () => { cancelled = true; };
+  }, []);
+
   return (
     <section className="relative bg-zinc-950 py-24 lg:py-32 overflow-hidden text-white">
       {/* Live backgrounds — turned UP for the dark canvas */}
@@ -1083,7 +1264,7 @@ function PopularRoutes() {
         </Reveal>
 
         <div className="grid gap-4 md:grid-cols-4 md:auto-rows-[230px]">
-          {routesBento.map((r, i) => (
+          {routes.map((r, i) => (
             <Reveal key={`${r.from}-${r.to}`} delay={i * 0.08} className={`min-w-0 ${r.featured ? "md:col-span-2 md:row-span-2" : ""}`}>
               <RouteTile r={r} large={r.featured} index={i} />
             </Reveal>
@@ -1190,7 +1371,7 @@ function WalletVisual() {
             <div className="mt-3 flex items-end justify-between">
               <div>
                 <div className="text-[9px] uppercase tracking-wider text-zinc-500">Trip hold</div>
-                <div className="font-mono text-base font-semibold tabular-nums">PKR 1,500.00</div>
+                <div className="font-mono text-base font-semibold tabular-nums">₦18,000.00</div>
               </div>
               <div className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-emerald-300">Held</div>
             </div>
@@ -1238,7 +1419,7 @@ function RadarVisual() {
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        Lahore → Islamabad
+        Lagos → Abuja
       </motion.div>
       <motion.div
         className="absolute left-[16%] top-[64%] flex items-center gap-1.5 rounded-full border border-zinc-200 bg-white px-2.5 py-1 text-[11px] font-medium text-zinc-700 shadow-[0_6px_18px_rgba(0,0,0,0.06)]"
@@ -1316,6 +1497,7 @@ function PillarVisual({ kind }: { kind: typeof featurePillars[number]["visual"] 
 }
 
 function Features() {
+  const reducedFx = useReducedFx();
   // Per-pillar accent palette — tuned for light editorial cards
   const accents: Record<typeof featurePillars[number]["visual"], {
     bar: string; chip: string; num: string; glow: string; dot: string; arrow: string;
@@ -1369,19 +1551,23 @@ function Features() {
             "linear-gradient(180deg, #ffffff 0%, #f4faf6 50%, #ecf6ef 100%)",
         }}
       />
-      {/* Slow drifting emerald aurora blobs */}
-      <motion.div
-        className="pointer-events-none absolute -top-40 left-[-10%] h-[520px] w-[520px] rounded-full blur-[120px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.30), transparent 70%)" }}
-        animate={{ x: [0, 40, 0], y: [0, -25, 0], scale: [1, 1.08, 1] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -bottom-40 right-[-10%] h-[460px] w-[460px] rounded-full blur-[110px]"
-        style={{ background: "radial-gradient(circle, rgba(20,184,166,0.25), transparent 70%)" }}
-        animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.05, 0.95, 1.05] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
-      />
+      {/* Slow drifting emerald aurora blobs — desktop only */}
+      {!reducedFx && (
+        <>
+          <motion.div
+            className="pointer-events-none absolute -top-40 left-[-10%] h-[520px] w-[520px] rounded-full blur-[120px]"
+            style={{ background: "radial-gradient(circle, rgba(16,185,129,0.30), transparent 70%)" }}
+            animate={{ x: [0, 40, 0], y: [0, -25, 0], scale: [1, 1.08, 1] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="pointer-events-none absolute -bottom-40 right-[-10%] h-[460px] w-[460px] rounded-full blur-[110px]"
+            style={{ background: "radial-gradient(circle, rgba(20,184,166,0.25), transparent 70%)" }}
+            animate={{ x: [0, -30, 0], y: [0, 20, 0], scale: [1.05, 0.95, 1.05] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
+          />
+        </>
+      )}
       <LiveDots count={18} color="emerald" />
       <div className="absolute inset-0 grain opacity-50" />
       {/* Top + bottom hairline emerald separators to break from neighboring dark sections */}
@@ -1524,8 +1710,8 @@ function PhoneSearchScreen() {
       <div className="mx-3 -mt-3 rounded-[20px] bg-white p-3 shadow-[0_12px_30px_-10px_rgba(0,0,0,0.18)] ring-1 ring-zinc-100">
         <div className="space-y-2">
           {[
-            { label: "From", value: "Lahore", sub: "Punjab" },
-            { label: "To", value: "Islamabad", sub: "Federal" },
+            { label: "From", value: "Lagos", sub: "Lagos State" },
+            { label: "To", value: "Abuja", sub: "FCT" },
             { label: "Date", value: "Tomorrow · 8:00 AM", sub: "" },
           ].map((f, i) => (
             <motion.div
@@ -1556,8 +1742,8 @@ function PhoneSearchScreen() {
       {/* result preview */}
       <div className="mx-3 mt-2 space-y-1.5">
         {[
-          { driver: "Kamran A.", price: "1,500", time: "4h 30m", seats: 7 },
-          { driver: "Bilal Q.", price: "1,400", time: "4h 45m", seats: 11 },
+          { driver: "Tunde A.", price: "18,000", time: "8h 30m", seats: 7 },
+          { driver: "Femi O.", price: "17,500", time: "8h 45m", seats: 11 },
         ].map((r, i) => (
           <motion.div
             key={r.driver}
@@ -1577,7 +1763,7 @@ function PhoneSearchScreen() {
               </div>
             </div>
             <div className="text-right">
-              <div className="font-mono text-[10px] font-bold text-zinc-950 tabular-nums">PKR {r.price}</div>
+              <div className="font-mono text-[10px] font-bold text-zinc-950 tabular-nums">₦{r.price}</div>
               <div className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1 py-0 text-[7px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
                 <span className="h-1 w-1 rounded-full bg-emerald-500" />
                 Available
@@ -1628,7 +1814,7 @@ function PhoneTripScreen() {
             <div className="h-2 w-2 rounded-full border-2 border-emerald-400 bg-white" />
           </div>
           <div className="flex-1">
-            <div className="text-[10px] font-bold text-zinc-950">Lahore</div>
+            <div className="text-[10px] font-bold text-zinc-950">Lagos</div>
             <div className="relative my-1 h-1 w-full overflow-hidden rounded-full bg-zinc-100">
               <motion.div
                 className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400"
@@ -1642,7 +1828,7 @@ function PhoneTripScreen() {
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut", delay: 1.5 }}
               />
             </div>
-            <div className="text-[10px] font-bold text-zinc-950">Islamabad</div>
+            <div className="text-[10px] font-bold text-zinc-950">Abuja</div>
           </div>
           <div className="text-right">
             <div className="font-mono text-[12px] font-bold tabular-nums text-zinc-950">62%</div>
@@ -1722,12 +1908,12 @@ function PhoneTicketScreen() {
         <div className="relative mt-3 flex items-end justify-between">
           <div>
             <div className="text-[8px] uppercase tracking-wider text-white/70">From</div>
-            <div className="text-[16px] font-bold leading-none">Lahore</div>
+            <div className="text-[16px] font-bold leading-none">Lagos</div>
           </div>
           <ArrowRightIcon className="mb-1 h-3 w-3 text-white/80" />
           <div className="text-right">
             <div className="text-[8px] uppercase tracking-wider text-white/70">To</div>
-            <div className="text-[16px] font-bold leading-none">Islamabad</div>
+            <div className="text-[16px] font-bold leading-none">Abuja</div>
           </div>
         </div>
 
@@ -1749,7 +1935,7 @@ function PhoneTicketScreen() {
           </div>
           <div className="text-right">
             <div className="text-[8px] uppercase tracking-wider text-white/70">Paid</div>
-            <div className="font-mono text-[12px] font-bold tabular-nums">PKR 1,500</div>
+            <div className="font-mono text-[12px] font-bold tabular-nums">₦18,000</div>
           </div>
         </div>
       </div>
@@ -2019,7 +2205,7 @@ function AppPreview() {
                 </MagneticLink>
               </div>
               <div className="mt-3 inline-flex items-center gap-1.5 text-[11px] text-zinc-500">
-                <span className="font-mono tabular-nums text-zinc-300"><CountUp to={2847} duration={1600} /></span>
+                <span className="font-mono tabular-nums text-zinc-300"><CountUp to={284} duration={1600} /></span>
                 already on the waitlist · no spam, one launch-day email
               </div>
             </div>
@@ -2070,9 +2256,9 @@ function StepSearchVisual() {
         <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Route</div>
         <div className="mt-1 flex items-center gap-2 text-[12px] text-white">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span className="font-semibold">Lahore</span>
+          <span className="font-semibold">Lagos</span>
           <svg className="h-3 w-3 text-zinc-500" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 8h10M9 4l4 4-4 4" /></svg>
-          <span className="font-semibold">Islamabad</span>
+          <span className="font-semibold">Abuja</span>
           <motion.span
             className="ml-auto inline-block h-3 w-[1.5px] bg-emerald-400"
             animate={{ opacity: [1, 0, 1] }}
@@ -2083,9 +2269,9 @@ function StepSearchVisual() {
       {/* Result tiles */}
       <div className="mt-2 space-y-1.5">
         {[
-          { op: "Bilal Transport", seats: 3, fare: "1,500", tone: "ring-emerald-400/30 bg-emerald-500/[0.04]" },
-          { op: "ZK Express", seats: 7, fare: "1,200", tone: "ring-white/10 bg-white/[0.03]" },
-          { op: "Fast Motors", seats: 2, fare: "1,800", tone: "ring-white/10 bg-white/[0.03]" },
+          { op: "GIG Mobility", seats: 3, fare: "18,000", tone: "ring-emerald-400/30 bg-emerald-500/[0.04]" },
+          { op: "ABC Coaches", seats: 7, fare: "16,500", tone: "ring-white/10 bg-white/[0.03]" },
+          { op: "Chisco Express", seats: 2, fare: "20,000", tone: "ring-white/10 bg-white/[0.03]" },
         ].map((r, i) => (
           <motion.div
             key={r.op}
@@ -2099,7 +2285,7 @@ function StepSearchVisual() {
               <div className="text-[11px] font-semibold text-white">{r.op}</div>
               <div className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">{r.seats} seats left</div>
             </div>
-            <div className="font-mono text-[11px] font-semibold tabular-nums text-emerald-300">PKR {r.fare}</div>
+            <div className="font-mono text-[11px] font-semibold tabular-nums text-emerald-300">₦{r.fare}</div>
           </motion.div>
         ))}
       </div>
@@ -2115,7 +2301,7 @@ function StepEscrowVisual() {
         <div className="flex items-start justify-between">
           <div>
             <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-amber-400">Escrow · locked</div>
-            <div className="mt-0.5 text-[11px] font-semibold text-white">Lahore → Islamabad</div>
+            <div className="mt-0.5 text-[11px] font-semibold text-white">Lagos → Abuja</div>
           </div>
           <motion.div
             className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/15"
@@ -2132,7 +2318,7 @@ function StepEscrowVisual() {
         <div className="flex items-end justify-between">
           <div>
             <div className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">Held amount</div>
-            <div className="font-[var(--font-display)] text-xl font-semibold tabular-nums text-white">PKR 1,500</div>
+            <div className="font-[var(--font-display)] text-xl font-semibold tabular-nums text-white">₦18,000</div>
           </div>
           <div className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-300">
             <span className="h-1 w-1 rounded-full bg-emerald-400" />
@@ -2195,7 +2381,7 @@ function StepTrackVisual() {
         </svg>
         {/* Origin pin */}
         <div className="absolute bottom-3 left-2 flex items-center gap-1.5 rounded-full border border-white/10 bg-zinc-950/80 px-2 py-0.5 text-[9px] font-semibold text-white backdrop-blur">
-          <span className="h-1 w-1 rounded-full bg-emerald-400" />Lahore
+          <span className="h-1 w-1 rounded-full bg-emerald-400" />Lagos
         </div>
         {/* Live dot */}
         <motion.div
@@ -2207,7 +2393,7 @@ function StepTrackVisual() {
         </motion.div>
         {/* Dest pin */}
         <div className="absolute right-2 top-3 flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2 py-0.5 text-[9px] font-semibold text-emerald-300 backdrop-blur">
-          <span className="h-1 w-1 rounded-full bg-emerald-400" />Islamabad
+          <span className="h-1 w-1 rounded-full bg-emerald-400" />Abuja
         </div>
       </div>
       {/* Controls below map */}
@@ -2418,15 +2604,29 @@ function HowItWorks() {
 
 // ─── SafetyBanner — trust ledger with live counters ─────────────────────────
 
-const ledgerRows = [
-  { label: "Drivers verified today", to: 47, suffix: "" },
-  { label: "Background checks completed", to: 312, suffix: "" },
-  { label: "Vehicles inspected this week", to: 1284, suffix: "" },
-  { label: "Insurance policies active", to: 12438, suffix: "" },
-  { label: "Trips with share-link enabled", to: 89, suffix: "%" },
+// Seed ledger — small, believable early-stage figures. Replaced 1:1 by real
+// values from /platform/overview as soon as they load.
+const seedLedgerRows = [
+  { label: "Active travelers", to: 320, suffix: "" },
+  { label: "Verified transporters", to: 48, suffix: "" },
+  { label: "Routes available right now", to: 26, suffix: "" },
+  { label: "Trips completed end-to-end", to: 410, suffix: "" },
+  { label: "Reviews collected from riders", to: 92, suffix: "" },
 ];
 
 function SafetyBanner() {
+  const live = useHomepageStats();
+  // Real platform numbers when available, seeds otherwise. Each row maps
+  // 1:1 to a column from /platform/overview's `stats` payload.
+  const ledgerRows = live
+    ? [
+        { label: "Active travelers", to: live.travelers, suffix: "" },
+        { label: "Verified transporters", to: live.transporters, suffix: "" },
+        { label: "Routes available right now", to: live.activeRoutes, suffix: "" },
+        { label: "Trips completed end-to-end", to: live.completedTrips, suffix: "" },
+        { label: "Reviews collected from riders", to: live.reviews, suffix: "" },
+      ]
+    : seedLedgerRows;
   return (
     <section className="relative bg-[#fafaf7] py-24 lg:py-32 overflow-hidden">
       <LiveAurora tones={["emerald", "cool"]} intensity={0.4} />
@@ -2484,33 +2684,57 @@ function SafetyBanner() {
 
 // ─── Testimonials — editorial rotator ───────────────────────────────────────
 
-const voices = [
+// Seed voices — site feedback (the editorial blockquote on the LEFT). Only
+// shown when /feedback/recent is empty. One traveler-flavored, one transporter-
+// flavored, so both audiences see themselves on first load.
+const voices: Testimonial[] = [
   {
-    name: "Sarah K.", role: "Frequent traveler · Lahore", initial: "S",
+    name: "Adeola Okonkwo", role: "Traveler · Lagos", initial: "A",
     avatar: "from-emerald-500 to-teal-600",
-    route: "Lahore → Islamabad",
-    date: "14 Mar 2026",
-    trips: 23,
-    excerpt: "Price up-front. Driver verified. Tracking link for my mum.",
-    text: "I stopped negotiating fares with strangers at the bus stand. SmatWay shows the price up-front, the driver verified, and I get a tracking link to send my mum.",
+    avatarUrl: null,
+    route: "Lagos → Abuja",
+    date: "22 Apr 2026",
+    trips: 6,
+    excerpt: "Driver was verified, price was set, mum got my live link.",
+    text: "First time using SmatWay last weekend — Lagos to Abuja. Fare was fixed, driver had ID on the app, and I sent the trip link to my mum so she could see me move. No haggling at the motor park. Will book again.",
   },
   {
-    name: "Ahmed R.", role: "Fleet owner · Karachi", initial: "A",
+    name: "Kwame Asante", role: "Transporter · Accra", initial: "K",
     avatar: "from-amber-500 to-orange-600",
-    route: "Karachi → Hyderabad",
-    date: "02 Apr 2026",
-    trips: 147,
-    excerpt: "Four vans booked out by Tuesday. Same-day payouts.",
-    text: "We were running half-empty. Now my four vans book out by Tuesday. Payment hits my account the same day a trip closes — cash flow finally feels predictable.",
+    avatarUrl: null,
+    route: "Accra → Kumasi",
+    date: "19 Apr 2026",
+    trips: 14,
+    excerpt: "Set up Accra–Kumasi in a minute. MoMo payout same day.",
+    text: "Listed my Accra to Kumasi route in about a minute. Got two seats booked the next morning and the payout hit my MoMo the same evening. Still early days for me on here but the flow makes sense so far.",
+  },
+];
+
+// Seed trip-receipts — per-booking transporter reviews (the paper-receipt card
+// on the RIGHT). Only used when /review/recent is empty. These describe an
+// actual trip with a transporter, not site-wide feedback.
+const tripReceipts: Testimonial[] = [
+  {
+    name: "Adunni Adebayo", role: "Verified rider · Lagos", initial: "A",
+    avatar: "from-emerald-500 to-teal-600",
+    avatarUrl: null,
+    route: "Lagos → Abuja",
+    date: "23 Apr 2026",
+    trips: 3,
+    rating: 5,
+    excerpt: "Driver was on time and the AC actually worked.",
+    text: "Driver was on time and the AC actually worked. Got to Abuja about 15 min ahead of ETA.",
   },
   {
-    name: "Maria L.", role: "Daily commuter · Islamabad", initial: "M",
-    avatar: "from-rose-500 to-pink-600",
-    route: "Islamabad → Rawalpindi",
-    date: "18 Apr 2026",
-    trips: 62,
-    excerpt: "Family sees me move. They sleep better. So do I.",
-    text: "The share link is the feature I didn't know I needed. My family sees me move. They sleep better. So do I.",
+    name: "Esi Mensah", role: "Verified rider · Accra", initial: "E",
+    avatar: "from-amber-500 to-orange-600",
+    avatarUrl: null,
+    route: "Accra → Kumasi",
+    date: "20 Apr 2026",
+    trips: 5,
+    rating: 5,
+    excerpt: "Smooth booking, polite driver, no surprises at the end.",
+    text: "Smooth booking, polite driver, no surprises at the end. Will use Kwame's coach again.",
   },
 ];
 
@@ -2540,48 +2764,103 @@ type Testimonial = {
   name: string;
   role: string;
   initial: string;
+  /** tailwind gradient classes used as a fallback when avatarUrl is null */
   avatar: string;
+  /** presigned absolute URL for a real user's profile image, when available */
+  avatarUrl: string | null;
   route: string;
   date: string;
   trips?: number;
+  /** 1-5 star rating — only meaningful for trip receipts; defaults to 5 for site feedback. */
+  rating?: number;
   excerpt: string;
   text: string;
 };
 
+function roleLabelFor(accountType: string | null | undefined, country: string | null | undefined): string {
+  const tag =
+    accountType === "TRANSPORTER" ? "Transporter" :
+    accountType === "TRAVELER" ? "Traveler" :
+    "SmatWay rider";
+  return country ? `${tag} · ${country}` : tag;
+}
+
 function Testimonials() {
+  // LEFT — editorial blockquote: site-wide feedback from /feedback/recent.
   const [items, setItems] = useState<Testimonial[]>(voices);
+  // RIGHT — receipt card: per-trip transporter reviews from /review/recent.
+  const [receipts, setReceipts] = useState<Testimonial[]>(tripReceipts);
   const [i, setI] = useState(0);
   const [paused, setPaused] = useState(false);
 
-  // Fetch real reviews once on mount — fall back to `voices` if none / error.
+  // Two parallel fetches: site feedback (for the editorial quote on the left)
+  // and per-booking transporter reviews (for the trip-receipt card on the
+  // right). Each falls back to its own seed if its endpoint is empty.
   useEffect(() => {
     let cancelled = false;
-    import("@/lib/api").then(({ getRecentReviews }) =>
+    import("@/lib/api").then(({ getRecentSiteFeedback, getRecentReviews }) => {
+      // Site feedback → editorial blockquote
+      getRecentSiteFeedback(6)
+        .then((res) => {
+          if (cancelled) return;
+          const live = (res?.feedback ?? []).filter(
+            (f) => f.comment && f.comment.trim().length > 0,
+          );
+          if (live.length === 0) return;
+          const mapped: Testimonial[] = live.map((f, idx) => {
+            const name = (f.user?.name as string) || "SmatWay rider";
+            return {
+              name,
+              role: roleLabelFor(f.user?.accountType, f.user?.country),
+              initial: name.charAt(0).toUpperCase(),
+              avatar: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length] ?? "from-emerald-500 to-teal-600",
+              avatarUrl: f.user?.avatarUrl ?? null,
+              route: "Shared on the dashboard",
+              date: formatReviewDate(f.createdAt),
+              trips: undefined,
+              rating: f.rating,
+              excerpt: firstSentence(f.comment, 90),
+              text: f.comment,
+            };
+          });
+          setItems(mapped);
+          setI(0);
+        })
+        .catch(() => { /* keep voices seed */ });
+
+      // Transporter reviews → trip-receipt card
       getRecentReviews(6)
         .then((res) => {
           if (cancelled) return;
-          const live = (res?.reviews ?? []).filter((r: any) => r.feedback);
+          const live = (res?.reviews ?? []).filter((r: { feedback: string | null }) => r.feedback);
           if (live.length === 0) return;
-          setItems(
-            live.map((r: any, idx: number) => {
-              const name = (r.traveler?.name as string) || "Traveler";
-              return {
-                name,
-                role: r.traveler?.country ? `Verified traveler · ${r.traveler.country}` : "Verified traveler",
-                initial: name.charAt(0).toUpperCase(),
-                avatar: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length],
-                route: r.transporter?.name ? `With ${r.transporter.name}` : "Verified trip",
-                date: formatReviewDate(r.createdAt),
-                trips: undefined as number | undefined,
-                excerpt: firstSentence(r.feedback, 90),
-                text: r.feedback,
-              };
-            }),
-          );
-          setI(0);
+          const mapped: Testimonial[] = live.map((r: {
+            rating: number;
+            feedback: string;
+            createdAt: string;
+            traveler?: { name?: string | null; country?: string | null; avatarUrl?: string | null } | null;
+            transporter?: { name?: string | null } | null;
+          }, idx: number) => {
+            const name = r.traveler?.name || "Verified rider";
+            const route = r.transporter?.name ? `With ${r.transporter.name}` : "Verified trip";
+            return {
+              name,
+              role: r.traveler?.country ? `Verified rider · ${r.traveler.country}` : "Verified rider",
+              initial: name.charAt(0).toUpperCase(),
+              avatar: AVATAR_GRADIENTS[idx % AVATAR_GRADIENTS.length] ?? "from-emerald-500 to-teal-600",
+              avatarUrl: r.traveler?.avatarUrl ?? null,
+              route,
+              date: formatReviewDate(r.createdAt),
+              trips: undefined,
+              rating: r.rating,
+              excerpt: firstSentence(r.feedback, 90),
+              text: r.feedback,
+            };
+          });
+          setReceipts(mapped);
         })
-        .catch(() => { /* keep fallback */ }),
-    );
+        .catch(() => { /* keep tripReceipts seed */ });
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -2592,6 +2871,9 @@ function Testimonials() {
   }, [paused, items.length]);
 
   const v = items[i];
+  // Receipt cycles through its own list — wrap-around so a shorter receipt
+  // list still pairs with every site-feedback entry.
+  const r = receipts[i % Math.max(1, receipts.length)];
   const next = () => setI((x) => (x + 1) % items.length);
   const prev = () => setI((x) => (x - 1 + items.length) % items.length);
 
@@ -2679,16 +2961,32 @@ function Testimonials() {
                 transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
               >
                 <div className="flex items-center gap-1 text-amber-500">
-                  {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-5 w-5" />)}
-                  <span className="ml-3 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">5.0 · verified trip</span>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <StarIcon
+                      key={s}
+                      className={`h-5 w-5 ${s <= (v.rating ?? 5) ? "" : "text-zinc-200"}`}
+                    />
+                  ))}
+                  <span className="ml-3 font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+                    {(v.rating ?? 5).toFixed(1)} · verified rider
+                  </span>
                 </div>
                 <blockquote className="mt-5 font-[var(--font-display)] text-3xl leading-[1.2] tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.75rem]">
                   <span className="italic text-emerald-700">&ldquo;</span>{v.text}<span className="italic text-emerald-700">&rdquo;</span>
                 </blockquote>
                 <div className="mt-8 flex items-center gap-4">
-                  <div className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${v.avatar} font-semibold text-white text-lg shadow-[0_10px_24px_-8px_rgba(15,23,42,0.2)]`}>
-                    {v.initial}
-                  </div>
+                  {v.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={v.avatarUrl}
+                      alt={v.name}
+                      className="h-14 w-14 rounded-full object-cover ring-2 ring-white shadow-[0_10px_24px_-8px_rgba(15,23,42,0.2)]"
+                    />
+                  ) : (
+                    <div className={`flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br ${v.avatar} font-semibold text-white text-lg shadow-[0_10px_24px_-8px_rgba(15,23,42,0.2)]`}>
+                      {v.initial}
+                    </div>
+                  )}
                   <div>
                     <div className="text-[15px] font-semibold text-zinc-950">{v.name}</div>
                     <div className="text-[13px] text-zinc-500">{v.role}</div>
@@ -2702,11 +3000,13 @@ function Testimonials() {
             </AnimatePresence>
           </div>
 
-          {/* RIGHT: branded trip-receipt card */}
+          {/* RIGHT: branded trip-receipt card — fed by transporter (per-trip)
+              reviews from /review/recent, distinct from the editorial site-
+              feedback blockquote on the left. */}
           <div className="relative" style={{ perspective: 1200 }}>
             <AnimatePresence mode="wait">
               <motion.div
-                key={`receipt-${v.name}`}
+                key={`receipt-${r.name}-${r.date}`}
                 initial={{ opacity: 0, rotateY: -8, y: 24 }}
                 animate={{ opacity: 1, rotateY: -2, y: 0 }}
                 exit={{ opacity: 0, rotateY: 6, y: -16 }}
@@ -2746,9 +3046,9 @@ function Testimonials() {
                     {/* Route + date row */}
                     <div className="flex items-baseline justify-between gap-4">
                       <div className="font-[var(--font-display)] text-lg font-semibold tracking-tight text-zinc-950">
-                        {v.route}
+                        {r.route}
                       </div>
-                      <div className="shrink-0 font-mono text-[11px] tabular-nums text-zinc-500">{v.date}</div>
+                      <div className="shrink-0 font-mono text-[11px] tabular-nums text-zinc-500">{r.date}</div>
                     </div>
 
                     {/* Dashed rule */}
@@ -2756,36 +3056,50 @@ function Testimonials() {
 
                     {/* Author block */}
                     <div className="flex items-center gap-3">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${v.avatar} font-semibold text-white shadow-md`}>
-                        {v.initial}
-                      </div>
+                      {r.avatarUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={r.avatarUrl}
+                          alt={r.name}
+                          className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white shadow-md"
+                        />
+                      ) : (
+                        <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${r.avatar} font-semibold text-white shadow-md`}>
+                          {r.initial}
+                        </div>
+                      )}
                       <div className="min-w-0 flex-1">
-                        <div className="truncate text-sm font-semibold text-zinc-950">{v.name}</div>
-                        <div className="truncate text-[11px] text-zinc-500">{v.role}</div>
+                        <div className="truncate text-sm font-semibold text-zinc-950">{r.name}</div>
+                        <div className="truncate text-[11px] text-zinc-500">{r.role}</div>
                       </div>
                       <div className="shrink-0 text-right">
                         <div className="flex items-center gap-0.5 text-amber-500">
-                          {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-3 w-3" />)}
+                          {[1, 2, 3, 4, 5].map((s) => (
+                            <StarIcon
+                              key={s}
+                              className={`h-3 w-3 ${s <= (r.rating ?? 5) ? "" : "text-zinc-200"}`}
+                            />
+                          ))}
                         </div>
-                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-zinc-500">5.0 / 5</div>
+                        <div className="mt-0.5 font-mono text-[10px] tabular-nums text-zinc-500">{(r.rating ?? 5).toFixed(1)} / 5</div>
                       </div>
                     </div>
 
                     {/* Excerpt quote */}
                     <div className="mt-5 rounded-lg bg-zinc-50 p-3.5">
                       <QuoteIcon className="h-4 w-4 text-emerald-500" />
-                      <p className="mt-1 text-[13px] leading-relaxed text-zinc-700">&ldquo;{v.excerpt}&rdquo;</p>
+                      <p className="mt-1 text-[13px] leading-relaxed text-zinc-700">&ldquo;{r.excerpt}&rdquo;</p>
                     </div>
 
                     {/* Stats row */}
                     <div className="mt-5 grid grid-cols-2 gap-3">
                       <div>
                         <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Trips taken</div>
-                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">{v.trips}</div>
+                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">{r.trips ?? "—"}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Member since</div>
-                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">2024</div>
+                        <div className="font-mono text-[9px] uppercase tracking-[0.18em] text-zinc-500">Reviewed</div>
+                        <div className="mt-0.5 font-mono text-base font-semibold tabular-nums text-zinc-950">{r.date.slice(-4)}</div>
                       </div>
                     </div>
 
@@ -2804,7 +3118,7 @@ function Testimonials() {
                         <span key={idx} className="h-full bg-zinc-900" style={{ width: `${w}px` }} />
                       ))}
                     </div>
-                    <div className="mt-1 text-center font-mono text-[9px] tracking-[0.25em] text-zinc-500">SW · {v.initial}{v.trips}{v.date.slice(-4)}</div>
+                    <div className="mt-1 text-center font-mono text-[9px] tracking-[0.25em] text-zinc-500">SW · {r.initial}{r.trips ?? ""}{r.date.slice(-4)}</div>
                   </div>
                 </div>
 
@@ -2850,23 +3164,54 @@ function Testimonials() {
 
 // ─── Feedback — rating breakdown + sentiment chips ──────────────────────────
 
-const ratingDist = [
-  { stars: 5, pct: 86 },
-  { stars: 4, pct: 11 },
-  { stars: 3, pct: 2 },
-  { stars: 2, pct: 1 },
-  { stars: 1, pct: 0 },
-];
+// Seed sentiment counts — purely indicative (no real tagging system yet).
+// Kept proportional to the seed feedback count (~92) so the chips don't
+// scream "we have ten thousand reviews" before we actually do.
 const sentimentChips = [
-  { label: "On-time", count: 11842 },
-  { label: "Clean vehicle", count: 9740 },
-  { label: "Friendly driver", count: 8312 },
-  { label: "Easy booking", count: 7129 },
-  { label: "Safe trip", count: 6890 },
-  { label: "Good value", count: 5403 },
+  { label: "On-time", count: 84 },
+  { label: "Clean vehicle", count: 71 },
+  { label: "Friendly driver", count: 63 },
+  { label: "Easy booking", count: 58 },
+  { label: "Safe trip", count: 52 },
+  { label: "Good value", count: 41 },
 ];
 
 function Feedback() {
+  const reducedFx = useReducedFx();
+  // Site feedback stats — pulled from /feedback/stats. Falls back to gentle
+  // seeds (4.9 / 97 / no count badge) until the first piece of feedback lands.
+  const [siteStats, setSiteStats] = useState<{
+    count: number;
+    avgRating: number | null;
+    distribution: number[];
+    recommendRate: number | null;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    import("@/lib/api").then(({ getSiteFeedbackStats }) =>
+      getSiteFeedbackStats()
+        .then((s) => { if (!cancelled) setSiteStats(s); })
+        .catch(() => { /* keep seed */ }),
+    );
+    return () => { cancelled = true; };
+  }, []);
+
+  const ratingValue = siteStats?.avgRating ?? 4.7;
+  const recommendValue = Math.round(siteStats?.recommendRate ?? 92);
+  const feedbackCount = siteStats?.count ?? 0;
+  // Distribution renders top-down 5★ → 1★. API returns [1★, 2★, 3★, 4★, 5★] pcts.
+  // Seed kept gentle (no impossible 86% five-star) so an empty platform doesn't
+  // brag about ratings it hasn't earned yet.
+  const seedDist: Array<{ stars: number; pct: number }> = [
+    { stars: 5, pct: 72 },
+    { stars: 4, pct: 20 },
+    { stars: 3, pct: 5 },
+    { stars: 2, pct: 2 },
+    { stars: 1, pct: 1 },
+  ];
+  const ratingDistLive: Array<{ stars: number; pct: number }> = siteStats && siteStats.count > 0
+    ? [5, 4, 3, 2, 1].map((stars) => ({ stars, pct: siteStats.distribution[stars - 1] ?? 0 }))
+    : seedDist;
   return (
     <section className="relative overflow-hidden py-24 lg:py-32 text-white"
       style={{ backgroundColor: "#09090b" }}
@@ -2895,20 +3240,23 @@ function Feedback() {
         }}
       />
 
-      {/* Slow drifting emerald glow, off-axis from CTA */}
-      <motion.div
-        className="pointer-events-none absolute -top-32 left-[-8%] h-[520px] w-[520px] rounded-full blur-[140px]"
-        style={{ background: "radial-gradient(circle, rgba(16,185,129,0.28), transparent 70%)" }}
-        animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.06, 1] }}
-        transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-      />
-      {/* Warm amber counterweight — rating/star warmth */}
-      <motion.div
-        className="pointer-events-none absolute -bottom-32 right-[-8%] h-[440px] w-[440px] rounded-full blur-[130px]"
-        style={{ background: "radial-gradient(circle, rgba(251,191,36,0.18), transparent 70%)" }}
-        animate={{ x: [0, -20, 0], y: [0, 15, 0], scale: [1.04, 0.96, 1.04] }}
-        transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      />
+      {/* Slow drifting emerald glow + warm amber counterweight — desktop only */}
+      {!reducedFx && (
+        <>
+          <motion.div
+            className="pointer-events-none absolute -top-32 left-[-8%] h-[520px] w-[520px] rounded-full blur-[140px]"
+            style={{ background: "radial-gradient(circle, rgba(16,185,129,0.28), transparent 70%)" }}
+            animate={{ x: [0, 30, 0], y: [0, -20, 0], scale: [1, 1.06, 1] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="pointer-events-none absolute -bottom-32 right-[-8%] h-[440px] w-[440px] rounded-full blur-[130px]"
+            style={{ background: "radial-gradient(circle, rgba(251,191,36,0.18), transparent 70%)" }}
+            animate={{ x: [0, -20, 0], y: [0, 15, 0], scale: [1.04, 0.96, 1.04] }}
+            transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+          />
+        </>
+      )}
 
       <LiveDots count={22} color="emerald" dark />
       <div className="grain pointer-events-none absolute inset-0 opacity-40" />
@@ -2925,7 +3273,11 @@ function Feedback() {
             <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-300">What riders say</span>
           </div>
           <h2 className="mt-4 font-[var(--font-display)] text-4xl md:text-5xl text-white tracking-tight leading-[1.05]">
-            <span className="italic text-emerald-300">12,438</span> verified ratings. One number.
+            {feedbackCount > 0 ? (
+              <><span className="italic text-emerald-300">{feedbackCount.toLocaleString()}</span> {feedbackCount === 1 ? "rider has spoken" : "riders have spoken"}. One number.</>
+            ) : (
+              <>What our <span className="italic text-emerald-300">riders</span> think.</>
+            )}
           </h2>
         </Reveal>
 
@@ -2947,27 +3299,33 @@ function Feedback() {
                   textShadow: "0 0 80px rgba(16,185,129,0.35)",
                 }}
               >
-                <CountUp to={4.9} decimals={1} duration={1800} />
+                <CountUp to={ratingValue} decimals={1} duration={1800} />
               </div>
             </div>
             <div className="mt-2 flex items-center gap-1 text-amber-400">
               {[0, 1, 2, 3, 4].map((s) => <StarIcon key={s} className="h-5 w-5 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]" />)}
               <span className="ml-2 text-sm text-zinc-400">out of 5</span>
             </div>
-            <div className="mt-3 text-sm text-zinc-400">Across <span className="font-mono font-semibold text-zinc-200">12,438</span> verified trips · last 30 days</div>
+            <div className="mt-3 text-sm text-zinc-400">
+              {feedbackCount > 0 ? (
+                <>Based on <span className="font-mono font-semibold text-zinc-200">{feedbackCount.toLocaleString()}</span> {feedbackCount === 1 ? "piece of" : "pieces of"} rider feedback</>
+              ) : (
+                <>Submit your own feedback from the dashboard to shape this number</>
+              )}
+            </div>
 
-            {/* Data-row micro stats */}
+            {/* Data-row micro stats — both site-feedback derived */}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:max-w-sm">
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
-                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">On-time</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Would recommend</div>
                 <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">
-                  <CountUp to={97.2} decimals={1} suffix="%" duration={1600} />
+                  <CountUp to={recommendValue} suffix="%" duration={1600} />
                 </div>
               </div>
               <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3 backdrop-blur">
-                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Would rebook</div>
+                <div className="font-mono text-[10px] uppercase tracking-[0.18em] text-zinc-500">Five-star</div>
                 <div className="mt-1 font-mono text-xl font-semibold tabular-nums text-white">
-                  <CountUp to={94} suffix="%" duration={1600} />
+                  <CountUp to={Math.round(siteStats?.distribution[4] ?? 72)} suffix="%" duration={1600} />
                 </div>
               </div>
             </div>
@@ -2977,10 +3335,10 @@ function Feedback() {
           <div>
             <div className="mb-4 flex items-center justify-between">
               <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-500">Rating distribution</div>
-              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-600">Last 30d</div>
+              <div className="font-mono text-[11px] uppercase tracking-[0.18em] text-zinc-600">{feedbackCount > 0 ? "All-time" : "Sample"}</div>
             </div>
             <div className="space-y-2.5 rounded-2xl border border-white/10 bg-white/[0.02] p-5 backdrop-blur-sm">
-              {ratingDist.map((r, i) => (
+              {ratingDistLive.map((r, i) => (
                 <Reveal key={r.stars} delay={i * 0.06}>
                   <div className="flex items-center gap-4">
                     <div className="flex w-10 items-center gap-1 font-mono text-xs text-zinc-400 tabular-nums">
@@ -3039,22 +3397,37 @@ function Feedback() {
 
 function CTA() {
   const t = useT();
+  const reducedFx = useReducedFx();
   return (
     <section className="relative overflow-hidden bg-zinc-950 py-28 lg:py-36">
       <LiveAurora tones={["emerald", "cool", "violet"]} intensity={0.55} dark />
       <LiveDots count={36} color="emerald" dark />
       <LiveRibbon dark />
       <div className="grain pointer-events-none absolute inset-0 opacity-50" />
-      <motion.div
-        className="pointer-events-none absolute -bottom-40 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full bg-emerald-600/30 blur-[140px]"
-        animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.85, 0.6] }}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="pointer-events-none absolute -top-20 right-[10%] h-[300px] w-[300px] rounded-full bg-teal-500/20 blur-[100px]"
-        animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-      />
+      {!reducedFx ? (
+        <>
+          <motion.div
+            className="pointer-events-none absolute -bottom-40 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full bg-emerald-600/30 blur-[140px]"
+            animate={{ scale: [1, 1.06, 1], opacity: [0.6, 0.85, 0.6] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="pointer-events-none absolute -top-20 right-[10%] h-[300px] w-[300px] rounded-full bg-teal-500/20 blur-[100px]"
+            animate={{ x: [0, 20, 0], y: [0, -10, 0] }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </>
+      ) : (
+        // Mobile: a single static glow keeps the section warm without the
+        // animated 140px blur cost.
+        <div
+          className="pointer-events-none absolute -bottom-40 left-1/2 h-[640px] w-[640px] -translate-x-1/2 rounded-full bg-emerald-600/25"
+          style={{
+            filter: "blur(80px)",
+            opacity: 0.7,
+          }}
+        />
+      )}
 
       <div className="relative z-10 mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
         <Reveal>

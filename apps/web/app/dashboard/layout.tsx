@@ -8,7 +8,7 @@ import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 import {
   MapPinIcon, DashboardIcon, CarIcon,
   BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, LogOutIcon,
-  ChevronDownIcon,
+  ChevronDownIcon, StarIcon,
 } from "@/app/dashboard/_Components/Icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getCurrentUser, logout, isTokenExpired, clearAuthData } from "@/lib/auth";
@@ -20,6 +20,7 @@ const travelerNav = [
   { key: "/dashboard", label: "Search Rides", icon: DashboardIcon },
   { key: "/dashboard/my-bookings", label: "My Bookings", icon: BookOpenIcon },
   { key: "/dashboard/announcements", label: "Announcements", icon: MegaphoneIcon },
+  { key: "/dashboard/feedback", label: "Feedback", icon: StarIcon },
   { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
   { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -30,6 +31,7 @@ const transporterNav = [
   { key: "/dashboard/routes", label: "Routes", icon: MapPinIcon },
   { key: "/dashboard/bookings", label: "Bookings", icon: BookOpenIcon },
   { key: "/dashboard/t-announcements", label: "Announcements", icon: MegaphoneIcon },
+  { key: "/dashboard/feedback", label: "Feedback", icon: StarIcon },
   { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
   { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -38,6 +40,7 @@ const travelerTitles: Record<string, string> = {
   "/dashboard": "Search Rides",
   "/dashboard/my-bookings": "My Bookings",
   "/dashboard/announcements": "Announcements",
+  "/dashboard/feedback": "Feedback",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };
@@ -48,6 +51,7 @@ const transporterTitles: Record<string, string> = {
   "/dashboard/routes": "Routes",
   "/dashboard/bookings": "Bookings",
   "/dashboard/t-announcements": "Announcements",
+  "/dashboard/feedback": "Feedback",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };

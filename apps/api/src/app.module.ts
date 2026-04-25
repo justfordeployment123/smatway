@@ -14,6 +14,8 @@ import { BookingModule } from './modules/booking/booking.module';
 import { VehicleModule } from './modules/vehicle/vehicle.module';
 import { ReviewModule } from './modules/review/review.module';
 import { ChatModule } from './modules/chat/chat.module';
+import { PlatformModule } from './modules/platform/platform.module';
+import { FeedbackModule } from './modules/feedback/feedback.module';
 
 @Module({
   imports: [
@@ -27,6 +29,8 @@ import { ChatModule } from './modules/chat/chat.module';
     VehicleModule,
     ReviewModule,
     ChatModule,
+    PlatformModule,
+    FeedbackModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

@@ -352,6 +352,94 @@ export async function getRecentReviews(limit: number = 6): Promise<{ reviews: an
   return apiGet<{ reviews: any[] }>(`/review/recent?limit=${limit}`);
 }
 
+/**
+ * Public platform overview — real, live aggregate counts plus latest reviews.
+ * Used by the auth left panel so we never display fabricated numbers.
+ */
+export type PlatformOverview = {
+  stats: {
+    travelers: number;
+    transporters: number;
+    activeRoutes: number;
+    completedTrips: number;
+    reviews: number;
+    avgRating: number | null;
+    onTimeRate: number | null;
+  };
+  recentReviews: Array<{
+    id: string;
+    rating: number;
+    feedback: string | null;
+    createdAt: string;
+    traveler: { name: string | null; country: string | null } | null;
+    transporter: { name: string | null } | null;
+  }>;
+};
+
+export async function getPlatformOverview(reviewLimit: number = 4): Promise<PlatformOverview> {
+  return apiGet<PlatformOverview>(`/platform/overview?reviewLimit=${reviewLimit}`);
+}
+
+// ─── Popular routes (public, marketing homepage bento) ────────────────────────
+export type PopularRoute = {
+  from: string;
+  to: string;
+  fromCountry: string;
+  toCountry: string;
+  bookings: number;
+  minPrice: number;
+  currency: string;
+  vehicle: string;
+  availableSeats: number;
+  nextDepartureMinutes: number | null;
+};
+
+export async function getPopularRoutes(limit: number = 4): Promise<{ routes: PopularRoute[] }> {
+  return apiGet<{ routes: PopularRoute[] }>(`/platform/popular-routes?limit=${limit}`);
+}
+
+// ─── Site feedback (about SmatWay itself, surfaced on homepage) ──────────────
+export type SiteFeedbackUser = {
+  id: string;
+  name: string | null;
+  country: string | null;
+  accountType: "TRAVELER" | "TRANSPORTER" | null;
+  avatarUrl: string | null;
+};
+
+export type SiteFeedbackEntry = {
+  id: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  user?: SiteFeedbackUser | null;
+};
+
+export type SiteFeedbackStats = {
+  count: number;
+  avgRating: number | null;
+  distribution: number[]; // [1★pct, 2★pct, 3★pct, 4★pct, 5★pct]
+  recommendRate: number | null;
+};
+
+export async function createSiteFeedback(data: { rating: number; comment: string }): Promise<{
+  id: string; rating: number; comment: string; createdAt: string;
+}> {
+  return apiPost('/feedback', data);
+}
+
+export async function getMySiteFeedback(): Promise<{ feedback: SiteFeedbackEntry[] }> {
+  return apiGet('/feedback/mine');
+}
+
+export async function getRecentSiteFeedback(limit: number = 6): Promise<{ feedback: SiteFeedbackEntry[] }> {
+  return apiGet(`/feedback/recent?limit=${limit}`);
+}
+
+export async function getSiteFeedbackStats(): Promise<SiteFeedbackStats> {
+  return apiGet('/feedback/stats');
+}
+
 // Vehicle
 export async function createVehicle(data: {
   name: string;

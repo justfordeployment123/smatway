@@ -94,26 +94,51 @@ export class ReviewService {
     const reviews = await this.prisma.review.findMany({
       where: { feedback: { not: null } },
       include: {
-        traveler: { select: { id: true, name: true, country: true } },
+        traveler: {
+          select: {
+            id: true,
+            name: true,
+            country: true,
+            avatarUrl: true,
+            profileImageUrl: true,
+          },
+        },
         transporter: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: cappedLimit,
     });
 
-    // Scrub empty-string feedback client-filter just in case a blank slipped through
-    return {
-      reviews: reviews
-        .filter(r => r.feedback && r.feedback.trim().length > 0)
-        .map(r => ({
+    // Resolve each traveler's presigned avatar URL in parallel. Falls back
+    // across profileImageUrl → avatarUrl. The frontend uses this to render
+    // a real photo on the trip-receipt card; the gradient+initial chip stays
+    // as the fallback when nothing is on file.
+    const filtered = reviews.filter(
+      (r) => r.feedback && r.feedback.trim().length > 0,
+    );
+    const withAvatars = await Promise.all(
+      filtered.map(async (r) => {
+        const rawAvatar = r.traveler.profileImageUrl || r.traveler.avatarUrl || null;
+        const avatarUrl = rawAvatar
+          ? await this.storageService.resolveImageUrl(rawAvatar).catch(() => null)
+          : null;
+        return {
           id: r.id,
           rating: r.rating,
           feedback: r.feedback,
           createdAt: r.createdAt,
-          traveler: r.traveler,
+          traveler: {
+            id: r.traveler.id,
+            name: r.traveler.name,
+            country: r.traveler.country,
+            avatarUrl,
+          },
           transporter: r.transporter,
-        })),
-    };
+        };
+      }),
+    );
+
+    return { reviews: withAvatars };
   }
 
   async getTransporterFullProfile(transporterId: string) {

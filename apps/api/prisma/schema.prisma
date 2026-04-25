@@ -79,6 +79,7 @@ model User {
   travelerChats  Chat[]               @relation("TravelerChats")
   transporterChats Chat[]             @relation("TransporterChats")
   messages       Message[]
+  siteFeedback   SiteFeedback[]
 }
 
 model AuthProvider {
@@ -262,6 +263,22 @@ model Review {
 
   @@index([transporterId])
   @@index([travelerId])
+}
+
+// Site-wide feedback about SmatWay itself (distinct from per-booking Review).
+// Submitted from the dashboard /feedback page; surfaced on the marketing
+// homepage Testimonials rotator alongside trip reviews.
+model SiteFeedback {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rating    Int      // 1..5
+  comment   String
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 model Chat {
