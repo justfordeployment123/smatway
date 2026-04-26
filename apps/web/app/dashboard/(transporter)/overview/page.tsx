@@ -12,9 +12,17 @@ import {
   Page, Reveal, PageHeader, StatStrip, EmptyState, Skeleton,
   PrimaryButton, StatusPill, spring,
 } from "@/app/dashboard/_Components/ui";
-import { getMyVehicles, getMyRoutes, getTransportBookings, getMyPayouts, type MyPayout } from "@/lib/api";
+import {
+  getMyVehicles, getMyRoutes, getTransportBookings, getMyPayouts,
+  getMyInsights,
+  type MyPayout, type TransporterInsights,
+} from "@/lib/api";
 import { formatBookingStatus } from "@/lib/bookingStatus";
 import { formatPrice } from "@/lib/currencies";
+import {
+  ChartCard, ChartSummary, PeriodSelector,
+  BookingsTrendChart, RevenueLineChart, StatusDonut, TopRoutesBar,
+} from "@/app/dashboard/_Components/Charts";
 
 export default function TransporterDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -22,6 +30,9 @@ export default function TransporterDashboardPage() {
   const [routes, setRoutes] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [payouts, setPayouts] = useState<MyPayout[]>([]);
+  const [insights, setInsights] = useState<TransporterInsights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
+  const [days, setDays] = useState(14);
 
   useEffect(() => {
     Promise.all([
@@ -32,16 +43,31 @@ export default function TransporterDashboardPage() {
       // doesn't blank out the whole dashboard for a transporter who hasn't
       // configured their payout account yet.
       getMyPayouts().catch(() => ({ payouts: [] })),
+      getMyInsights(14).catch(() => null),
     ])
-      .then(([v, r, b, p]) => {
+      .then(([v, r, b, p, i]) => {
         setVehicles(v || []);
         setRoutes(r || []);
         setBookings(b || []);
         setPayouts(p?.payouts ?? []);
+        setInsights(i);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Refetch insights when the user toggles the period — keeps the rest of
+  // the dashboard from flickering since vehicles/routes/payouts don't depend
+  // on the time window.
+  useEffect(() => {
+    if (loading) return;
+    setInsightsLoading(true);
+    getMyInsights(days)
+      .then(setInsights)
+      .catch(() => {})
+      .finally(() => setInsightsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [days]);
 
   const activeRoutes = routes.filter((r) => r.status === "ACTIVE").length;
   const pendingBookings = bookings.filter((b) => b.status === "PENDING").length;
@@ -73,6 +99,56 @@ export default function TransporterDashboardPage() {
   const isEmpty = !loading && vehicles.length === 0 && routes.length === 0;
   const recentBookings = bookings.slice(0, 4);
 
+  // Pick the dominant earnings currency across the time-series (falls back
+  // to the StatStrip's dominant currency for the empty-window case).
+  const earningsTotalsByCur = new Map<string, number>();
+  if (insights) {
+    for (const d of insights.series) {
+      for (const [cur, val] of Object.entries(d.earningsByCurrency)) {
+        earningsTotalsByCur.set(cur, (earningsTotalsByCur.get(cur) ?? 0) + val);
+      }
+    }
+  }
+  const insightsCurrency =
+    [...earningsTotalsByCur.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ??
+    releasedCurrency;
+  const earningsSeries = (insights?.series ?? []).map((d) => ({
+    date: d.date,
+    revenue: d.earningsByCurrency[insightsCurrency] ?? 0,
+  }));
+  const totalEarnings = earningsSeries.reduce((a, d) => a + d.revenue, 0);
+  const totalBookings = (insights?.series ?? []).reduce(
+    (a, d) => a + d.bookings,
+    0,
+  );
+  const totalCompleted = (insights?.series ?? []).reduce(
+    (a, d) => a + d.completedBookings,
+    0,
+  );
+  const totalPaid = (insights?.series ?? []).reduce(
+    (a, d) => a + d.paidBookings,
+    0,
+  );
+  const deltas = insights
+    ? {
+        bookings: pctDelta(totalBookings, insights.prior.bookings),
+        completed: pctDelta(totalCompleted, insights.prior.completedBookings),
+        paid: pctDelta(totalPaid, insights.prior.paidBookings),
+        earnings: pctDelta(
+          totalEarnings,
+          insights.prior.earningsByCurrency[insightsCurrency] ?? 0,
+        ),
+      }
+    : null;
+  // Adapt the BookingsTrendChart's expected `signups` series — we don't
+  // surface signups to a transporter, so we feed it `completedBookings`
+  // (a meaningful second line for them) and rename via the summary chips.
+  const trendSeries = (insights?.series ?? []).map((d) => ({
+    date: d.date,
+    bookings: d.bookings,
+    signups: d.completedBookings,
+  }));
+
   return (
     <Page>
       <PageHeader
@@ -80,9 +156,12 @@ export default function TransporterDashboardPage() {
         title="Welcome back"
         subtitle="A quick look at your fleet, routes, and activity from today."
         action={
-          <PrimaryButton href="/dashboard/routes/add" icon={<PlusIcon className="w-4 h-4" />}>
-            New route
-          </PrimaryButton>
+          <div className="flex items-center gap-2">
+            <PeriodSelector value={days} onChange={setDays} />
+            <PrimaryButton href="/dashboard/routes/add" icon={<PlusIcon className="w-4 h-4" />}>
+              New route
+            </PrimaryButton>
+          </div>
         }
       />
 
@@ -133,6 +212,116 @@ export default function TransporterDashboardPage() {
         <Reveal className="mb-8">
           <GettingStarted />
         </Reveal>
+      )}
+
+      {/* Insights: charts only render once the transporter has any routes /
+          bookings — otherwise the empty hero (GettingStarted) is the focus. */}
+      {!isEmpty && (
+        <>
+          <Reveal className="mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <ChartCard
+                title="Activity trend"
+                hint={`Bookings and completed trips · last ${days} days`}
+                className="lg:col-span-2"
+              >
+                {loading || !insights ? (
+                  <SummarySkeleton />
+                ) : (
+                  <ChartSummary
+                    items={[
+                      {
+                        label: "Bookings",
+                        value: totalBookings,
+                        delta: deltas?.bookings,
+                        tone: "emerald",
+                      },
+                      {
+                        label: "Completed",
+                        value: totalCompleted,
+                        delta: deltas?.completed,
+                        tone: "blue",
+                      },
+                    ]}
+                  />
+                )}
+                <ChartFrame
+                  loading={loading || !insights}
+                  refreshing={insightsLoading}
+                  height={260}
+                >
+                  {insights && <BookingsTrendChart data={trendSeries} />}
+                </ChartFrame>
+              </ChartCard>
+
+              <ChartCard title="Booking status" hint="Across your bookings">
+                <ChartFrame
+                  loading={loading || !insights}
+                  refreshing={false}
+                  height={260}
+                >
+                  {insights && (
+                    <StatusDonut data={insights.statusBreakdown} />
+                  )}
+                </ChartFrame>
+              </ChartCard>
+            </div>
+          </Reveal>
+
+          <Reveal className="mb-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <ChartCard
+                title="Earnings"
+                hint={`Released payouts · last ${days} days`}
+                className="lg:col-span-2"
+              >
+                {loading || !insights ? (
+                  <SummarySkeleton />
+                ) : (
+                  <ChartSummary
+                    items={[
+                      {
+                        label: `Earnings (${insightsCurrency})`,
+                        value: totalEarnings,
+                        delta: deltas?.earnings,
+                        tone: "violet",
+                        formatter: (v) => formatPrice(Number(v), insightsCurrency),
+                      },
+                      {
+                        label: "Paid bookings",
+                        value: totalPaid,
+                        delta: deltas?.paid,
+                        tone: "emerald",
+                      },
+                    ]}
+                  />
+                )}
+                <ChartFrame
+                  loading={loading || !insights}
+                  refreshing={insightsLoading}
+                  height={260}
+                >
+                  {insights && (
+                    <RevenueLineChart
+                      data={earningsSeries}
+                      currency={insightsCurrency}
+                    />
+                  )}
+                </ChartFrame>
+              </ChartCard>
+
+              <ChartCard title="Top routes" hint="Your most booked">
+                <ChartFrame
+                  loading={loading || !insights}
+                  refreshing={insightsLoading}
+                  height={200}
+                >
+                  {insights && <TopRoutesBar data={insights.topRoutes} />}
+                </ChartFrame>
+              </ChartCard>
+            </div>
+          </Reveal>
+        </>
       )}
 
       {!isEmpty && (
@@ -350,6 +539,64 @@ function SnapshotTile({ icon, label, value }: { icon: React.ReactNode; label: st
         <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
       </div>
       <p className="text-xl md:text-2xl font-semibold text-zinc-950 tabular-nums tracking-tight">{value}</p>
+    </div>
+  );
+}
+
+// ─── Chart helpers ───────────────────────────────────────────────────────────
+
+function pctDelta(current: number, prior: number): number | null {
+  if (prior === 0) return current === 0 ? 0 : null;
+  return Math.round(((current - prior) / prior) * 100);
+}
+
+// Mirror of admin's ChartFrame — keeps the Recharts container mounted
+// across data refetches so the chart never goes blank during a period
+// switch (Recharts' ResponsiveContainer caches its parent measurement at
+// mount and a fresh remount often draws zero-sized).
+function ChartFrame({
+  loading,
+  refreshing,
+  height,
+  children,
+}: {
+  loading: boolean;
+  refreshing: boolean;
+  height: number;
+  children: React.ReactNode;
+}) {
+  if (loading) {
+    return (
+      <div
+        className="rounded-lg bg-slate-100 animate-pulse mx-2"
+        style={{ height }}
+      />
+    );
+  }
+  return (
+    <div className="relative" style={{ minHeight: height }}>
+      {children}
+      {refreshing && (
+        <div className="absolute inset-0 grid place-items-center bg-white/60 backdrop-blur-[2px] rounded-xl pointer-events-none">
+          <span className="inline-flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-white ring-1 ring-slate-200 rounded-full px-2.5 py-1 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            Updating
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <div className="flex gap-7 px-3 pt-1 pb-4">
+      {[1, 2].map((i) => (
+        <div key={i} className="space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-7 w-24" />
+        </div>
+      ))}
     </div>
   );
 }

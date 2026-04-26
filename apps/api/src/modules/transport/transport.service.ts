@@ -431,4 +431,222 @@ export class TransportService {
       data: { status: TransportStatus.INACTIVE },
     });
   }
+
+  /**
+   * Time-series + breakdowns for the transporter dashboard charts.
+   * Mirrors the admin /admin/overview/insights shape so the same chart
+   * primitives can be reused on the web side. All counts are scoped to
+   * the authenticated transporter's routes; earnings come from the
+   * Payout table (releasedAt timestamp) so the line tracks money that
+   * actually landed in the transporter's bank.
+   */
+  async getInsights(transporterId: string, daysParam?: string) {
+    const days = clampInsightsDays(daysParam);
+    const start = startOfDayUtc(
+      new Date(Date.now() - (days - 1) * 24 * 60 * 60 * 1000),
+    );
+    const priorStart = startOfDayUtc(
+      new Date(start.getTime() - days * 24 * 60 * 60 * 1000),
+    );
+
+    type DayRow = { day: Date; count: bigint };
+    type RevRow = { day: Date; currency: string; total: string | number };
+
+    const [
+      bookingRows,
+      paidBookingRows,
+      completedBookingRows,
+      earningsRows,
+      statusRows,
+      paymentRows,
+      topRouteRows,
+      priorBookings,
+      priorPaidBookings,
+      priorCompletedBookings,
+      priorEarningsRows,
+    ] = await Promise.all([
+      this.prisma.$queryRaw<DayRow[]>`
+        SELECT DATE_TRUNC('day', b."createdAt")::date AS day, COUNT(*)::bigint AS count
+        FROM "Booking" b
+        JOIN "Transport" t ON t."id" = b."transportId"
+        WHERE t."transporterId" = ${transporterId} AND b."createdAt" >= ${start}
+        GROUP BY day
+        ORDER BY day ASC
+      `,
+      this.prisma.$queryRaw<DayRow[]>`
+        SELECT DATE_TRUNC('day', b."createdAt")::date AS day, COUNT(*)::bigint AS count
+        FROM "Booking" b
+        JOIN "Transport" t ON t."id" = b."transportId"
+        WHERE t."transporterId" = ${transporterId}
+          AND b."paymentStatus" = 'PAID'
+          AND b."createdAt" >= ${start}
+        GROUP BY day
+        ORDER BY day ASC
+      `,
+      this.prisma.$queryRaw<DayRow[]>`
+        SELECT DATE_TRUNC('day', b."createdAt")::date AS day, COUNT(*)::bigint AS count
+        FROM "Booking" b
+        JOIN "Transport" t ON t."id" = b."transportId"
+        WHERE t."transporterId" = ${transporterId}
+          AND b."status" = 'COMPLETED'
+          AND b."createdAt" >= ${start}
+        GROUP BY day
+        ORDER BY day ASC
+      `,
+      this.prisma.$queryRaw<RevRow[]>`
+        SELECT DATE_TRUNC('day', "releasedAt")::date AS day,
+               "currency" AS currency,
+               SUM("netAmount")::numeric AS total
+        FROM "Payout"
+        WHERE "transporterId" = ${transporterId}
+          AND "status" = 'RELEASED'
+          AND "releasedAt" >= ${start}
+        GROUP BY day, currency
+        ORDER BY day ASC
+      `,
+      this.prisma.booking.groupBy({
+        by: ['status'],
+        where: { transport: { transporterId } },
+        _count: { _all: true },
+      }),
+      this.prisma.booking.groupBy({
+        by: ['paymentStatus'],
+        where: { transport: { transporterId } },
+        _count: { _all: true },
+      }),
+      this.prisma.booking.groupBy({
+        by: ['transportId'],
+        where: { transport: { transporterId } },
+        _count: { _all: true },
+        orderBy: { _count: { transportId: 'desc' } },
+        take: 5,
+      }),
+      this.prisma.booking.count({
+        where: {
+          transport: { transporterId },
+          createdAt: { gte: priorStart, lt: start },
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          transport: { transporterId },
+          paymentStatus: 'PAID',
+          createdAt: { gte: priorStart, lt: start },
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          transport: { transporterId },
+          status: 'COMPLETED',
+          createdAt: { gte: priorStart, lt: start },
+        },
+      }),
+      this.prisma.$queryRaw<Array<{ currency: string; total: string | number }>>`
+        SELECT "currency" AS currency,
+               SUM("netAmount")::numeric AS total
+        FROM "Payout"
+        WHERE "transporterId" = ${transporterId}
+          AND "status" = 'RELEASED'
+          AND "releasedAt" >= ${priorStart}
+          AND "releasedAt" < ${start}
+        GROUP BY currency
+      `,
+    ]);
+
+    const bookingsByDay = new Map<string, number>();
+    for (const r of bookingRows) bookingsByDay.set(toIsoDate(r.day), Number(r.count));
+
+    const paidByDay = new Map<string, number>();
+    for (const r of paidBookingRows) paidByDay.set(toIsoDate(r.day), Number(r.count));
+
+    const completedByDay = new Map<string, number>();
+    for (const r of completedBookingRows)
+      completedByDay.set(toIsoDate(r.day), Number(r.count));
+
+    const earningsByDay = new Map<string, Record<string, number>>();
+    for (const r of earningsRows) {
+      const key = toIsoDate(r.day);
+      const bucket = earningsByDay.get(key) ?? {};
+      bucket[r.currency] = (bucket[r.currency] ?? 0) + Number(r.total);
+      earningsByDay.set(key, bucket);
+    }
+
+    const priorEarningsByCurrency: Record<string, number> = {};
+    for (const r of priorEarningsRows) {
+      priorEarningsByCurrency[r.currency] =
+        (priorEarningsByCurrency[r.currency] ?? 0) + Number(r.total);
+    }
+
+    const series: Array<{
+      date: string;
+      bookings: number;
+      paidBookings: number;
+      completedBookings: number;
+      earningsByCurrency: Record<string, number>;
+    }> = [];
+    for (let i = 0; i < days; i++) {
+      const d = startOfDayUtc(new Date(start.getTime() + i * 24 * 60 * 60 * 1000));
+      const key = toIsoDate(d);
+      series.push({
+        date: key,
+        bookings: bookingsByDay.get(key) ?? 0,
+        paidBookings: paidByDay.get(key) ?? 0,
+        completedBookings: completedByDay.get(key) ?? 0,
+        earningsByCurrency: earningsByDay.get(key) ?? {},
+      });
+    }
+
+    const transports = topRouteRows.length
+      ? await this.prisma.transport.findMany({
+          where: { id: { in: topRouteRows.map((r) => r.transportId) } },
+          select: { id: true, departureCity: true, destinationCity: true },
+        })
+      : [];
+    const transportMap = new Map(transports.map((t) => [t.id, t]));
+
+    return {
+      days,
+      series,
+      prior: {
+        bookings: priorBookings,
+        paidBookings: priorPaidBookings,
+        completedBookings: priorCompletedBookings,
+        earningsByCurrency: priorEarningsByCurrency,
+      },
+      statusBreakdown: statusRows.map((r) => ({
+        status: r.status,
+        count: r._count._all,
+      })),
+      paymentBreakdown: paymentRows.map((r) => ({
+        paymentStatus: r.paymentStatus,
+        count: r._count._all,
+      })),
+      topRoutes: topRouteRows
+        .map((r) => {
+          const t = transportMap.get(r.transportId);
+          if (!t) return null;
+          return {
+            transportId: t.id,
+            departureCity: t.departureCity,
+            destinationCity: t.destinationCity,
+            bookings: r._count._all,
+          };
+        })
+        .filter((x): x is NonNullable<typeof x> => x !== null),
+    };
+  }
+}
+
+function clampInsightsDays(raw: string | undefined): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return 14;
+  return Math.min(90, Math.max(7, Math.floor(n)));
+}
+
+function startOfDayUtc(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+function toIsoDate(d: Date): string {
+  return d.toISOString().slice(0, 10);
 }

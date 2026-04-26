@@ -29,6 +29,12 @@ export class TransportController {
     return this.transportService.myRoutes(user.id);
   }
 
+  @Get('my/insights')
+  @UseGuards(JwtAuthGuard)
+  myInsights(@CurrentUser() user: User, @Query('days') days?: string) {
+    return this.transportService.getInsights(user.id, days);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.transportService.findOne(id);

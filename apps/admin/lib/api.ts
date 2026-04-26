@@ -116,6 +116,43 @@ export async function getAdminOverview(): Promise<AdminOverview> {
   return get('/admin/overview');
 }
 
+export interface AdminInsights {
+  days: number;
+  series: Array<{
+    date: string;
+    bookings: number;
+    signups: number;
+    paidBookings: number;
+    routesCreated: number;
+    revenueByCurrency: Record<string, number>;
+  }>;
+  prior: {
+    bookings: number;
+    signups: number;
+    paidBookings: number;
+    routesCreated: number;
+    revenueByCurrency: Record<string, number>;
+  };
+  statusBreakdown: Array<{
+    status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
+    count: number;
+  }>;
+  paymentBreakdown: Array<{
+    paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+    count: number;
+  }>;
+  topRoutes: Array<{
+    transportId: string;
+    departureCity: string;
+    destinationCity: string;
+    bookings: number;
+  }>;
+}
+
+export async function getAdminInsights(days = 14): Promise<AdminInsights> {
+  return get(`/admin/overview/insights?days=${days}`);
+}
+
 // ─── Users ───────────────────────────────────────────────────────────────────
 
 export interface AdminUserRow {

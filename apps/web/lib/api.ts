@@ -309,6 +309,43 @@ export async function getMyRoutes(): Promise<any[]> {
   return apiGet<any[]>('/transport/my');
 }
 
+// ─── Transporter dashboard insights ──────────────────────────────────────────
+
+export interface TransporterInsights {
+  days: number;
+  series: Array<{
+    date: string;
+    bookings: number;
+    paidBookings: number;
+    completedBookings: number;
+    earningsByCurrency: Record<string, number>;
+  }>;
+  prior: {
+    bookings: number;
+    paidBookings: number;
+    completedBookings: number;
+    earningsByCurrency: Record<string, number>;
+  };
+  statusBreakdown: Array<{
+    status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'CANCELLED' | 'COMPLETED';
+    count: number;
+  }>;
+  paymentBreakdown: Array<{
+    paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+    count: number;
+  }>;
+  topRoutes: Array<{
+    transportId: string;
+    departureCity: string;
+    destinationCity: string;
+    bookings: number;
+  }>;
+}
+
+export async function getMyInsights(days = 14): Promise<TransporterInsights> {
+  return apiGet<TransporterInsights>(`/transport/my/insights?days=${days}`);
+}
+
 /**
  * Patch a route. Send only the fields you want to change; everything else
  * stays as-is. Used for the inline group-ride threshold edit on the routes
