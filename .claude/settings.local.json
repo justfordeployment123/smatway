@@ -23,7 +23,8 @@
       "Bash(echo \"---admin exit $?---\")",
       "Read(//tmp/**)",
       "Bash(git -C \"D:/CODE/Projects/Markhor Systems Projects/smatway\" log --oneline -1 -- apps/api/src/main.ts apps/api/src/app.module.ts)",
-      "Bash(git -C \"D:/CODE/Projects/Markhor Systems Projects/smatway\" diff HEAD -- apps/api/src/main.ts apps/api/src/app.module.ts)"
+      "Bash(git -C \"D:/CODE/Projects/Markhor Systems Projects/smatway\" diff HEAD -- apps/api/src/main.ts apps/api/src/app.module.ts)",
+      "mcp__code-review-graph__semantic_search_nodes_tool"
     ]
   },
   "enabledMcpjsonServers": [
