@@ -354,7 +354,7 @@ export function BookingsTrendChart({
   return (
     <div className="h-[260px] w-full">
       <ResponsiveContainer>
-        <AreaChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+        <AreaChart data={data} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
           <defs>
             <linearGradient id="gradBookings" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={PALETTE.emerald} stopOpacity={0.4} />
@@ -398,6 +398,7 @@ export function BookingsTrendChart({
             axisLine={false}
             allowDecimals={false}
             width={28}
+            domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.25)]}
           />
           <Tooltip
             content={<CustomTooltip />}
@@ -405,7 +406,7 @@ export function BookingsTrendChart({
             cursor={{ stroke: "#cbd5e1", strokeDasharray: "3 3" }}
           />
           <Area
-            type="natural"
+            type="monotone"
             dataKey="signups"
             stroke={PALETTE.blue}
             strokeWidth={2}
@@ -414,7 +415,7 @@ export function BookingsTrendChart({
             isAnimationActive={false}
           />
           <Area
-            type="natural"
+            type="monotone"
             dataKey="bookings"
             stroke={PALETTE.emerald}
             strokeWidth={2.5}
@@ -445,7 +446,7 @@ export function RevenueLineChart({
   return (
     <div className="h-[260px] w-full">
       <ResponsiveContainer>
-        <AreaChart data={data} margin={{ top: 12, right: 16, left: 0, bottom: 8 }}>
+        <AreaChart data={data} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
           <defs>
             <linearGradient id="gradRevenue" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={PALETTE.violet} stopOpacity={0.4} />
@@ -484,6 +485,7 @@ export function RevenueLineChart({
             axisLine={false}
             width={48}
             tickFormatter={(v) => formatCompact(Number(v ?? 0))}
+            domain={[0, (dataMax: number) => Math.ceil(dataMax * 1.25)]}
           />
           <Tooltip
             content={
@@ -495,7 +497,7 @@ export function RevenueLineChart({
             cursor={{ stroke: "#cbd5e1", strokeDasharray: "3 3" }}
           />
           <Area
-            type="natural"
+            type="monotone"
             dataKey="revenue"
             stroke={PALETTE.violet}
             strokeWidth={2.5}
