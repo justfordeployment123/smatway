@@ -16,7 +16,10 @@ import { ReviewModule } from './modules/review/review.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { PlatformModule } from './modules/platform/platform.module';
 import { FeedbackModule } from './modules/feedback/feedback.module';
+import { BugReportsModule } from './modules/bug-reports/bug-reports.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { PayoutsModule } from './modules/payouts/payouts.module';
 
 @Module({
   imports: [
@@ -32,7 +35,10 @@ import { AdminModule } from './modules/admin/admin.module';
     ChatModule,
     PlatformModule,
     FeedbackModule,
+    BugReportsModule,
     AdminModule,
+    PaymentsModule,
+    PayoutsModule,
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
   ],
   controllers: [AppController],

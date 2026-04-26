@@ -22,8 +22,14 @@ export const ADMIN_PERMISSIONS = {
   FINANCE_READ: 'finance:read',
   FINANCE_REFUND: 'finance:refund',
 
+  PAYOUTS_READ: 'payouts:read',
+  PAYOUTS_RELEASE: 'payouts:release',
+
   FEEDBACK_READ: 'feedback:read',
   FEEDBACK_DELETE: 'feedback:delete',
+
+  BUG_REPORTS_READ: 'bug-reports:read',
+  BUG_REPORTS_REPLY: 'bug-reports:reply',
 
   REVIEWS_READ: 'reviews:read',
   REVIEWS_DELETE: 'reviews:delete',
@@ -86,6 +92,8 @@ export const ADMIN_PERMISSION_GROUPS: Array<{
     permissions: [
       { value: ADMIN_PERMISSIONS.FINANCE_READ, label: 'View finance', description: 'Revenue dashboards, payouts, reconciliation.' },
       { value: ADMIN_PERMISSIONS.FINANCE_REFUND, label: 'Issue refunds', description: 'Trigger a refund on a paid booking.' },
+      { value: ADMIN_PERMISSIONS.PAYOUTS_READ, label: 'View payouts', description: 'See pending and historical transporter payouts.' },
+      { value: ADMIN_PERMISSIONS.PAYOUTS_RELEASE, label: 'Release payouts', description: 'Trigger Paystack transfer for a pending payout.' },
     ],
   },
   {
@@ -93,6 +101,8 @@ export const ADMIN_PERMISSION_GROUPS: Array<{
     permissions: [
       { value: ADMIN_PERMISSIONS.FEEDBACK_READ, label: 'View site feedback', description: 'See feedback submitted from the dashboard.' },
       { value: ADMIN_PERMISSIONS.FEEDBACK_DELETE, label: 'Delete site feedback', description: 'Remove inappropriate feedback.' },
+      { value: ADMIN_PERMISSIONS.BUG_REPORTS_READ, label: 'View bug reports', description: 'Read user-submitted bug reports and suggestions.' },
+      { value: ADMIN_PERMISSIONS.BUG_REPORTS_REPLY, label: 'Reply to bug reports', description: 'Send a reply or close a bug report.' },
       { value: ADMIN_PERMISSIONS.REVIEWS_READ, label: 'View trip reviews', description: 'See per-booking transporter reviews.' },
       { value: ADMIN_PERMISSIONS.REVIEWS_DELETE, label: 'Delete trip reviews', description: 'Remove inappropriate trip reviews.' },
     ],

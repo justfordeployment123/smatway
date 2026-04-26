@@ -8,12 +8,14 @@ import { Menu as MenuIcon, X as CloseIcon } from "lucide-react";
 import {
   MapPinIcon, DashboardIcon, CarIcon,
   BookOpenIcon, MegaphoneIcon, UserIcon, SettingsIcon, LogOutIcon,
-  ChevronDownIcon, StarIcon,
+  ChevronDownIcon, StarIcon, InfoCircleIcon,
 } from "@/app/dashboard/_Components/Icons";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getCurrentUser, logout, isTokenExpired, clearAuthData } from "@/lib/auth";
 import { NotificationBell } from "@/components/NotificationBell";
 import { useLiveAvatar } from "@/app/dashboard/_Components/events";
+import { useUnreadBugReplies } from "@/lib/bugReportNotifications";
+import { useUnreadAnnouncements } from "@/lib/announcementsNotifications";
 
 // ─── Nav config ───────────────────────────────────────────────────────────────
 const travelerNav = [
@@ -21,6 +23,7 @@ const travelerNav = [
   { key: "/dashboard/my-bookings", label: "My Bookings", icon: BookOpenIcon },
   { key: "/dashboard/announcements", label: "Announcements", icon: MegaphoneIcon },
   { key: "/dashboard/feedback", label: "Feedback", icon: StarIcon },
+  { key: "/dashboard/support", label: "Report a problem", icon: InfoCircleIcon },
   { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
   { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -30,8 +33,12 @@ const transporterNav = [
   { key: "/dashboard/vehicles", label: "Fleet", icon: CarIcon },
   { key: "/dashboard/routes", label: "Routes", icon: MapPinIcon },
   { key: "/dashboard/bookings", label: "Bookings", icon: BookOpenIcon },
+  { key: "/dashboard/verify-pickup", label: "Verify Pickup", icon: BookOpenIcon },
+  { key: "/dashboard/my-payouts", label: "Earnings", icon: BookOpenIcon },
+  { key: "/dashboard/payout-settings", label: "Payout Account", icon: SettingsIcon },
   { key: "/dashboard/t-announcements", label: "Announcements", icon: MegaphoneIcon },
   { key: "/dashboard/feedback", label: "Feedback", icon: StarIcon },
+  { key: "/dashboard/support", label: "Report a problem", icon: InfoCircleIcon },
   { key: "/dashboard/profile", label: "Profile", icon: UserIcon },
   { key: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -41,6 +48,7 @@ const travelerTitles: Record<string, string> = {
   "/dashboard/my-bookings": "My Bookings",
   "/dashboard/announcements": "Announcements",
   "/dashboard/feedback": "Feedback",
+  "/dashboard/support": "Report a problem",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };
@@ -50,8 +58,12 @@ const transporterTitles: Record<string, string> = {
   "/dashboard/vehicles": "Fleet",
   "/dashboard/routes": "Routes",
   "/dashboard/bookings": "Bookings",
+  "/dashboard/verify-pickup": "Verify Pickup",
+  "/dashboard/my-payouts": "Earnings",
+  "/dashboard/payout-settings": "Payout Account",
   "/dashboard/t-announcements": "Announcements",
   "/dashboard/feedback": "Feedback",
+  "/dashboard/support": "Report a problem",
   "/dashboard/profile": "Profile",
   "/dashboard/settings": "Settings",
 };
@@ -82,9 +94,41 @@ function isActivePath(pathname: string, key: string) {
   return false;
 }
 
+// Small unread badge for sidebar nav items. Renders a pulsing emerald dot
+// (with a count when > 1) anchored to the right of the row. Used for the
+// "Report a problem" link so admin replies surface without a hard refresh.
+function NavDot({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span className="ml-auto inline-flex items-center gap-1.5">
+      {count > 1 && (
+        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-md px-1.5 py-0.5">
+          {count > 9 ? "9+" : count}
+        </span>
+      )}
+      <span className="relative flex h-2 w-2">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+      </span>
+    </span>
+  );
+}
+
+// Map a sidebar role to the correct announcements path + audience. Traveler
+// hits `/dashboard/announcements`; transporter is on `/dashboard/t-announcements`
+// because the two pages live in separate route groups.
+function announcementMeta(role: "traveler" | "transporter") {
+  return role === "transporter"
+    ? { key: "/dashboard/t-announcements", audience: "TRANSPORTER" as const }
+    : { key: "/dashboard/announcements", audience: "TRAVELER" as const };
+}
+
 // ─── Sidebar ──────────────────────────────────────────────────────────────────
 function Sidebar({ pathname, role }: { pathname: string; role: "traveler" | "transporter" }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
+  const { unread } = useUnreadBugReplies();
+  const ann = announcementMeta(role);
+  const { unread: announcementsUnread } = useUnreadAnnouncements(ann.audience);
 
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 bottom-0 w-64 bg-white border-r border-slate-200/70 z-30">
@@ -119,6 +163,9 @@ function Sidebar({ pathname, role }: { pathname: string; role: "traveler" | "tra
           {navItems.map((item) => {
             const active = isActivePath(pathname, item.key);
             const Icon = item.icon;
+            const itemUnread =
+              item.key === "/dashboard/support" ? unread :
+              item.key === ann.key ? announcementsUnread : 0;
             return (
               <li key={item.key} className="relative">
                 {active && (
@@ -136,12 +183,14 @@ function Sidebar({ pathname, role }: { pathname: string; role: "traveler" | "tra
                 >
                   <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-slate-400 group-hover:text-slate-600"}`} />
                   {item.label}
-                  {active && (
+                  {active ? (
                     <motion.span
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)]"
                     />
+                  ) : (
+                    <NavDot count={itemUnread} />
                   )}
                 </Link>
               </li>
@@ -316,6 +365,9 @@ function MobileDrawer({
   role: "traveler" | "transporter";
 }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
+  const { unread } = useUnreadBugReplies();
+  const ann = announcementMeta(role);
+  const { unread: announcementsUnread } = useUnreadAnnouncements(ann.audience);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -376,6 +428,9 @@ function MobileDrawer({
                 {navItems.map((item) => {
                   const active = isActivePath(pathname, item.key);
                   const Icon = item.icon;
+                  const itemUnread =
+                    item.key === "/dashboard/support" ? unread :
+                    item.key === ann.key ? announcementsUnread : 0;
                   return (
                     <li key={item.key}>
                       <Link
@@ -387,8 +442,10 @@ function MobileDrawer({
                       >
                         <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-slate-400"}`} />
                         {item.label}
-                        {active && (
+                        {active ? (
                           <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)]" />
+                        ) : (
+                          <NavDot count={itemUnread} />
                         )}
                       </Link>
                     </li>
@@ -420,6 +477,9 @@ function MobileDrawer({
 // ─── Mobile Nav ───────────────────────────────────────────────────────────────
 function MobileNav({ pathname, role }: { pathname: string; role: "traveler" | "transporter" }) {
   const navItems = role === "transporter" ? transporterNav : travelerNav;
+  const { unread } = useUnreadBugReplies();
+  const ann = announcementMeta(role);
+  const { unread: announcementsUnread } = useUnreadAnnouncements(ann.audience);
 
   return (
     <div className="lg:hidden sticky top-16 z-30 border-b border-slate-200/70 bg-white/85 backdrop-blur-xl">
@@ -433,6 +493,10 @@ function MobileNav({ pathname, role }: { pathname: string; role: "traveler" | "t
         {navItems.map((item) => {
           const active = isActivePath(pathname, item.key);
           const Icon = item.icon;
+          const itemUnread =
+            item.key === "/dashboard/support" ? unread :
+            item.key === ann.key ? announcementsUnread : 0;
+          const showDot = itemUnread > 0 && !active;
           return (
             <Link
               key={item.key}
@@ -443,6 +507,12 @@ function MobileNav({ pathname, role }: { pathname: string; role: "traveler" | "t
             >
               <Icon className="w-3.5 h-3.5" />
               {item.label}
+              {showDot && (
+                <span className="relative flex h-1.5 w-1.5 ml-0.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                </span>
+              )}
             </Link>
           );
         })}

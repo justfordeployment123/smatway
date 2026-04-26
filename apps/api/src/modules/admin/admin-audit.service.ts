@@ -42,9 +42,24 @@ export class AdminAuditService {
     }
   }
 
-  async list(params: { limit?: number; cursor?: string } = {}) {
+  async list(params: { limit?: number; cursor?: string; from?: string; to?: string } = {}) {
     const limit = Math.min(Math.max(params.limit ?? 50, 1), 200);
+    // `from` / `to` are ISO timestamps representing the user's local-day
+    // boundary converted to UTC by the client — same convention as
+    // /admin/bookings, so the helper can be lifted across pages without
+    // re-translating timezones each time.
+    const fromDate = params.from ? new Date(params.from) : null;
+    const toDate = params.to ? new Date(params.to) : null;
     const items = await this.prisma.adminAuditLog.findMany({
+      where:
+        fromDate || toDate
+          ? {
+              createdAt: {
+                ...(fromDate ? { gte: fromDate } : {}),
+                ...(toDate ? { lt: toDate } : {}),
+              },
+            }
+          : undefined,
       take: limit + 1,
       cursor: params.cursor ? { id: params.cursor } : undefined,
       skip: params.cursor ? 1 : 0,

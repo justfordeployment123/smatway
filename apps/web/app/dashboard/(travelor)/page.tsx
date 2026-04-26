@@ -8,6 +8,7 @@ import { searchTransports, createBooking, getTransporterProfile } from "@/lib/ap
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatPrice } from "@/lib/currencies";
+import { toLocalDateInput } from "@/lib/dateInput";
 import {
   SearchIcon, CarIcon, MapPinIcon, CalendarIcon, ChevronDownIcon,
   UsersIcon, ArrowRightIcon, XIcon, StarIcon, SparklesIcon,
@@ -17,6 +18,7 @@ import {
   Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
   PrimaryButton, SurfaceCard, spring,
 } from "@/app/dashboard/_Components/ui";
+import { ProviderLogo } from "@/components/ProviderLogo";
 
 const transportTypes = ["All", "CAR", "BUS", "VAN", "MINIBUS", "TRUCK"] as const;
 
@@ -39,7 +41,9 @@ export default function SearchRidesPage() {
           setDepCountry(user.country);
           setDestCountry(user.country);
         }
-        setDate(new Date().toISOString().split("T")[0]);
+        // Local date — `toISOString()` would default to UTC, showing the
+        // wrong day for users in any non-UTC timezone.
+        setDate(toLocalDateInput());
       } catch {}
     })();
   }, []);
@@ -216,12 +220,63 @@ export default function SearchRidesPage() {
             className="grid grid-cols-1 gap-3"
           >
             {results.map((transport) => (
-              <TransportCard key={transport.id} transport={transport} />
+              <TransportCard
+                key={transport.id}
+                transport={transport}
+                onBooked={(seats) => {
+                  // Patch the result row in place so the "seats left" and
+                  // group-ride filling meter reflect the new booking
+                  // immediately. Without this, the card stays stale until
+                  // the user refreshes.
+                  setResults((rs) =>
+                    rs
+                      ? rs.map((r) =>
+                          r.id === transport.id
+                            ? {
+                                ...r,
+                                availableSeats: Math.max(0, (r.availableSeats ?? 0) - seats),
+                                filledSeats: (r.filledSeats ?? 0) + seats,
+                              }
+                            : r,
+                        )
+                      : rs,
+                  );
+                }}
+              />
             ))}
           </motion.div>
         </>
       )}
     </Page>
+  );
+}
+
+// ─── Payout-provider badges ───────────────────────────────────────────────────
+/**
+ * Tiny pill that previews which payment rails will be available at
+ * checkout for this route. Driven by the transporter's configured payout
+ * accounts (transport.payoutProviders). Uses the actual brand SVGs from
+ * /public/logo so travelers recognise them immediately.
+ *
+ * Hidden entirely when the transporter hasn't set up any account — the
+ * booking flow surfaces a separate "driver hasn't set up payouts" panel
+ * in that case, so the silence here is intentional.
+ */
+function PayoutProviderBadges({ providers }: { providers: string[] }) {
+  const has = (p: string) => providers.some((x) => x.toUpperCase() === p);
+  const showPaystack = has("PAYSTACK");
+  const showFlw = has("FLUTTERWAVE");
+  if (!showPaystack && !showFlw) return null;
+  const both = showPaystack && showFlw;
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2 py-1 text-[10px] font-semibold text-slate-700"
+      title={both ? "Pays via Paystack or Flutterwave" : showPaystack ? "Pays via Paystack" : "Pays via Flutterwave"}
+    >
+      <span className="text-[9px] uppercase tracking-wider text-slate-400">Pay</span>
+      {showPaystack && <ProviderLogo provider="PAYSTACK" size={14} />}
+      {showFlw && <ProviderLogo provider="FLUTTERWAVE" size={14} />}
+    </span>
   );
 }
 
@@ -239,7 +294,7 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
 }
 
 // ─── Transport card ───────────────────────────────────────────────────────────
-function TransportCard({ transport }: { transport: any }) {
+function TransportCard({ transport, onBooked }: { transport: any; onBooked?: (seats: number) => void }) {
   const [booking, setBooking] = useState(false);
   const [seats, setSeats] = useState(1);
   const [booked, setBooked] = useState<any>(null);
@@ -254,6 +309,9 @@ function TransportCard({ transport }: { transport: any }) {
     try {
       const result = await createBooking({ transportId: transport.id, seatsBooked: seats });
       setBooked(result);
+      // Tell the parent how many seats were booked so the card's counts
+      // (seats left, group-ride filling) update without a page reload.
+      onBooked?.(seats);
     } catch (e: any) {
       setError(e?.message || "Booking failed");
     } finally {
@@ -280,10 +338,10 @@ function TransportCard({ transport }: { transport: any }) {
 
   return (
     <SurfaceCard>
-      <div className="p-5">
-        <div className="flex flex-col sm:flex-row gap-4">
-          {/* Vehicle image */}
-          <div className="sm:w-28 h-24 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100">
+      <div className="p-4 sm:p-5">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          {/* Vehicle image — shorter on mobile so the card overall is less tall */}
+          <div className="sm:w-28 h-20 sm:h-24 flex-shrink-0 rounded-xl overflow-hidden bg-slate-100">
             {vehicle?.imageUrl ? (
               <img src={vehicle.imageUrl} alt={vehicle.name} className="w-full h-full object-cover" />
             ) : (
@@ -310,7 +368,7 @@ function TransportCard({ transport }: { transport: any }) {
               {transport.departureCountry} → {transport.destinationCountry}
             </p>
 
-            <div className="flex items-center gap-4 text-[11px] text-slate-500 mt-2.5 flex-wrap">
+            <div className="flex items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 mt-2 flex-wrap">
               <span className="inline-flex items-center gap-1">
                 <CalendarIcon className="w-3.5 h-3.5 text-slate-400" />
                 {dep.toLocaleDateString()} · {dep.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -324,66 +382,100 @@ function TransportCard({ transport }: { transport: any }) {
               </span>
             </div>
 
-            {/* Transporter mini */}
-            <button
-              onClick={openTransporterProfile}
-              className="inline-flex items-center gap-2 mt-3 rounded-full bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 transition-colors"
-            >
-              <Avatar className="h-5 w-5 rounded-full">
-                {transport.transporter?.profileImageUrl && (
-                  <AvatarImage src={transport.transporter.profileImageUrl} alt={transport.transporter.name} />
-                )}
-                <AvatarFallback className="text-[9px] bg-zinc-950 text-white">
-                  {transport.transporter?.name?.charAt(0).toUpperCase() || "?"}
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-[11px] font-semibold text-zinc-950">
-                {transport.transporter?.name || "Unknown"}
-              </span>
-              <span className="flex items-center gap-0.5 text-[10px] text-amber-600 font-semibold">
-                <StarIcon className="w-3 h-3 fill-current" />
-                {rating.toFixed(1)}
-              </span>
-              <span className="text-[10px] text-slate-400">· {rides} rides</span>
-            </button>
+            {/* Profile mini + (optional) compact group-ride pill, side-by-side.
+                The meter shrinks to a small amber pill so it doesn't dominate
+                the card. Hides once the threshold is hit. */}
+            <div className="flex items-center gap-2 mt-2 sm:mt-3 flex-wrap">
+              <button
+                onClick={openTransporterProfile}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-50 hover:bg-slate-100 px-2.5 py-1.5 transition-colors"
+              >
+                <Avatar className="h-5 w-5 rounded-full">
+                  {transport.transporter?.profileImageUrl && (
+                    <AvatarImage src={transport.transporter.profileImageUrl} alt={transport.transporter.name} />
+                  )}
+                  <AvatarFallback className="text-[9px] bg-zinc-950 text-white">
+                    {transport.transporter?.name?.charAt(0).toUpperCase() || "?"}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="text-[11px] font-semibold text-zinc-950">
+                  {transport.transporter?.name || "Unknown"}
+                </span>
+                <span className="flex items-center gap-0.5 text-[10px] text-amber-600 font-semibold">
+                  <StarIcon className="w-3 h-3 fill-current" />
+                  {rating.toFixed(1)}
+                </span>
+                <span className="text-[10px] text-slate-400">· {rides} rides</span>
+              </button>
+              {(() => {
+                const min = transport.minSeatsToConfirm as number | null | undefined;
+                const filled = (transport.filledSeats as number | undefined) ?? 0;
+                if (!min || filled >= min) return null;
+                const pct = Math.min(100, Math.round((filled / min) * 100));
+                return (
+                  <span
+                    className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 pl-2 pr-2.5 py-1 text-[10px] font-semibold text-slate-700"
+                    title={`Trip runs once ${min} seats are booked`}
+                  >
+                    <span className="relative inline-block w-7 h-1 rounded-full bg-slate-200 overflow-hidden">
+                      <span
+                        className="absolute inset-y-0 left-0 bg-slate-700 transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </span>
+                    <span className="tabular-nums">{filled}/{min} filling</span>
+                  </span>
+                );
+              })()}
+              {/* Provider badges — quick preview of which payment rails
+                  will be available before the traveler clicks into the
+                  pay flow. Hidden when neither is configured because
+                  there's nothing useful to communicate. */}
+              <PayoutProviderBadges
+                providers={(transport.payoutProviders ?? []) as string[]}
+              />
+            </div>
           </div>
 
-          {/* Book */}
-          <div className="flex flex-row sm:flex-col items-end sm:items-end justify-between gap-3 sm:min-w-[160px] sm:border-l sm:border-slate-100 sm:pl-5">
-            <div className="text-right">
-              <p className="text-xl font-semibold text-zinc-950 tabular-nums leading-tight">
+          {/* Book footer — mobile: tight horizontal row [price · per seat] [input Book]
+              that doesn't wrap. Desktop: stacked column on the right of the card.
+              Price text is text-[15px] on mobile so it stays inline with the
+              actions; bumps to text-xl on sm+ where there's vertical room. */}
+          <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-2 sm:gap-3 sm:min-w-[160px] sm:border-l sm:border-slate-100 sm:pl-5">
+            <div className="min-w-0 sm:text-right">
+              <p className="text-[15px] sm:text-xl font-semibold text-zinc-950 tabular-nums leading-tight truncate">
                 {formatPrice(transport.price, transport.currency)}
               </p>
-              <p className="text-[10px] text-slate-400">per seat</p>
+              <p className="text-[10px] text-slate-400 leading-none mt-0.5">per seat</p>
             </div>
             {booked ? (
               <Link
                 href={`/dashboard/traveler/booking/${booked.id}`}
-                className="text-xs font-semibold text-emerald-700 inline-flex items-center gap-1 hover:text-emerald-800"
+                className="text-xs font-semibold text-emerald-700 inline-flex items-center gap-1 hover:text-emerald-800 shrink-0"
               >
                 <CheckCircleIcon className="w-3.5 h-3.5" />
                 View booking
               </Link>
             ) : (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <input
                   type="number"
                   min={1}
                   max={transport.availableSeats}
                   value={seats}
                   onChange={(e) => setSeats(Number(e.target.value))}
-                  className="w-12 text-center rounded-lg border border-slate-200 px-1 py-1.5 text-sm font-semibold tabular-nums"
+                  className="w-10 sm:w-12 text-center rounded-lg border border-slate-200 px-1 py-1.5 text-sm font-semibold tabular-nums"
                 />
                 <button
                   onClick={handleBook}
                   disabled={booking || transport.availableSeats === 0}
-                  className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white text-[12px] font-semibold px-3.5 py-2 rounded-lg transition-all active:scale-[0.98]"
+                  className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white text-[12px] font-semibold px-3 sm:px-3.5 py-2 rounded-lg transition-all active:scale-[0.98]"
                 >
                   {booking ? "..." : "Book"}
                 </button>
               </div>
             )}
-            {error && <p className="text-[10px] text-red-600">{error}</p>}
+            {error && <p className="basis-full text-[10px] text-red-600 sm:text-right -mt-1 sm:mt-0">{error}</p>}
           </div>
         </div>
       </div>
@@ -497,14 +589,6 @@ function TransporterProfileModalInner({ loading, profile, onClose }: { loading: 
               </div>
             )}
 
-            {profile.phoneNumber && (
-              <div className="px-6 pb-6">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
-                  Contact
-                </p>
-                <p className="text-[14px] font-medium text-zinc-950">{profile.phoneNumber}</p>
-              </div>
-            )}
           </>
         ) : (
           <div className="p-10 text-center text-sm text-red-600">Failed to load profile</div>

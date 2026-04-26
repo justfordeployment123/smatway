@@ -54,6 +54,8 @@ const post = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: 'POST', body: data ? JSON.stringify(data) : undefined });
 const patch = <T>(path: string, data?: unknown) =>
   request<T>(path, { method: 'PATCH', body: data ? JSON.stringify(data) : undefined });
+const put = <T>(path: string, data?: unknown) =>
+  request<T>(path, { method: 'PUT', body: data ? JSON.stringify(data) : undefined });
 const del = <T>(path: string) => request<T>(path, { method: 'DELETE' });
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -100,8 +102,9 @@ export interface AdminOverview {
     totalPrice: string | number;
     seatsBooked: number;
     createdAt: string;
-    traveler: { name: string | null } | null;
+    traveler: { id: string; name: string | null } | null;
     transport: {
+      id: string;
       departureCity: string;
       destinationCity: string;
       currency: string;
@@ -317,6 +320,7 @@ export interface AdminRouteRow {
   currency: string;
   availableSeats: number;
   departureDateTime: string;
+  maxReachDateTime: string;
   createdAt: string;
   transporter: { id: string; name: string | null; email: string } | null;
   vehicle: { id: string; name: string; plateNumber: string } | null;
@@ -326,12 +330,16 @@ export interface AdminRouteRow {
 export async function listAdminRoutes(params: {
   search?: string;
   status?: 'ACTIVE' | 'INACTIVE' | 'FULL';
+  from?: string;
+  to?: string;
   cursor?: string;
   limit?: number;
 } = {}): Promise<{ routes: AdminRouteRow[]; nextCursor: string | null }> {
   const q = new URLSearchParams();
   if (params.search) q.set('search', params.search);
   if (params.status) q.set('status', params.status);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
   if (params.cursor) q.set('cursor', params.cursor);
   if (params.limit) q.set('limit', String(params.limit));
   return get(`/admin/routes?${q.toString()}`);
@@ -363,20 +371,59 @@ export interface AdminBookingRow {
     currency: string;
     transporter: { id: string; name: string | null } | null;
   };
+  // Drives the derived "RECEIVED" stage on the row pill. Null when no payout
+  // exists yet (booking hasn't reached COMPLETED) or when the payout is
+  // still PENDING/PROCESSING/FAILED.
+  payout?: { status: string; releasedAt: string | null } | null;
 }
 
 export async function listAdminBookings(params: {
   status?: string;
   paymentStatus?: string;
+  from?: string;
+  to?: string;
   cursor?: string;
   limit?: number;
 } = {}): Promise<{ bookings: AdminBookingRow[]; nextCursor: string | null }> {
   const q = new URLSearchParams();
   if (params.status) q.set('status', params.status);
   if (params.paymentStatus) q.set('paymentStatus', params.paymentStatus);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
   if (params.cursor) q.set('cursor', params.cursor);
   if (params.limit) q.set('limit', String(params.limit));
   return get(`/admin/bookings?${q.toString()}`);
+}
+
+export interface AdminBookingStats {
+  byStatus: Record<"PENDING" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED", number>;
+  byPayment: Record<"PENDING" | "PAID" | "FAILED", number>;
+}
+
+/**
+ * Admin force-cancel a booking. Backend refunds the seats and notifies both
+ * traveler + transporter. Returns `refundRequired: true` if the booking was
+ * already PAID — finance still has to issue the money refund manually.
+ */
+export async function adminCancelBooking(
+  id: string,
+  reason?: string,
+): Promise<{ booking: AdminBookingRow; refundRequired: boolean }> {
+  return patch(`/admin/bookings/${id}/cancel`, { reason });
+}
+
+export async function getAdminBookingStats(params: {
+  status?: string;
+  paymentStatus?: string;
+  from?: string;
+  to?: string;
+} = {}): Promise<AdminBookingStats> {
+  const q = new URLSearchParams();
+  if (params.status) q.set('status', params.status);
+  if (params.paymentStatus) q.set('paymentStatus', params.paymentStatus);
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
+  return get(`/admin/bookings/stats?${q.toString()}`);
 }
 
 // ─── Finance ─────────────────────────────────────────────────────────────────
@@ -388,6 +435,8 @@ export interface AdminFinanceSummary {
     paidBookings: number;
     completedGross: number;
     completedBookings: number;
+    /** Platform revenue from completed bookings — sum of commissionAmount on the payouts. */
+    completedCommission: number;
   }>;
   pendingPayments: number;
   failedPayments: number;
@@ -478,6 +527,9 @@ export interface AdminAnnouncement {
   body: string;
   audience: AnnouncementAudience;
   isPublished: boolean;
+  imageKeys: string[];
+  imageUrls: (string | null)[];
+  expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   createdByAdmin: { id: string; username: string; email: string } | null;
@@ -490,13 +542,41 @@ export async function listAdminAnnouncements(audience?: AnnouncementAudience): P
   return get(`/admin/announcements${q}`);
 }
 
+/**
+ * Create an announcement. Multipart so up to 4 images can ride along with
+ * the text fields. `expiresInDays` defaults to 7 server-side; pass 0 (or
+ * undefined) to keep that default; pass a negative number to disable
+ * expiry entirely (super-admin pinned banner case).
+ */
 export async function createAdminAnnouncement(data: {
   title: string;
   body: string;
   audience: AnnouncementAudience;
   isPublished?: boolean;
-}) {
-  return post<{ announcement: AdminAnnouncement }>('/admin/announcements', data);
+  expiresInDays?: number;
+  images?: File[];
+}): Promise<{ announcement: AdminAnnouncement }> {
+  const formData = new FormData();
+  formData.append('title', data.title);
+  formData.append('body', data.body);
+  formData.append('audience', data.audience);
+  if (data.isPublished !== undefined) formData.append('isPublished', String(data.isPublished));
+  if (data.expiresInDays !== undefined) formData.append('expiresInDays', String(data.expiresInDays));
+  for (const file of data.images ?? []) formData.append('images', file);
+
+  const url = `${ADMIN_API_BASE_URL}/admin/announcements`;
+  const token = getAdminToken();
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({} as { message?: string }));
+    throw new ApiError(res.status, err.message || 'Failed to create announcement');
+  }
+  return res.json();
 }
 
 export async function updateAdminAnnouncement(id: string, data: Partial<{
@@ -504,6 +584,8 @@ export async function updateAdminAnnouncement(id: string, data: Partial<{
   body: string;
   audience: AnnouncementAudience;
   isPublished: boolean;
+  expiresInDays: number;
+  clearExpiry: boolean;
 }>) {
   return patch<{ announcement: AdminAnnouncement }>(`/admin/announcements/${id}`, data);
 }
@@ -569,12 +651,149 @@ export interface AdminAuditEntry {
   createdAt: string;
 }
 
-export async function listAdminAuditLog(params: { cursor?: string; limit?: number } = {}): Promise<{
+export async function listAdminAuditLog(params: {
+  cursor?: string;
+  limit?: number;
+  from?: string;
+  to?: string;
+} = {}): Promise<{
   logs: AdminAuditEntry[];
   nextCursor: string | null;
 }> {
   const q = new URLSearchParams();
   if (params.cursor) q.set('cursor', params.cursor);
   if (params.limit) q.set('limit', String(params.limit));
+  if (params.from) q.set('from', params.from);
+  if (params.to) q.set('to', params.to);
   return get(`/admin/audit?${q.toString()}`);
+}
+
+// ─── Payouts ─────────────────────────────────────────────────────────────────
+
+export type PayoutStatus = 'PENDING' | 'PROCESSING' | 'RELEASED' | 'FAILED';
+
+export type PayoutTrigger = 'AUTO' | 'MANUAL';
+
+export interface AdminPayoutRow {
+  id: string;
+  bookingId: string;
+  transporterId: string;
+  grossAmount: string | number;
+  commissionRate: string | number;
+  commissionAmount: string | number;
+  netAmount: string | number;
+  currency: string;
+  status: PayoutStatus;
+  releaseTrigger: PayoutTrigger | null;
+  paystackRecipientCode: string | null;
+  paystackTransferCode: string | null;
+  paystackTransferReference: string | null;
+  failureReason: string | null;
+  createdAt: string;
+  releasedAt: string | null;
+  failedAt: string | null;
+  transporter: { id: string; name: string | null; email: string; paystackRecipientCode: string | null } | null;
+  booking: {
+    id: string;
+    seatsBooked: number;
+    transport: { id: string; departureCity: string; destinationCity: string };
+  };
+}
+
+export async function listAdminPayouts(params: {
+  status?: PayoutStatus;
+  cursor?: string;
+  limit?: number;
+} = {}): Promise<{ payouts: AdminPayoutRow[]; nextCursor: string | null }> {
+  const q = new URLSearchParams();
+  if (params.status) q.set('status', params.status);
+  if (params.cursor) q.set('cursor', params.cursor);
+  if (params.limit) q.set('limit', String(params.limit));
+  return get(`/admin/payouts?${q.toString()}`);
+}
+
+export async function releaseAdminPayout(id: string) {
+  return post(`/admin/payouts/${id}/release`);
+}
+
+export async function reconcileAdminPayout(id: string) {
+  return post<{ status: PayoutStatus }>(`/admin/payouts/${id}/reconcile`);
+}
+
+export async function markAdminPayoutFailed(id: string, reason: string) {
+  return post<{ payout: AdminPayoutRow }>(`/admin/payouts/${id}/mark-failed`, { reason });
+}
+
+// ─── Platform settings ───────────────────────────────────────────────────────
+export interface PlatformSettings {
+  commissionRate: number;       // 0..0.5 (0% .. 50%)
+  autoPayoutEnabled: boolean;
+  updatedAt: string | null;
+  updatedByAdminId: string | null;
+}
+
+export async function getPlatformSettings(): Promise<PlatformSettings> {
+  return get('/admin/settings');
+}
+
+export async function updatePlatformSettings(input: {
+  commissionRate?: number;
+  autoPayoutEnabled?: boolean;
+}): Promise<{ settings: PlatformSettings }> {
+  return put('/admin/settings', input);
+}
+
+// ─── Bug reports ─────────────────────────────────────────────────────────────
+export type BugReportKind = "BUG" | "SUGGESTION";
+export type BugReportStatus = "OPEN" | "REPLIED" | "CLOSED";
+
+export interface AdminBugReportRow {
+  id: string;
+  kind: BugReportKind;
+  subject: string;
+  body: string;
+  imageKeys: string[];
+  imageUrls: (string | null)[];
+  status: BugReportStatus;
+  adminReply: string | null;
+  repliedAt: string | null;
+  repliedByAdminId: string | null;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    accountType: 'TRAVELER' | 'TRANSPORTER' | null;
+    country?: string | null;
+  };
+}
+
+export async function listAdminBugReports(params: {
+  kind?: BugReportKind;
+  status?: BugReportStatus;
+  cursor?: string;
+  limit?: number;
+} = {}): Promise<{ reports: AdminBugReportRow[]; nextCursor: string | null }> {
+  const q = new URLSearchParams();
+  if (params.kind) q.set('kind', params.kind);
+  if (params.status) q.set('status', params.status);
+  if (params.cursor) q.set('cursor', params.cursor);
+  if (params.limit) q.set('limit', String(params.limit));
+  return get(`/admin/bug-reports?${q.toString()}`);
+}
+
+export async function getAdminBugReportCounts(): Promise<Record<BugReportStatus, number>> {
+  return get('/admin/bug-reports/counts');
+}
+
+export async function getAdminBugReport(id: string): Promise<AdminBugReportRow> {
+  return get(`/admin/bug-reports/${id}`);
+}
+
+export async function replyAdminBugReport(id: string, reply: string): Promise<AdminBugReportRow> {
+  return patch(`/admin/bug-reports/${id}/reply`, { reply });
+}
+
+export async function closeAdminBugReport(id: string): Promise<AdminBugReportRow> {
+  return patch(`/admin/bug-reports/${id}/close`);
 }

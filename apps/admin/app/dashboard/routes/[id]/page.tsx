@@ -10,6 +10,7 @@ import {
 import { adminCan, getAdminProfile } from "@/lib/auth";
 import { ADMIN_PERMISSIONS } from "@/lib/permissions";
 import { formatMoney } from "@/lib/format";
+import { formatBookingStatus } from "@/lib/bookingStatus";
 
 export default function RouteDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -234,7 +235,7 @@ export default function RouteDetailPage({ params }: { params: Promise<{ id: stri
                             </Link>
                           ) : <span className="text-zinc-700">—</span>}
                         </td>
-                        <td className="px-5 py-3"><StatusPill tone={b.status === "COMPLETED" ? "emerald" : b.status === "CONFIRMED" ? "blue" : b.status === "CANCELLED" ? "red" : "yellow"}>{b.status}</StatusPill></td>
+                        <td className="px-5 py-3"><StatusPill tone={b.status === "COMPLETED" ? "emerald" : b.status === "CONFIRMED" ? "blue" : b.status === "IN_PROGRESS" ? "orange" : b.status === "CANCELLED" ? "red" : "yellow"}>{formatBookingStatus(b.status)}</StatusPill></td>
                         <td className="px-5 py-3"><StatusPill tone={b.paymentStatus === "PAID" ? "emerald" : b.paymentStatus === "FAILED" ? "red" : "yellow"}>{b.paymentStatus}</StatusPill></td>
                         <td className="px-5 py-3 text-right tabular-nums">{b.seatsBooked}</td>
                         <td className="px-5 py-3 text-right font-mono tabular-nums">{formatMoney(b.totalPrice, route.currency)}</td>

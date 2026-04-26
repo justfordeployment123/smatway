@@ -3,11 +3,20 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill, SecondaryButton } from "@/app/_Components/ui";
+import { Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill, SecondaryButton, TabFilter } from "@/app/_Components/ui";
 import { SearchIcon, CarIcon } from "@/app/_Components/Icons";
 import { listAdminVehicles, AdminVehicleRow } from "@/lib/api";
 
-const TYPES = ["CAR", "BUS", "VAN", "MINIBUS", "TRUCK"] as const;
+const TYPE_TABS = ["", "CAR", "BUS", "VAN", "MINIBUS", "TRUCK"] as const;
+type TypeTab = (typeof TYPE_TABS)[number];
+const TYPE_LABELS: Record<TypeTab, string> = {
+  "": "ALL",
+  CAR: "CAR",
+  BUS: "BUS",
+  VAN: "VAN",
+  MINIBUS: "MINIBUS",
+  TRUCK: "TRUCK",
+};
 
 export default function VehiclesPage() {
   const router = useRouter();
@@ -17,7 +26,7 @@ export default function VehiclesPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [transportType, setTransportType] = useState<"" | typeof TYPES[number]>("");
+  const [transportType, setTransportType] = useState<TypeTab>("");
 
   function load(reset = true) {
     if (reset) { setLoading(true); setRows([]); setNextCursor(null); } else { setLoadingMore(true); }
@@ -41,7 +50,8 @@ export default function VehiclesPage() {
     <Page className="space-y-6">
       <PageHeader kicker="Fleet" title="Vehicles" subtitle="Every vehicle registered by transporters on the platform." />
 
-      <Card>
+      <Card className="space-y-3">
+        <TabFilter<TypeTab> tabs={TYPE_TABS} value={transportType} onChange={setTransportType} formatLabel={(t) => TYPE_LABELS[t]} />
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -56,14 +66,6 @@ export default function VehiclesPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
             />
           </div>
-          <select
-            value={transportType}
-            onChange={(e) => setTransportType(e.target.value as "" | typeof TYPES[number])}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400"
-          >
-            <option value="">All types</option>
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
           <SecondaryButton onClick={() => load(true)}>Search</SecondaryButton>
         </div>
       </Card>

@@ -14,6 +14,9 @@ export type User = {
   avatarUrl?: string | null;
   phoneNumber?: string;
   country?: string;
+  // ISO 4217 code chosen on the profile page. Pre-fills currency selectors
+  // (route creation, payout settings) so the user doesn't pick it every time.
+  preferredCurrency?: string;
   createdAt?: string;
   updatedAt?: string;
 };

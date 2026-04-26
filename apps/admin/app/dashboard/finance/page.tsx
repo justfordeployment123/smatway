@@ -51,8 +51,10 @@ export default function FinancePage() {
             <CashIcon className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-base font-semibold text-zinc-900">Gross revenue by currency</h2>
-            <p className="text-xs text-slate-500">Sums of paid bookings, denominated in their original currency.</p>
+            <h2 className="text-base font-semibold text-zinc-900">Revenue by currency</h2>
+            <p className="text-xs text-slate-500">
+              Gross is what customers paid. <span className="text-emerald-700 font-semibold">Platform revenue</span> is the commission the platform actually keeps after sending transporter payouts.
+            </p>
           </div>
         </div>
         {loading ? (
@@ -60,30 +62,75 @@ export default function FinancePage() {
         ) : !summary || summary.currencies.length === 0 ? (
           <p className="text-sm text-slate-500">No paid bookings yet.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="text-left py-2 font-semibold">Currency</th>
-                  <th className="text-right py-2 font-semibold">Paid gross</th>
-                  <th className="text-right py-2 font-semibold">Paid bookings</th>
-                  <th className="text-right py-2 font-semibold">Completed gross</th>
-                  <th className="text-right py-2 font-semibold">Completed bookings</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {summary.currencies.map((c) => (
-                  <tr key={c.currency}>
-                    <td className="py-3 font-mono font-semibold">{c.currency}</td>
-                    <td className="py-3 text-right tabular-nums font-semibold">{formatMoney(c.paidGross, c.currency)}</td>
-                    <td className="py-3 text-right tabular-nums">{c.paidBookings}</td>
-                    <td className="py-3 text-right tabular-nums">{formatMoney(c.completedGross, c.currency)}</td>
-                    <td className="py-3 text-right tabular-nums">{c.completedBookings}</td>
+          <>
+            {/* Mobile: each currency rendered as a card with a 2-col grid of
+                stats. The 6-column table doesn't fit on a phone — squeezing
+                the columns made the headers wrap on top of each other. */}
+            <div className="md:hidden space-y-3">
+              {summary.currencies.map((c) => (
+                <div key={c.currency} className="rounded-xl border border-slate-200 bg-slate-50/40 p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-mono font-bold text-zinc-950">{c.currency}</span>
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-wide text-emerald-700 font-semibold">Platform revenue</div>
+                      <div className="text-base font-mono font-semibold text-emerald-700 tabular-nums">
+                        {formatMoney(c.completedCommission, c.currency)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-y-2 gap-x-3 text-sm">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-medium">Paid gross</div>
+                      <div className="font-semibold tabular-nums">{formatMoney(c.paidGross, c.currency)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-medium">Paid bookings</div>
+                      <div className="tabular-nums">{c.paidBookings}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-medium">Completed gross</div>
+                      <div className="tabular-nums text-slate-600">{formatMoney(c.completedGross, c.currency)}</div>
+                    </div>
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wide text-slate-500 font-medium">Completed bookings</div>
+                      <div className="tabular-nums text-slate-600">{c.completedBookings}</div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: keep the existing wide table. min-w guards against
+                future column adds squeezing things on smaller laptops. */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead className="text-[11px] uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="text-left py-2 font-semibold whitespace-nowrap">Currency</th>
+                    <th className="text-right py-2 font-semibold whitespace-nowrap">Paid gross</th>
+                    <th className="text-right py-2 font-semibold whitespace-nowrap">Paid bookings</th>
+                    <th className="text-right py-2 font-semibold whitespace-nowrap">Completed gross</th>
+                    <th className="text-right py-2 font-semibold whitespace-nowrap">Completed bookings</th>
+                    <th className="text-right py-2 font-semibold text-emerald-700 whitespace-nowrap">Platform revenue</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {summary.currencies.map((c) => (
+                    <tr key={c.currency}>
+                      <td className="py-3 font-mono font-semibold">{c.currency}</td>
+                      <td className="py-3 text-right tabular-nums font-semibold">{formatMoney(c.paidGross, c.currency)}</td>
+                      <td className="py-3 text-right tabular-nums">{c.paidBookings}</td>
+                      <td className="py-3 text-right tabular-nums text-slate-500">{formatMoney(c.completedGross, c.currency)}</td>
+                      <td className="py-3 text-right tabular-nums text-slate-500">{c.completedBookings}</td>
+                      <td className="py-3 text-right tabular-nums font-mono font-semibold text-emerald-700">
+                        {formatMoney(c.completedCommission, c.currency)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </Card>
 

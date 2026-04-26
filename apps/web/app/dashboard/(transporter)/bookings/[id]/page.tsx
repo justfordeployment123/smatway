@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { motion } from "motion/react";
 import io from "socket.io-client";
 import {
-  getBooking, confirmBooking, rejectBooking, completeBooking,
+  getBooking, confirmBooking, rejectBooking, requestBookingCompletion,
   initChat, getMessages,
 } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
@@ -16,6 +16,7 @@ import {
 import {
   Page, Reveal, PageHeader, StatusPill, SkeletonCard, spring,
 } from "@/app/dashboard/_Components/ui";
+import { formatBookingStatus } from "@/lib/bookingStatus";
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -116,14 +117,19 @@ export default function BookingDetailPage() {
     }
   }
 
-  async function handleComplete() {
-    if (!confirm("Mark this booking as completed?")) return;
+  /**
+   * Two-party completion: transporter signals trip-ended, traveler still has
+   * to confirm before status flips + payout fires. Stops a transporter from
+   * unilaterally triggering their own payout.
+   */
+  async function handleRequestCompletion() {
+    if (!confirm("Notify the traveler that the trip has ended? They'll get a prompt to confirm — that's what closes the trip and releases your payout.")) return;
     setActionLoading(true);
     try {
-      const updated = await completeBooking(id);
-      setBooking((b: any) => ({ ...b, status: updated.status }));
+      const updated = await requestBookingCompletion(id);
+      setBooking((b: any) => ({ ...b, completionRequestedAt: updated.completionRequestedAt }));
     } catch (e: any) {
-      setError(e?.message || "Failed to complete");
+      setError(e?.message || "Failed to send completion request");
     } finally {
       setActionLoading(false);
     }
@@ -155,6 +161,7 @@ export default function BookingDetailPage() {
   const tone =
     booking.status === "CONFIRMED" ? "emerald" :
     booking.status === "PENDING" ? "yellow" :
+    booking.status === "IN_PROGRESS" ? "orange" :
     booking.status === "COMPLETED" ? "blue" : "red";
 
   return (
@@ -183,8 +190,8 @@ export default function BookingDetailPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <StatusPill tone={tone} dot={booking.status === "CONFIRMED" || booking.status === "PENDING"}>
-                    {booking.status}
+                  <StatusPill tone={tone} dot={booking.status === "CONFIRMED" || booking.status === "PENDING" || booking.status === "IN_PROGRESS"}>
+                    {formatBookingStatus(booking.status)}
                   </StatusPill>
                   <StatusPill tone={booking.paymentStatus === "PAID" ? "emerald" : "slate"}>
                     {booking.paymentStatus === "PAID" ? "Paid" : "Unpaid"}
@@ -245,20 +252,34 @@ export default function BookingDetailPage() {
             </div>
           )}
 
-          {booking.status === "CONFIRMED" && (
-            <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-5">
-              <p className="text-[13px] font-semibold text-zinc-950 mb-1">Ready to complete?</p>
-              <p className="text-[12px] text-slate-600 mb-4">
-                Mark the booking as complete once the trip has finished.
-              </p>
-              <button
-                onClick={handleComplete}
-                disabled={actionLoading}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl disabled:opacity-50 transition-all active:scale-[0.98]"
-              >
-                {actionLoading ? "Completing..." : "Complete booking"}
-              </button>
-            </div>
+          {booking.status === "IN_PROGRESS" && (
+            booking.completionRequestedAt ? (
+              <div className="rounded-2xl bg-amber-50 border border-amber-200 p-5">
+                <p className="text-[13px] font-semibold text-amber-900 mb-1">Awaiting traveler confirmation</p>
+                <p className="text-[12px] text-amber-800">
+                  We've notified your passenger that the trip has ended. As soon as
+                  they confirm "I have arrived", the trip closes and your payout queues.
+                </p>
+                <p className="text-[10px] text-amber-700 mt-2">
+                  Requested {new Date(booking.completionRequestedAt).toLocaleString()}
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-gradient-to-br from-blue-50 to-white border border-blue-100 p-5">
+                <p className="text-[13px] font-semibold text-zinc-950 mb-1">Trip ended?</p>
+                <p className="text-[12px] text-slate-600 mb-4">
+                  Notify the traveler that the ride is over. They'll be prompted to
+                  confirm — only then is the trip marked completed and your payout queued.
+                </p>
+                <button
+                  onClick={handleRequestCompletion}
+                  disabled={actionLoading}
+                  className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl disabled:opacity-50 transition-all active:scale-[0.98]"
+                >
+                  {actionLoading ? "Sending..." : "Mark ride completed"}
+                </button>
+              </div>
+            )
           )}
 
           {/* Chat */}
@@ -340,9 +361,21 @@ export default function BookingDetailPage() {
             </div>
             <div className="p-5 space-y-4">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 text-white text-sm font-semibold flex items-center justify-center">
-                  {traveler?.name?.charAt(0).toUpperCase() || "U"}
-                </div>
+                {/* Render the avatar image when present; fall back to the
+                    initial in a gradient tile. The image is a presigned
+                    S3 URL — server resolves keys before sending. */}
+                {traveler?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={traveler.avatarUrl}
+                    alt={traveler.name || "Traveler"}
+                    className="w-11 h-11 rounded-xl object-cover ring-1 ring-slate-200"
+                  />
+                ) : (
+                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-900 to-slate-700 text-white text-sm font-semibold flex items-center justify-center">
+                    {traveler?.name?.charAt(0).toUpperCase() || "U"}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <p className="text-[14px] font-semibold text-zinc-950 truncate">
                     {traveler?.name || "Unknown"}
@@ -357,6 +390,15 @@ export default function BookingDetailPage() {
                 )}
                 {traveler?.phoneNumber && (
                   <DetailRow icon={<PhoneIcon className="w-3.5 h-3.5" />} label="Phone" value={traveler.phoneNumber} accent />
+                )}
+                {/* Pre-payment, the API masks email + phone (mirrors the
+                    contact masking the traveler sees of the transporter).
+                    Show a note so the driver understands why contact
+                    isn't visible yet rather than thinking it's broken. */}
+                {!traveler?.email && !traveler?.phoneNumber && booking.paymentStatus !== "PAID" && (
+                  <p className="text-[11px] text-slate-500 leading-snug">
+                    Contact details unlock once your passenger pays. For now use the in-app chat below.
+                  </p>
                 )}
               </div>
             </div>

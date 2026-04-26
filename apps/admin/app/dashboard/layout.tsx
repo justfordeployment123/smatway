@@ -13,6 +13,7 @@ import {
   AdminProfile, adminCan, clearAdminAuth, getAdminProfile, setAdminProfile,
 } from "@/lib/auth";
 import { ADMIN_PERMISSIONS } from "@/lib/permissions";
+import { useAdminUnreadBugReports } from "@/lib/bugReportNotifications";
 
 // Sidebar nav — every entry gates on a permission. Hidden when the admin
 // doesn't hold it (SUPER_ADMIN sees everything).
@@ -30,11 +31,14 @@ const NAV: NavEntry[] = [
   { key: "/dashboard/vehicles", label: "Vehicles", icon: CarIcon, permission: ADMIN_PERMISSIONS.VEHICLES_READ },
   { key: "/dashboard/bookings", label: "Bookings", icon: BookOpenIcon, permission: ADMIN_PERMISSIONS.BOOKINGS_READ },
   { key: "/dashboard/finance", label: "Finance", icon: CashIcon, permission: ADMIN_PERMISSIONS.FINANCE_READ },
+  { key: "/dashboard/payouts", label: "Payouts", icon: CashIcon, permission: ADMIN_PERMISSIONS.PAYOUTS_READ },
   { key: "/dashboard/feedback", label: "Site feedback", icon: MessageSquareIcon, permission: ADMIN_PERMISSIONS.FEEDBACK_READ },
+  { key: "/dashboard/bug-reports", label: "Bug reports", icon: MessageSquareIcon, permission: ADMIN_PERMISSIONS.BUG_REPORTS_READ },
   { key: "/dashboard/reviews", label: "Trip reviews", icon: StarIcon, permission: ADMIN_PERMISSIONS.REVIEWS_READ },
   { key: "/dashboard/announcements", label: "Announcements", icon: MegaphoneIcon, permission: ADMIN_PERMISSIONS.ANNOUNCEMENTS_READ },
   { key: "/dashboard/admins", label: "Admins", icon: ShieldUserIcon, permission: ADMIN_PERMISSIONS.ADMINS_READ },
   { key: "/dashboard/audit", label: "Audit log", icon: ListIcon, permission: ADMIN_PERMISSIONS.AUDIT_READ },
+  { key: "/dashboard/settings", label: "Settings", icon: ListIcon, permission: ADMIN_PERMISSIONS.SETTINGS_EDIT },
 ];
 
 const TITLES: Record<string, string> = {
@@ -44,11 +48,14 @@ const TITLES: Record<string, string> = {
   "/dashboard/vehicles": "Vehicles",
   "/dashboard/bookings": "Bookings",
   "/dashboard/finance": "Finance",
+  "/dashboard/payouts": "Payouts",
   "/dashboard/feedback": "Site feedback",
+  "/dashboard/bug-reports": "Bug reports",
   "/dashboard/reviews": "Trip reviews",
   "/dashboard/announcements": "Announcements",
   "/dashboard/admins": "Admins",
   "/dashboard/audit": "Audit log",
+  "/dashboard/settings": "Settings",
 };
 
 function isActivePath(pathname: string, key: string) {
@@ -83,6 +90,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const visibleNav = NAV.filter((n) => adminCan(profile, n.permission));
   const title = TITLES[pathname] ?? "Admin";
+  const { open: unreadBugReports } = useAdminUnreadBugReports();
 
   const sidebar = (
     <>
@@ -111,6 +119,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           {visibleNav.map((item) => {
             const active = isActivePath(pathname, item.key);
             const Icon = item.icon;
+            // Only "Bug reports" surfaces an unread count today. If more
+            // sidebar items grow notifications later, generalize this map.
+            const itemUnread = item.key === "/dashboard/bug-reports" ? unreadBugReports : 0;
             return (
               <li key={item.key}>
                 <Link
@@ -124,9 +135,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 >
                   <Icon className={`w-[18px] h-[18px] ${active ? "text-white" : "text-slate-400"}`} />
                   {item.label}
-                  {active && (
+                  {active ? (
                     <span className="ml-auto w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_0_3px_rgba(52,211,153,0.2)]" />
-                  )}
+                  ) : itemUnread > 0 ? (
+                    <span className="ml-auto inline-flex items-center gap-1.5">
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-md px-1.5 py-0.5">
+                        {itemUnread > 9 ? "9+" : itemUnread}
+                      </span>
+                      <span className="relative flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                      </span>
+                    </span>
+                  ) : null}
                 </Link>
               </li>
             );

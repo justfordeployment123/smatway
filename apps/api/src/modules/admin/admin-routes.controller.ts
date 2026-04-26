@@ -33,12 +33,28 @@ export class AdminRoutesController {
   async list(
     @Query('search') search?: string,
     @Query('status') status?: TransportStatus,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
     @Query('limit') limitRaw: string = '50',
     @Query('cursor') cursor?: string,
   ) {
     const limit = Math.min(Math.max(parseInt(limitRaw, 10) || 50, 1), 200);
+    // `from`/`to` filter `departureDateTime` — for routes, the meaningful
+    // date is when the trip happens, not when the row was created. Bookings
+    // filter by createdAt because that's "when the booking was made"; for
+    // routes, "today/this week" naturally means "departing today/this week".
+    const fromDate = from ? new Date(from) : null;
+    const toDate = to ? new Date(to) : null;
     const where = {
       ...(status ? { status } : {}),
+      ...(fromDate || toDate
+        ? {
+            departureDateTime: {
+              ...(fromDate ? { gte: fromDate } : {}),
+              ...(toDate ? { lt: toDate } : {}),
+            },
+          }
+        : {}),
       ...(search
         ? {
             OR: [

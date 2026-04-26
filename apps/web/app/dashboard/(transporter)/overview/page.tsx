@@ -12,20 +12,32 @@ import {
   Page, Reveal, PageHeader, StatStrip, EmptyState, Skeleton,
   PrimaryButton, StatusPill, spring,
 } from "@/app/dashboard/_Components/ui";
-import { getMyVehicles, getMyRoutes, getTransportBookings } from "@/lib/api";
+import { getMyVehicles, getMyRoutes, getTransportBookings, getMyPayouts, type MyPayout } from "@/lib/api";
+import { formatBookingStatus } from "@/lib/bookingStatus";
+import { formatPrice } from "@/lib/currencies";
 
 export default function TransporterDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [payouts, setPayouts] = useState<MyPayout[]>([]);
 
   useEffect(() => {
-    Promise.all([getMyVehicles(), getMyRoutes(), getTransportBookings()])
-      .then(([v, r, b]) => {
+    Promise.all([
+      getMyVehicles(),
+      getMyRoutes(),
+      getTransportBookings(),
+      // Payouts → drives the real earnings number. Soft-fail so a 4xx here
+      // doesn't blank out the whole dashboard for a transporter who hasn't
+      // configured their payout account yet.
+      getMyPayouts().catch(() => ({ payouts: [] })),
+    ])
+      .then(([v, r, b, p]) => {
         setVehicles(v || []);
         setRoutes(r || []);
         setBookings(b || []);
+        setPayouts(p?.payouts ?? []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -35,9 +47,28 @@ export default function TransporterDashboardPage() {
   const pendingBookings = bookings.filter((b) => b.status === "PENDING").length;
   const confirmedBookings = bookings.filter((b) => b.status === "CONFIRMED").length;
   const completedBookings = bookings.filter((b) => b.status === "COMPLETED").length;
-  const revenue = bookings
-    .filter((b) => b.status !== "CANCELLED")
-    .reduce((sum, b) => sum + Number(b.totalPrice || 0), 0);
+
+  // Earnings = transporter's NET take-home from the Payout table — same source
+  // the Earnings page reads. Released = money confirmed in the bank. We pick
+  // the largest-net currency to display in the tile (a transporter with mixed
+  // NGN + USD trips usually skews heavily to one); the Earnings page itself
+  // breaks down per currency.
+  const releasedByCurrency = new Map<string, number>();
+  for (const p of payouts) {
+    if (p.status !== "RELEASED") continue;
+    const cur = p.currency || "USD";
+    releasedByCurrency.set(cur, (releasedByCurrency.get(cur) ?? 0) + Number(p.netAmount));
+  }
+  const dominantCurrency = [...releasedByCurrency.entries()].sort((a, b) => b[1] - a[1])[0];
+  const releasedAmount = dominantCurrency?.[1] ?? 0;
+  const releasedCurrency = dominantCurrency?.[0] ?? "USD";
+  const otherCurrencies = releasedByCurrency.size - (dominantCurrency ? 1 : 0);
+  const earningsHint =
+    completedBookings === 0
+      ? "no completed trips yet"
+      : otherCurrencies > 0
+      ? `+ ${otherCurrencies} other currency${otherCurrencies === 1 ? "" : "s"}`
+      : `${completedBookings} completed`;
 
   const isEmpty = !loading && vehicles.length === 0 && routes.length === 0;
   const recentBookings = bookings.slice(0, 4);
@@ -84,9 +115,12 @@ export default function TransporterDashboardPage() {
                 tone: "amber",
               },
               {
-                label: "Revenue",
-                value: `$${revenue.toFixed(0)}`,
-                hint: `${completedBookings} completed`,
+                // Transporter's net earnings — sum of RELEASED payouts in
+                // their dominant currency. Mirrors what the Earnings page
+                // shows ("Total released to you"), so the two never disagree.
+                label: "Released earnings",
+                value: formatPrice(releasedAmount, releasedCurrency),
+                hint: earningsHint,
                 icon: <CreditCardIcon className="w-4 h-4" />,
                 tone: "rose",
               },
@@ -177,13 +211,15 @@ export default function TransporterDashboardPage() {
                                 ? "emerald"
                                 : booking.status === "PENDING"
                                 ? "yellow"
+                                : booking.status === "IN_PROGRESS"
+                                ? "orange"
                                 : booking.status === "COMPLETED"
                                 ? "blue"
                                 : "red"
                             }
-                            dot={booking.status === "PENDING" || booking.status === "CONFIRMED"}
+                            dot={booking.status === "PENDING" || booking.status === "CONFIRMED" || booking.status === "IN_PROGRESS"}
                           >
-                            {booking.status}
+                            {formatBookingStatus(booking.status)}
                           </StatusPill>
                         </Link>
                       </motion.li>

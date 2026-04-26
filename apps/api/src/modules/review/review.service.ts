@@ -142,8 +142,20 @@ export class ReviewService {
   }
 
   async getTransporterFullProfile(transporterId: string) {
+    // This endpoint is unauthenticated-context (called from the browse-page
+    // modal before any booking exists), so we only return fields safe to
+    // expose publicly. Contact info (phone/email) is gated to paid bookings
+    // via the booking service — never leak it from here.
     const user = await this.prisma.user.findUnique({
       where: { id: transporterId },
+      select: {
+        id: true,
+        name: true,
+        country: true,
+        profileImageUrl: true,
+        avatarUrl: true,
+        createdAt: true,
+      },
     });
 
     if (!user) throw new NotFoundException('Transporter not found');
@@ -158,7 +170,10 @@ export class ReviewService {
     const profileImageUrl = await this.storageService.resolveImageUrl(user.profileImageUrl || user.avatarUrl);
 
     return {
-      ...user,
+      id: user.id,
+      name: user.name,
+      country: user.country,
+      createdAt: user.createdAt,
       profileImageUrl,
       ...stats,
       vehicleCount,

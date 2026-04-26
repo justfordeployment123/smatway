@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
+import { IsBoolean, IsNotEmpty, IsNumber, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class CreateTransportDto {
   @IsString() @IsNotEmpty() departureCountry!: string;
@@ -18,4 +18,17 @@ export class CreateTransportDto {
   @IsString() @IsNotEmpty() departureDateTime!: string;
 
   @IsString() @IsNotEmpty() maxReachDateTime!: string;
+
+  // Group-ride threshold. When set, the trip is "filling" until this many
+  // seats are booked across non-cancelled bookings. Below threshold:
+  // payment is locked for travelers and the transporter's per-booking
+  // Confirm button is gated (overridable). At/above threshold: pay opens
+  // (after the booking is CONFIRMED — either auto, see flag below, or
+  // by the transporter clicking Confirm).
+  @IsOptional() @IsInt() @Min(1) minSeatsToConfirm?: number;
+
+  // When true, every PENDING booking on the route auto-flips to
+  // CONFIRMED the moment the threshold is met. When false (default),
+  // transporter still confirms each one manually.
+  @IsOptional() @IsBoolean() autoConfirmOnFill?: boolean;
 }

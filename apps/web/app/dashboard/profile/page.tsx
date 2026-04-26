@@ -14,9 +14,8 @@ import {
   Page, Reveal, PageHeader, Skeleton, PrimaryButton, GhostButton, spring,
 } from "@/app/dashboard/_Components/ui";
 import { emitAvatarChange } from "@/app/dashboard/_Components/events";
-import { countries } from "@/lib/countries";
-import { currencies, defaultCurrencyForCountry } from "@/lib/currencies";
 import { Combobox } from "@/components/Combobox";
+import { PAYOUT_COUNTRIES, currencyForCountry } from "@/lib/payoutCountries";
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -28,7 +27,11 @@ export default function ProfilePage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("");
-  const [preferredCurrency, setPreferredCurrency] = useState("");
+  // Currency derives from country — Paystack/Flutterwave each have a
+  // fixed settlement currency per country. Storing them separately
+  // would let them drift; this way the user picks ONE thing (country)
+  // and the currency follows.
+  const preferredCurrency = currencyForCountry(country);
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
@@ -50,8 +53,10 @@ export default function ProfilePage() {
       setProfileData(data);
       setFullName(data.user.name || "");
       setPhone(data.user.phoneNumber || "");
-      setCountry(data.user.country || "");
-      setPreferredCurrency((data.user as any).preferredCurrency || "");
+      // Pre-select the user's saved country if it's still in the
+      // supported list. Falls back to NG as the platform's default
+      // market — the user can change it from the form.
+      setCountry(data.user.country || "NG");
       setBio(data.profile?.bio || "");
       setAvatarUrl(data.user.avatarUrl || null);
     } catch (err) {
@@ -82,6 +87,9 @@ export default function ProfilePage() {
     try {
       setSaving(true);
       setError(null);
+      // Send the derived currency too — the API treats it as the
+      // user's preferred currency and pre-fills it on route creation
+      // and the payout-settings modal.
       await updateProfile({ name: fullName, phoneNumber: phone, country, preferredCurrency: preferredCurrency || undefined, bio });
       setSuccess("Profile updated");
       setTimeout(() => window.location.reload(), 900);
@@ -195,10 +203,10 @@ export default function ProfilePage() {
                     <img
                       src={avatarUrl}
                       alt="Profile"
-                      className="w-20 h-20 rounded-2xl object-cover ring-2 ring-white shadow-lg"
+                      className="w-20 h-20 rounded-lg object-cover ring-2 ring-white shadow-lg"
                     />
                   ) : (
-                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-2xl font-semibold ring-2 ring-white shadow-lg">
+                    <div className="w-20 h-20 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white text-2xl font-semibold ring-2 ring-white shadow-lg">
                       {initial}
                     </div>
                   )}
@@ -212,11 +220,14 @@ export default function ProfilePage() {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-[18px] font-semibold text-zinc-950 truncate">{fullName || "User"}</h2>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ring-inset ${isTransporter ? "bg-blue-50 text-blue-700 ring-blue-200" : "bg-emerald-50 text-emerald-700 ring-emerald-200"}`}>
+                  {/* Mobile: badge on its own line, then email wrapped below
+                      so it isn't squeezed into "m.hasaam.o…". sm+ keeps the
+                      old inline layout where there's enough horizontal room. */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mt-1 min-w-0">
+                    <span className={`self-start text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ring-1 ring-inset ${isTransporter ? "bg-blue-50 text-blue-700 ring-blue-200" : "bg-emerald-50 text-emerald-700 ring-emerald-200"}`}>
                       {roleLabel}
                     </span>
-                    <span className="text-[11px] text-slate-500 truncate">{profileData.user.email}</span>
+                    <span className="text-[11px] text-slate-500 truncate min-w-0">{profileData.user.email}</span>
                   </div>
                 </div>
               </div>
@@ -246,27 +257,36 @@ export default function ProfilePage() {
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="Country">
+                  {/* Restricted to the countries Paystack/Flutterwave
+                      can settle in — picking a country here is what
+                      determines the currency on every other surface
+                      (route prices, bookings, payouts), so we can only
+                      offer countries the platform can actually transact
+                      in. */}
                   <Combobox
                     ariaLabel="Country"
                     placeholder="Type to search countries…"
-                    options={countries.map(c => ({ value: c.code, label: c.name, hint: c.code }))}
+                    options={PAYOUT_COUNTRIES.map(c => ({
+                      value: c.country,
+                      label: c.countryName,
+                      hint: c.country,
+                      search: [c.countryName, c.country, c.currency],
+                    }))}
                     value={country}
-                    onChange={(v) => {
-                      setCountry(v);
-                      if (!preferredCurrency) setPreferredCurrency(defaultCurrencyForCountry(v));
-                    }}
+                    onChange={setCountry}
                     className={comboboxInputClass}
                   />
                 </Field>
-                <Field label="Preferred currency">
-                  <Combobox
-                    ariaLabel="Preferred currency"
-                    placeholder="Type to search currencies…"
-                    options={currencies.map(c => ({ value: c.code, label: `${c.code} — ${c.name}`, hint: c.symbol, search: [c.name, c.code, c.symbol] }))}
-                    value={preferredCurrency}
-                    onChange={setPreferredCurrency}
-                    className={comboboxInputClass}
-                  />
+                <Field label="Currency">
+                  {/* Read-only — derived from the country above. Listed
+                      separately so the user sees what they'll be
+                      transacting in, but they can't pick it
+                      independently (would let it drift from the
+                      country and break payouts). */}
+                  <div className={`${comboboxInputClass} flex items-center justify-between bg-slate-50/60 cursor-not-allowed`}>
+                    <span className="font-mono font-semibold tabular-nums">{preferredCurrency}</span>
+                    <span className="text-[11px] text-slate-500">Set by country</span>
+                  </div>
                 </Field>
               </div>
 

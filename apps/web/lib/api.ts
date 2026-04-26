@@ -253,10 +253,28 @@ export async function searchTransports(params: {
   destinationCity?: string;
   destinationCountry?: string;
   transportType?: string;
+  /** YYYY-MM-DD in the user's local timezone — converted to from/to ISO timestamps below. */
   date?: string;
 }): Promise<any[]> {
   const query = new URLSearchParams();
-  Object.entries(params).forEach(([k, v]) => { if (v && v !== 'All Types') query.set(k, v); });
+  for (const [k, v] of Object.entries(params)) {
+    if (k === "date") continue; // handled separately so we send local-day bounds
+    if (v && v !== "All Types") query.set(k, v);
+  }
+  // Convert the picked YYYY-MM-DD into the *local* day's UTC boundaries so
+  // a route at "04:01 Apr 26 local" matches when the user picks Apr 26 —
+  // even though its UTC instant lives on Apr 25. Sending naked `date=` would
+  // make the backend treat it as a UTC day, which mis-matches routes near
+  // the local midnight boundary.
+  if (params.date) {
+    const [y, m, d] = params.date.split("-").map(Number);
+    if (y && m && d) {
+      const from = new Date(y, m - 1, d, 0, 0, 0, 0);
+      const to = new Date(y, m - 1, d + 1, 0, 0, 0, 0);
+      query.set("from", from.toISOString());
+      query.set("to", to.toISOString());
+    }
+  }
   return apiGet<any[]>(`/transport?${query.toString()}`);
 }
 
@@ -275,12 +293,37 @@ export async function createTransport(data: {
   departureDateTime: string;
   maxReachDateTime: string;
   vehicleId: string;
+  // Group-ride threshold. When set, the trip "fills" until this many
+  // seats are booked, gating payment for travelers and the Confirm
+  // button on the transporter side. Omit (or pass undefined) to skip
+  // the threshold entirely.
+  minSeatsToConfirm?: number;
+  // When true and the threshold is reached, every PENDING booking
+  // auto-confirms in one shot.
+  autoConfirmOnFill?: boolean;
 }): Promise<any> {
   return apiPost<any>('/transport', data);
 }
 
 export async function getMyRoutes(): Promise<any[]> {
   return apiGet<any[]>('/transport/my');
+}
+
+/**
+ * Patch a route. Send only the fields you want to change; everything else
+ * stays as-is. Used for the inline group-ride threshold edit on the routes
+ * page (and any future field-level edits).
+ */
+export async function updateTransport(
+  id: string,
+  data: Partial<{
+    minSeatsToConfirm: number;
+    autoConfirmOnFill: boolean;
+    availableSeats: number;
+    price: number;
+  }>,
+): Promise<any> {
+  return apiPatch<any>(`/transport/${id}`, data);
 }
 
 export async function deleteTransport(id: string): Promise<any> {
@@ -327,9 +370,10 @@ export async function rejectBooking(id: string): Promise<any> {
   return apiPatch<any>(`/booking/${id}/reject`);
 }
 
-export async function completeBooking(id: string): Promise<any> {
-  return apiPatch<any>(`/booking/${id}/complete`);
-}
+// completeBooking() removed — the legacy /booking/:id/complete endpoint was
+// retired so a transporter can't unilaterally close a trip + trigger their
+// own payout. Use requestBookingCompletion() (transporter side) +
+// confirmBookingArrival() (traveler side) instead.
 
 export async function createReview(bookingId: string, rating: number, feedback?: string): Promise<any> {
   return apiPost<any>(`/review`, { bookingId, rating, feedback });
@@ -448,6 +492,9 @@ export interface PublicAnnouncement {
   title: string;
   body: string;
   audience: AnnouncementAudience;
+  imageKeys?: string[];
+  imageUrls?: (string | null)[];
+  expiresAt?: string | null;
   createdAt: string;
 }
 
@@ -455,6 +502,175 @@ export async function getAnnouncements(audience: 'TRAVELER' | 'TRANSPORTER'): Pr
   announcements: PublicAnnouncement[];
 }> {
   return apiGet(`/announcements?audience=${audience}`);
+}
+
+// ─── Payments ────────────────────────────────────────────────────────────────
+// Paystack-backed for now. Same shape will work for Flutterwave / M-Pesa once
+// those are added to the backend.
+
+export interface InitializePaymentResponse {
+  authorizationUrl: string;
+  accessCode: string;
+  reference: string;
+}
+
+export async function initializePaystackPayment(bookingId: string): Promise<InitializePaymentResponse> {
+  return apiPost(`/payments/initialize/paystack/${bookingId}`);
+}
+
+export type PaymentVerifyStatus = 'success' | 'failed' | 'pending';
+
+export interface VerifyPaymentResponse {
+  status: PaymentVerifyStatus;
+  bookingId: string;
+  paymentStatus: 'PENDING' | 'PAID' | 'FAILED';
+  reason?: string;
+}
+
+export async function verifyPaystackPayment(reference: string): Promise<VerifyPaymentResponse> {
+  return apiGet(`/payments/verify/paystack/${reference}`);
+}
+
+export async function initializeFlutterwavePayment(bookingId: string): Promise<InitializePaymentResponse> {
+  return apiPost(`/payments/initialize/flutterwave/${bookingId}`);
+}
+
+/**
+ * Verify a Flutterwave payment. Pass either our tx_ref (`reference`) or
+ * Flutterwave's `transaction_id` — whichever the callback URL gave us.
+ */
+export async function verifyFlutterwavePayment(input: {
+  reference?: string;
+  transactionId?: string;
+}): Promise<VerifyPaymentResponse> {
+  const q = new URLSearchParams();
+  if (input.reference) q.set('reference', input.reference);
+  if (input.transactionId) q.set('transactionId', input.transactionId);
+  return apiGet(`/payments/verify/flutterwave?${q.toString()}`);
+}
+
+// ─── Booking lifecycle: pickup verification + arrival ────────────────────────
+
+export interface VerifyPickupResponse {
+  booking: { id: string; status: string };
+  traveler: { id: string; name: string | null };
+  route: string;
+  seatsBooked: number;
+}
+
+/** Transporter scans/enters the traveler's 10-digit code at pickup. */
+export async function verifyPickupCode(code: string): Promise<VerifyPickupResponse> {
+  return apiPost('/booking/verify-pickup', { code });
+}
+
+/** Traveler taps "I've arrived" to close out the trip. */
+export async function confirmBookingArrival(bookingId: string): Promise<{ id: string; status: string }> {
+  return apiPatch(`/booking/${bookingId}/arrived`);
+}
+
+/**
+ * Transporter taps "Ride completed" — pre-flag the trip so the traveler is
+ * prompted to confirm. Doesn't end the trip; that still requires the
+ * traveler's confirmBookingArrival() call.
+ */
+export async function requestBookingCompletion(bookingId: string): Promise<{ id: string; completionRequestedAt: string }> {
+  return apiPatch(`/booking/${bookingId}/request-completion`);
+}
+
+// ─── Payouts (transporter side) ──────────────────────────────────────────────
+
+export interface Bank {
+  name: string;
+  code: string;
+  longcode: string;
+}
+
+export type PayoutProvider = 'PAYSTACK' | 'FLUTTERWAVE';
+
+export async function listBanks(
+  currency: string = 'NGN',
+  provider: PayoutProvider = 'PAYSTACK',
+): Promise<{ banks: Bank[] }> {
+  return apiGet(
+    `/payouts/banks?currency=${encodeURIComponent(currency)}&provider=${provider}`,
+  );
+}
+
+export async function resolveBankAccount(
+  bankCode: string,
+  accountNumber: string,
+  provider: PayoutProvider = 'PAYSTACK',
+): Promise<{
+  accountName: string;
+  accountNumber: string;
+}> {
+  return apiGet(
+    `/payouts/resolve/${encodeURIComponent(bankCode)}/${encodeURIComponent(accountNumber)}?provider=${provider}`,
+  );
+}
+
+export interface PayoutAccount {
+  // Paystack-side bank info
+  bankCode: string | null;
+  bankAccountNumber: string | null;
+  bankAccountName: string | null;
+  paystackRecipientCode: string | null;
+  // Flutterwave-side bank info (independent of Paystack)
+  flwBankCode: string | null;
+  flwBankAccountNumber: string | null;
+  flwBankAccountName: string | null;
+  // Preferred provider (for cases where both are configured); not really
+  // load-bearing anymore — actual release uses the provider the booking
+  // was charged through.
+  payoutProvider: PayoutProvider | null;
+  // Derived: which providers are fully configured.
+  configuredProviders: PayoutProvider[];
+}
+
+export async function setPayoutAccount(data: {
+  bankCode: string;
+  accountNumber: string;
+  currency: string;
+  provider?: PayoutProvider;
+}): Promise<PayoutAccount> {
+  return apiPut('/payouts/account', data);
+}
+
+export async function getPayoutAccount(): Promise<PayoutAccount> {
+  return apiGet('/payouts/account');
+}
+
+/**
+ * Disconnect one provider's payout account. Clears only that provider's
+ * columns server-side; the other provider's account stays intact.
+ */
+export async function removePayoutAccount(
+  provider: PayoutProvider,
+): Promise<PayoutAccount> {
+  return apiDelete(`/payouts/account?provider=${encodeURIComponent(provider)}`);
+}
+
+export type MyPayoutStatus = 'PENDING' | 'PROCESSING' | 'RELEASED' | 'FAILED';
+
+export interface MyPayout {
+  id: string;
+  bookingId: string;
+  grossAmount: string | number;
+  commissionAmount: string | number;
+  netAmount: string | number;
+  currency: string;
+  status: MyPayoutStatus;
+  failureReason: string | null;
+  createdAt: string;
+  releasedAt: string | null;
+  booking: {
+    id: string;
+    transport: { departureCity: string; destinationCity: string };
+  };
+}
+
+export async function getMyPayouts(): Promise<{ payouts: MyPayout[] }> {
+  return apiGet('/payouts/mine');
 }
 
 // Vehicle
@@ -560,4 +776,62 @@ export async function getMessages(chatId: string): Promise<any[]> {
 
 export async function sendMessage(chatId: string, content: string): Promise<any> {
   return apiPost<any>(`/chat/${chatId}/messages`, { content });
+}
+
+// ─── Bug reports / suggestions ───────────────────────────────────────────────
+export type BugReportKind = "BUG" | "SUGGESTION";
+export type BugReportStatus = "OPEN" | "REPLIED" | "CLOSED";
+
+export interface BugReport {
+  id: string;
+  kind: BugReportKind;
+  subject: string;
+  body: string;
+  imageKeys: string[];
+  imageUrls: (string | null)[];
+  status: BugReportStatus;
+  adminReply: string | null;
+  repliedAt: string | null;
+  createdAt: string;
+}
+
+/**
+ * Submit a bug report or improvement suggestion. Uses multipart/form-data so
+ * we can attach up to 4 image files alongside the text fields.
+ */
+export async function submitBugReport(input: {
+  kind: BugReportKind;
+  subject: string;
+  body: string;
+  images?: File[];
+}): Promise<BugReport> {
+  const formData = new FormData();
+  formData.append("kind", input.kind);
+  formData.append("subject", input.subject);
+  formData.append("body", input.body);
+  for (const file of input.images ?? []) {
+    formData.append("images", file);
+  }
+
+  const url = new URL("/bug-reports", API_BASE_URL).toString();
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({} as { message?: string }));
+    throw new ApiError(err.message || "Failed to submit report", response.status, err);
+  }
+  return response.json();
+}
+
+export async function listMyBugReports(): Promise<BugReport[]> {
+  return apiGet<BugReport[]>("/bug-reports/mine");
+}
+
+export async function getMyBugReport(id: string): Promise<BugReport> {
+  return apiGet<BugReport>(`/bug-reports/${id}`);
 }

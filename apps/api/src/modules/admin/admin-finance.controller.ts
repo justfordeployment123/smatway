@@ -14,19 +14,33 @@ export class AdminFinanceController {
   @RequirePermissions(ADMIN_PERMISSIONS.FINANCE_READ)
   async summary() {
     // Group total bookings + revenue by currency, since the platform supports
-    // multiple currencies via Transport.currency.
+    // multiple currencies via Transport.currency. We pull payout.commissionAmount
+    // alongside the booking so the per-currency platform-revenue (= commission)
+    // is computed from what was actually captured at payout-creation time —
+    // that survives commission-rate changes correctly.
     const paidBookings = await this.prisma.booking.findMany({
       where: { paymentStatus: PaymentStatus.PAID },
       select: {
         totalPrice: true,
         status: true,
         transport: { select: { currency: true } },
+        payout: { select: { commissionAmount: true } },
       },
     });
 
     const byCurrency = new Map<
       string,
-      { paidGross: number; bookings: number; completedGross: number; completedBookings: number }
+      {
+        paidGross: number;
+        bookings: number;
+        completedGross: number;
+        completedBookings: number;
+        // Platform's actual revenue on completed bookings — sum of
+        // captured commissionAmount on the payout. Falls back to 0 for
+        // completed bookings without a payout row yet (rare race window
+        // before createForBooking finishes).
+        completedCommission: number;
+      }
     >();
     for (const b of paidBookings) {
       const cur = b.transport.currency || 'USD';
@@ -35,6 +49,7 @@ export class AdminFinanceController {
         bookings: 0,
         completedGross: 0,
         completedBookings: 0,
+        completedCommission: 0,
       };
       const amount = Number(b.totalPrice);
       slot.paidGross += amount;
@@ -42,6 +57,9 @@ export class AdminFinanceController {
       if (b.status === BookingStatus.COMPLETED) {
         slot.completedGross += amount;
         slot.completedBookings += 1;
+        if (b.payout) {
+          slot.completedCommission += Number(b.payout.commissionAmount);
+        }
       }
       byCurrency.set(cur, slot);
     }
@@ -59,6 +77,7 @@ export class AdminFinanceController {
         paidBookings: v.bookings,
         completedGross: Math.round(v.completedGross * 100) / 100,
         completedBookings: v.completedBookings,
+        completedCommission: Math.round(v.completedCommission * 100) / 100,
       })),
       pendingPayments: pendingCount,
       failedPayments: failedCount,

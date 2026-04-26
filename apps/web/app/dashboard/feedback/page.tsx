@@ -78,16 +78,19 @@ export default function FeedbackPage() {
       <Reveal>
         <form
           onSubmit={handleSubmit}
-          className="rounded-2xl border border-slate-200/70 bg-white p-6 sm:p-8 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
+          className="rounded-2xl border border-slate-200/70 bg-white p-5 sm:p-8 shadow-[0_1px_2px_rgba(0,0,0,0.03)]"
         >
           {/* Rating */}
-          <div className="mb-7">
+          <div className="mb-6 sm:mb-7">
             <div className="flex items-center justify-between gap-3 mb-3">
               <label className="text-sm font-semibold text-zinc-900">Your rating</label>
               <span className="text-xs font-medium text-slate-500">{ratingLabel}</span>
             </div>
+            {/* `justify-between` so the 5 stars distribute across whatever
+                width is available — fixes the clipped 5th star on narrow
+                phones. Slightly smaller on mobile (w-7) to save extra room. */}
             <div
-              className="flex items-center gap-1.5"
+              className="flex items-center justify-between gap-1"
               onMouseLeave={() => setHover(0)}
             >
               {[1, 2, 3, 4, 5].map((n) => {
@@ -99,11 +102,11 @@ export default function FeedbackPage() {
                     aria-label={`${n} star${n === 1 ? "" : "s"}`}
                     onMouseEnter={() => setHover(n)}
                     onClick={() => setRating(n)}
-                    className="relative p-1.5 rounded-lg transition-colors hover:bg-amber-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+                    className="relative p-1 sm:p-1.5 rounded-lg transition-colors hover:bg-amber-50/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
                   >
                     <StarIcon
                       filled={active}
-                      className={`w-8 h-8 transition-colors ${active ? "text-amber-400" : "text-slate-200"}`}
+                      className={`w-7 h-7 sm:w-8 sm:h-8 transition-colors ${active ? "text-amber-400" : "text-slate-200"}`}
                     />
                   </button>
                 );

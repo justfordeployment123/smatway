@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getBooking, initChat, getMessages, sendMessage, completeBooking } from "@/lib/api";
+import { getBooking, initChat, getMessages, sendMessage, requestBookingCompletion } from "@/lib/api";
 import Link from "next/link";
+import { formatBookingStatus } from "@/lib/bookingStatus";
 
 export default function TransporterBookingDetailPage() {
   const params = useParams<{ id: string; bookingId: string }>();
@@ -71,14 +72,19 @@ export default function TransporterBookingDetailPage() {
     }
   }
 
-  async function handleCompleteBooking() {
-    if (!confirm("Mark this booking as completed?")) return;
+  async function handleRequestCompletion() {
+    // Two-party closeout: this only flags the trip as "ride ended". The
+    // traveler still has to confirm arrival before the booking flips to
+    // COMPLETED + payout queues. Stops a transporter from triggering their
+    // own payout.
+    if (!confirm("Mark this ride as completed? Your passenger will be asked to confirm arrival.")) return;
     setCompletingBooking(true);
     try {
-      const updated = await completeBooking(bookingId);
-      setBooking(updated);
+      await requestBookingCompletion(bookingId);
+      const fresh = await getBooking(bookingId);
+      setBooking(fresh);
     } catch (e: any) {
-      setError(e?.message || "Failed to complete booking");
+      setError(e?.message || "Failed to mark ride completed");
     } finally {
       setCompletingBooking(false);
     }
@@ -99,8 +105,8 @@ export default function TransporterBookingDetailPage() {
       {/* Booking Summary */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${booking.status === "PENDING" ? "bg-yellow-50 text-yellow-700 border-yellow-200" : booking.status === "CONFIRMED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
-            {booking.status}
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${booking.status === "PENDING" ? "bg-yellow-50 text-yellow-700 border-yellow-200" : booking.status === "CONFIRMED" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : booking.status === "IN_PROGRESS" ? "bg-orange-50 text-orange-700 border-orange-200" : booking.status === "CANCELLED" ? "bg-red-50 text-red-600 border-red-200" : "bg-blue-50 text-blue-700 border-blue-200"}`}>
+            {formatBookingStatus(booking.status)}
           </span>
         </div>
 
@@ -140,16 +146,28 @@ export default function TransporterBookingDetailPage() {
         </div>
       )}
 
-      {booking.status === "CONFIRMED" && (
+      {/* Only after the pickup code has been verified (status IN_PROGRESS).
+          Pre-pickup the closeout button doesn't make sense — the trip
+          hasn't started yet. */}
+      {booking.status === "IN_PROGRESS" && !booking.completionRequestedAt && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <p className="text-xs text-slate-400 mb-3">Mark as complete when trip finishes</p>
+          <p className="text-xs text-slate-400 mb-3">Mark the ride as completed when you've dropped your passenger off</p>
           <button
-            onClick={handleCompleteBooking}
+            onClick={handleRequestCompletion}
             disabled={completingBooking}
             className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg disabled:opacity-50"
           >
-            {completingBooking ? "Completing..." : "Complete Booking"}
+            {completingBooking ? "Sending..." : "Mark ride completed"}
           </button>
+        </div>
+      )}
+      {booking.status === "IN_PROGRESS" && booking.completionRequestedAt && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <p className="text-sm font-semibold text-amber-900">Awaiting traveler confirmation</p>
+          <p className="text-xs text-amber-800 mt-1">
+            We've notified your passenger. They close the trip with "I have arrived",
+            which queues your payout.
+          </p>
         </div>
       )}
 

@@ -253,20 +253,24 @@ function PasswordField({
       <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">
         {label}
       </label>
-      <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
+      <div className="flex items-center gap-1 rounded-xl border border-slate-200 bg-white pl-3.5 pr-1.5 py-1.5 focus-within:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
         <input
           type={visible ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           required
-          className="flex-1 outline-none text-[13px] text-zinc-950 placeholder:text-slate-400 bg-transparent"
+          /* `border-0 outline-0 ring-0` overrides default browser input chrome
+             that was making the eye icon look like it floated outside the
+             input's visual frame. */
+          className="flex-1 min-w-0 border-0 outline-0 ring-0 py-1.5 text-[13px] text-zinc-950 placeholder:text-slate-400 bg-transparent"
         />
         {onToggleVisibility && (
           <button
             type="button"
             onClick={onToggleVisibility}
-            className="text-slate-400 hover:text-slate-600"
+            aria-label={visible ? "Hide password" : "Show password"}
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
           >
             {visible ? <EyeIcon className="w-4 h-4" /> : <EyeOffIcon className="w-4 h-4" />}
           </button>

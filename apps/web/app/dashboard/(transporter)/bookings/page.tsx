@@ -19,9 +19,19 @@ import {
   Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
   TabFilter, SurfaceCard, spring,
 } from "@/app/dashboard/_Components/ui";
+import {
+  deriveBookingStage, BookingStage, STAGE_TONE, formatStageLabel,
+} from "@/lib/bookingStatus";
+import {
+  DATE_RANGE_TABS, DATE_RANGE_LABELS, isInDateRange, type DateRange,
+} from "@/lib/dateRange";
 
-type Filter = "ALL" | "PENDING" | "CONFIRMED" | "CANCELLED";
-const FILTERS: readonly Filter[] = ["ALL", "PENDING", "CONFIRMED", "CANCELLED"] as const;
+// Full transporter-facing lifecycle. PAID is post-payment + pre-pickup;
+// RECEIVED is post-payout-released. Both are derived stages, not raw enum values.
+type Filter = "ALL" | BookingStage;
+const FILTERS: readonly Filter[] = [
+  "ALL", "PENDING", "CONFIRMED", "PAID", "IN_TRANSIT", "COMPLETED", "RECEIVED", "CANCELLED",
+] as const;
 
 export default function TransporterBookingsPage() {
   const router = useRouter();
@@ -29,6 +39,9 @@ export default function TransporterBookingsPage() {
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<Filter>("ALL");
+  // Default to "this week" — most transporters care about upcoming + recent
+  // bookings, not history dump.
+  const [dateRange, setDateRange] = useState<DateRange>("WEEK");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [chatBookingId, setChatBookingId] = useState<string | null>(null);
@@ -61,6 +74,28 @@ export default function TransporterBookingsPage() {
   useEffect(() => {
     loadBookings();
     getCurrentUser().then(setCurrentUser);
+  }, []);
+
+  // Live refresh: useChat broadcasts a `smatway:notification` event for
+  // every socket-delivered notification. We re-fetch the bookings list
+  // whenever a relevant event fires so a new booking, payment, or
+  // arrival shows up without the transporter having to reload.
+  useEffect(() => {
+    const handler = (ev: Event) => {
+      const detail = (ev as CustomEvent).detail;
+      if (!detail) return;
+      const t = detail.type as string;
+      if (
+        t === 'booking' ||
+        t === 'booking_cancelled' ||
+        t === 'booking_paid' ||
+        t === 'booking_arrival_confirmed'
+      ) {
+        loadBookings();
+      }
+    };
+    window.addEventListener('smatway:notification', handler);
+    return () => window.removeEventListener('smatway:notification', handler);
   }, []);
 
   useEffect(() => {
@@ -139,14 +174,25 @@ export default function TransporterBookingsPage() {
     }
   }
 
-  const filtered = filter === "ALL" ? bookings : bookings.filter((b) => b.status === filter);
+  // Compute the derived stage once per booking — drives both the filter and
+  // the row's status pill so they always agree.
+  const stageOf = (b: any): BookingStage => deriveBookingStage(b);
+  // Date range narrows first; stage tab filters within it. Counts/header
+  // stats are scoped to the current range too so they match the rendered list.
+  const inRange = bookings.filter((b) => isInDateRange(b.transport.departureDateTime, dateRange));
+  const filtered = filter === "ALL" ? inRange : inRange.filter((b) => stageOf(b) === filter);
 
-  const counts = {
-    ALL: bookings.length,
-    PENDING: bookings.filter((b) => b.status === "PENDING").length,
-    CONFIRMED: bookings.filter((b) => b.status === "CONFIRMED").length,
-    CANCELLED: bookings.filter((b) => b.status === "CANCELLED").length,
+  const counts: Record<Filter, number> = {
+    ALL: inRange.length,
+    PENDING: 0,
+    CONFIRMED: 0,
+    PAID: 0,
+    IN_TRANSIT: 0,
+    COMPLETED: 0,
+    RECEIVED: 0,
+    CANCELLED: 0,
   };
+  for (const b of inRange) counts[stageOf(b)] += 1;
 
   return (
     <Page>
@@ -158,17 +204,31 @@ export default function TransporterBookingsPage() {
 
       {/* Tab filter + stats */}
       {!loading && bookings.length > 0 && (
-        <Reveal className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <TabFilter<Filter> tabs={FILTERS} value={filter} onChange={setFilter} counts={counts} />
-          <div className="flex items-center gap-5 text-[11px] text-slate-500">
-            <span className="inline-flex items-center gap-1.5">
-              <ClockIcon className="w-3.5 h-3.5 text-amber-500" />
-              <span className="font-semibold text-zinc-900">{counts.PENDING}</span> pending
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="font-semibold text-zinc-900">{counts.CONFIRMED}</span> confirmed
-            </span>
+        <Reveal className="mb-6 space-y-3">
+          <TabFilter<DateRange>
+            tabs={DATE_RANGE_TABS}
+            value={dateRange}
+            onChange={setDateRange}
+            formatLabel={(t) => DATE_RANGE_LABELS[t]}
+          />
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <TabFilter<Filter>
+              tabs={FILTERS}
+              value={filter}
+              onChange={setFilter}
+              counts={counts}
+              formatLabel={(t) => (t === "ALL" ? "ALL" : formatStageLabel(t as BookingStage))}
+            />
+            <div className="flex items-center gap-5 text-[11px] text-slate-500">
+              <span className="inline-flex items-center gap-1.5">
+                <ClockIcon className="w-3.5 h-3.5 text-amber-500" />
+                <span className="font-semibold text-zinc-900">{counts.PENDING}</span> pending
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircleIcon className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="font-semibold text-zinc-900">{counts.PAID}</span> paid
+              </span>
+            </div>
           </div>
         </Reveal>
       )}
@@ -183,8 +243,12 @@ export default function TransporterBookingsPage() {
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          title={`No ${filter.toLowerCase()} bookings`}
-          description="Try a different filter above."
+          title={
+            inRange.length === 0
+              ? `No bookings ${dateRange === "TODAY" ? "today" : dateRange === "WEEK" ? "this week" : "this month"}`
+              : `No ${filter.toLowerCase()} bookings ${dateRange === "TODAY" ? "today" : dateRange === "WEEK" ? "this week" : "this month"}`
+          }
+          description="Try a different date range or status filter above."
         />
       ) : (
         <motion.div
@@ -261,20 +325,17 @@ function BookingRow({
             </Avatar>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                <StatusPill
-                  tone={
-                    booking.status === "CONFIRMED"
-                      ? "emerald"
-                      : booking.status === "PENDING"
-                      ? "yellow"
-                      : booking.status === "COMPLETED"
-                      ? "blue"
-                      : "red"
-                  }
-                  dot={booking.status === "PENDING" || booking.status === "CONFIRMED"}
-                >
-                  {booking.status}
-                </StatusPill>
+                {(() => {
+                  // Single derived stage drives both colour + label so the
+                  // pill matches whichever filter tab the row falls under.
+                  const stage = deriveBookingStage(booking);
+                  const livePulse = stage === "PENDING" || stage === "CONFIRMED" || stage === "PAID" || stage === "IN_TRANSIT";
+                  return (
+                    <StatusPill tone={STAGE_TONE[stage]} dot={livePulse}>
+                      {formatStageLabel(stage)}
+                    </StatusPill>
+                  );
+                })()}
                 <span className="text-[10px] text-slate-400 font-mono">
                   #{booking.id.slice(0, 6).toUpperCase()}
                 </span>
@@ -334,14 +395,22 @@ function BookingRow({
                 </button>
               </div>
             ) : (
-              <div className="flex gap-1.5">
-                {booking.status === "CONFIRMED" && (
+              <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                {/* Chat is locked server-side until the traveler has paid. Show
+                    the button only on paid bookings so we don't dispatch a
+                    request that's guaranteed to fail. */}
+                {booking.paymentStatus === "PAID" && booking.status !== "CANCELLED" && (
                   <button
                     onClick={onChat}
                     className="text-[11px] font-semibold bg-zinc-950 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-all active:scale-[0.98]"
                   >
                     Chat
                   </button>
+                )}
+                {booking.paymentStatus !== "PAID" && booking.status === "CONFIRMED" && (
+                  <span className="inline-flex items-center text-[10px] leading-none font-semibold text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-200 px-2.5 py-1.5 rounded-lg">
+                    Awaiting payment
+                  </span>
                 )}
                 <Link
                   href={`/dashboard/bookings/${booking.id}`}

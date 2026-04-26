@@ -58,9 +58,14 @@ export class AdminOverviewController {
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        traveler: { select: { name: true } },
+        // ids included so the admin overview cards can link straight into
+        // /dashboard/users/:id and /dashboard/routes/:id without an extra
+        // fetch. Without these, the cards would show names that aren't
+        // clickable.
+        traveler: { select: { id: true, name: true } },
         transport: {
           select: {
+            id: true,
             departureCity: true,
             destinationCity: true,
             currency: true,

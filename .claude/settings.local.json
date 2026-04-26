@@ -19,7 +19,9 @@
       "mcp__playwright__browser_resize",
       "Bash(npx tsc *)",
       "Bash(npx prisma *)",
-      "Bash(npx eslint *)"
+      "Bash(npx eslint *)",
+      "Bash(echo \"---admin exit $?---\")",
+      "Read(//tmp/**)"
     ]
   },
   "enabledMcpjsonServers": [

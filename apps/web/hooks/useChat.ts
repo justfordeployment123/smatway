@@ -120,6 +120,14 @@ export function useChat(userId: string | null) {
       const messageId = notification.message?.id;
       const now = Date.now();
 
+      // Diagnostic — turn on with localStorage.setItem('smatway:debug','1')
+      // in the console. Lets you confirm whether a notification reached
+      // this tab, before any dedupe/permission filters touch it.
+      if (typeof window !== 'undefined' && localStorage.getItem('smatway:debug') === '1') {
+        // eslint-disable-next-line no-console
+        console.log('[smatway:notification]', { type, userId, notification });
+      }
+
       // ── Deduplicate ──────────────────────────────────────────────────────
       const lastNotif = lastNotificationRef.current;
       const isDuplicate =
@@ -140,6 +148,17 @@ export function useChat(userId: string | null) {
       setNotifications(prev => [enriched, ...prev]);
       persistNotification(enriched);
       lastNotificationRef.current = { id: messageId || notifKey, time: now };
+
+      // Broadcast a window event so live pages (transporter routes list,
+      // transporter bookings list, etc.) can react without each opening
+      // its own socket. Listeners filter on `detail.type` to pick the
+      // events they care about — e.g. `booking` / `booking_cancelled`
+      // for refreshing seat counts on /dashboard/routes.
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('smatway:notification', { detail: enriched }),
+        );
+      }
 
       if (Notification.permission !== 'granted' || isGlobalDuplicate) return;
 
@@ -167,6 +186,20 @@ export function useChat(userId: string | null) {
         clickUrl = '/dashboard/overview';
         openBell = true;
 
+      } else if (type === 'booking_cancelled_by_admin') {
+        // Sent to BOTH parties when an admin force-cancels (stuck booking,
+        // dispute, fraud). Reason is included if the admin set one.
+        const route = notification.route ? ` · ${notification.route}` : '';
+        const reason = (notification as any).reason
+          ? ` Reason: ${(notification as any).reason}.`
+          : '';
+        title = `Booking cancelled by SmatWay${route}`;
+        body = `Our team cancelled this booking.${reason} Seats are freed${
+          (notification as any).traveler ? '' : ' and any payment will be refunded'
+        }.`;
+        clickUrl = '/dashboard/my-bookings';
+        openBell = true;
+
       } else if (type === 'booking_confirmed') {
         const name = notification.transporter?.name || 'Your transporter';
         const route = notification.route ? ` · ${notification.route}` : '';
@@ -189,6 +222,57 @@ export function useChat(userId: string | null) {
         title = `Trip completed${route}`;
         body = `${name} marked your trip as complete. Leave a review!`;
         clickUrl = '/dashboard/my-bookings';
+        openBell = true;
+
+      } else if (type === 'booking_paid') {
+        const name = (notification as any).traveler?.name || 'A traveler';
+        const route = notification.route ? ` · ${notification.route}` : '';
+        const amount = (notification as any).amount;
+        const cur = (notification as any).currency || '';
+        title = `Payment received${route}`;
+        body = amount
+          ? `${name} paid ${cur} ${amount}. Chat is now unlocked.`
+          : `${name} paid for the trip. Chat is now unlocked.`;
+        clickUrl = '/dashboard/bookings';
+        openBell = true;
+
+      } else if (type === 'booking_arrival_confirmed') {
+        const name = (notification as any).traveler?.name || 'Your passenger';
+        const route = notification.route ? ` · ${notification.route}` : '';
+        title = `Trip closed${route}`;
+        body = `${name} confirmed arrival. Payout has been queued.`;
+        clickUrl = '/dashboard/bookings';
+        openBell = true;
+
+      } else if (type === 'booking_pickup_verified') {
+        const name = notification.transporter?.name || 'Your transporter';
+        const route = notification.route ? ` · ${notification.route}` : '';
+        title = `Trip in progress${route}`;
+        body = `${name} verified your pickup. Tap "I have arrived" when you reach.`;
+        clickUrl = (notification as any).bookingId
+          ? `/dashboard/traveler/booking/${(notification as any).bookingId}`
+          : '/dashboard/my-bookings';
+        openBell = true;
+
+      } else if (type === 'booking_completion_requested') {
+        const name = notification.transporter?.name || 'Your driver';
+        const route = notification.route ? ` · ${notification.route}` : '';
+        title = `Confirm arrival${route}`;
+        body = `${name} says you've arrived. Confirm to close the trip and release payment.`;
+        clickUrl = (notification as any).bookingId
+          ? `/dashboard/traveler/booking/${(notification as any).bookingId}`
+          : '/dashboard/my-bookings';
+        openBell = true;
+
+      } else if (type === 'payout_released' || type === 'payout_processing') {
+        const isReleased = type === 'payout_released';
+        const net = (notification as any).netAmount;
+        const cur = (notification as any).currency || 'NGN';
+        title = isReleased ? 'Payout released' : 'Payout processing';
+        body = isReleased
+          ? `Your earnings ${net ? `(${cur} ${net}) ` : ''}have been sent to your bank.`
+          : `Your earnings ${net ? `(${cur} ${net}) ` : ''}are on the way — usually within 1 business day.`;
+        clickUrl = '/dashboard/my-payouts';
         openBell = true;
 
       } else if (type === 'message') {

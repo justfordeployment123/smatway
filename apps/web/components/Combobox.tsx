@@ -106,6 +106,14 @@ export function Combobox({
 
   const inputDisplay = open ? query : (selected?.label ?? "");
 
+  // Reserve right padding for what's actually stacked on the right edge:
+  // chevron (always) + clear button (when selected) + hint badge (sm+ only).
+  const rightPadClass = !selected
+    ? "pr-10"
+    : selected.hint
+      ? "pr-14 sm:pr-24"
+      : "pr-14";
+
   const select = (opt: ComboboxOption) => {
     onChange(opt.value);
     setQuery("");
@@ -162,7 +170,7 @@ export function Combobox({
         onFocus={() => setOpen(true)}
         onClick={() => setOpen(true)}
         onKeyDown={onKeyDown}
-        className={`${className} ${leftIcon ? "pl-10" : ""} pr-10 cursor-pointer`}
+        className={`${className} ${leftIcon ? "pl-10" : ""} ${rightPadClass} cursor-pointer`}
       />
 
       {/* Right-side icons: hint badge for selected, then clear, then chevron */}

@@ -34,25 +34,23 @@ export default function OverviewPage() {
 
       {error && <ErrorState message={error} onRetry={load} />}
 
-      {/* KPI grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* KPI grid — tighter gap on mobile (2 cols), generous on desktop (4 cols) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KpiTile loading={loading} label="Total users" value={data?.stats.totalUsers} icon={<UsersIcon />} sub={data ? `${data.stats.travelers} travelers · ${data.stats.transporters} transporters` : undefined} />
         <KpiTile loading={loading} label="Active routes" value={data?.stats.activeRoutes} icon={<MapPinIcon />} />
         <KpiTile loading={loading} label="Total bookings" value={data?.stats.totalBookings} icon={<BookOpenIcon />} sub={data ? `${data.stats.completedBookings} completed · ${data.stats.pendingBookings} pending` : undefined} />
         <KpiTile loading={loading} label="Paid bookings" value={data?.stats.paidBookings} icon={<CashIcon />} />
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KpiTile loading={loading} label="Site feedback" value={data?.stats.siteFeedback} icon={<MessageSquareIcon />} small />
         <KpiTile loading={loading} label="Trip reviews" value={data?.stats.reviews} icon={<MessageSquareIcon />} small />
         <KpiTile loading={loading} label="Live announcements" value={data?.stats.publishedAnnouncements} icon={<MegaphoneIcon />} small />
-        <Card className="flex items-center justify-between">
-          <div>
-            <div className="text-xs uppercase tracking-wide text-slate-500 font-medium">Quick links</div>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              <Link href="/dashboard/announcements" className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">New announcement</Link>
-              <Link href="/dashboard/admins" className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200">Manage admins</Link>
-            </div>
+        <Card>
+          <div className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-500 font-medium leading-snug mb-2">Quick links</div>
+          <div className="flex flex-wrap gap-1.5">
+            <Link href="/dashboard/announcements" className="text-[11px] px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 hover:bg-emerald-100 transition-colors">New announcement</Link>
+            <Link href="/dashboard/admins" className="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200 hover:bg-slate-200 transition-colors">Manage admins</Link>
           </div>
         </Card>
       </div>
@@ -72,13 +70,18 @@ export default function OverviewPage() {
             <ul className="divide-y divide-slate-100">
               {data.recentSignups.map((u) => (
                 <li key={u.id} className="py-3 flex items-center justify-between">
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-zinc-950 truncate">{u.name || u.email}</div>
+                  <Link
+                    href={`/dashboard/users/${u.id}`}
+                    className="min-w-0 flex-1 group"
+                  >
+                    <div className="text-sm font-semibold text-zinc-950 truncate group-hover:text-emerald-700 transition-colors">
+                      {u.name || u.email}
+                    </div>
                     <div className="text-[11px] text-slate-500 truncate">
                       {u.email}
                       {u.country ? ` · ${u.country}` : ""}
                     </div>
-                  </div>
+                  </Link>
                   <StatusPill tone={u.accountType === "TRANSPORTER" ? "blue" : "emerald"}>
                     {u.accountType ?? "—"}
                   </StatusPill>
@@ -102,11 +105,24 @@ export default function OverviewPage() {
               {data.recentBookings.map((b) => (
                 <li key={b.id} className="py-3 flex items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-zinc-950 truncate">
+                    <Link
+                      href={`/dashboard/routes/${b.transport.id}`}
+                      className="text-sm font-semibold text-zinc-950 truncate hover:text-emerald-700 block"
+                    >
                       {b.transport.departureCity} → {b.transport.destinationCity}
-                    </div>
+                    </Link>
                     <div className="text-[11px] text-slate-500 truncate">
-                      {b.traveler?.name || "—"} · {b.seatsBooked} seat{b.seatsBooked === 1 ? "" : "s"}
+                      {b.traveler ? (
+                        <Link
+                          href={`/dashboard/users/${b.traveler.id}`}
+                          className="hover:text-emerald-700"
+                        >
+                          {b.traveler.name || "—"}
+                        </Link>
+                      ) : (
+                        "—"
+                      )}{" "}
+                      · {b.seatsBooked} seat{b.seatsBooked === 1 ? "" : "s"}
                     </div>
                   </div>
                   <div className="text-right shrink-0">
@@ -141,23 +157,31 @@ function KpiTile({
   small?: boolean;
 }) {
   return (
-    <Card className={small ? "" : ""}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-xs uppercase tracking-wide text-slate-500 font-medium">{label}</div>
-          {loading ? (
-            <Skeleton className="h-7 w-20 mt-2" />
-          ) : (
-            <div className={`mt-1 font-semibold tabular-nums text-zinc-950 ${small ? "text-xl" : "text-2xl"}`}>
-              {(value ?? 0).toLocaleString()}
-            </div>
-          )}
-          {sub && <div className="text-[11px] text-slate-400 mt-1 truncate">{sub}</div>}
+    <Card>
+      {/* Mobile-first layout: icon is small + at top-right, label + value
+          + sub all flow on the left as a single column with full row width.
+          The old layout split the tile in two columns and the icon ate
+          enough space that "TOTAL USERS" couldn't fit on one line. */}
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <div className="text-[10px] sm:text-xs uppercase tracking-wide text-slate-500 font-medium leading-snug min-w-0">
+          {label}
         </div>
-        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600 shrink-0">
+        <div className="grid h-7 w-7 sm:h-9 sm:w-9 place-items-center rounded-lg bg-emerald-50 text-emerald-600 shrink-0">
           {icon}
         </div>
       </div>
+      {loading ? (
+        <Skeleton className="h-7 w-20" />
+      ) : (
+        <div className={`font-semibold tabular-nums text-zinc-950 ${small ? "text-xl" : "text-2xl"}`}>
+          {(value ?? 0).toLocaleString()}
+        </div>
+      )}
+      {/* `line-clamp-2` instead of `truncate` so "1 traveler · 2 transporters"
+          wraps gracefully on a narrow tile instead of becoming "1 tr…". */}
+      {sub && (
+        <div className="text-[10px] sm:text-[11px] text-slate-400 mt-1 line-clamp-2">{sub}</div>
+      )}
     </Card>
   );
 }

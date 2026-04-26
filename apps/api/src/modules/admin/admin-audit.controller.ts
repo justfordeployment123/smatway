@@ -11,8 +11,13 @@ export class AdminAuditController {
 
   @Get()
   @RequirePermissions(ADMIN_PERMISSIONS.AUDIT_READ)
-  list(@Query('limit') limitRaw?: string, @Query('cursor') cursor?: string) {
+  list(
+    @Query('limit') limitRaw?: string,
+    @Query('cursor') cursor?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
     const limit = limitRaw ? parseInt(limitRaw, 10) : 50;
-    return this.audit.list({ limit, cursor });
+    return this.audit.list({ limit, cursor, from, to });
   }
 }

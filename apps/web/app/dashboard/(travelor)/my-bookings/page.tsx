@@ -16,9 +16,20 @@ import {
   Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
   TabFilter, SurfaceCard, spring,
 } from "@/app/dashboard/_Components/ui";
+import {
+  deriveBookingStage, BookingStage, STAGE_TONE, formatStageLabel,
+} from "@/lib/bookingStatus";
+import {
+  DATE_RANGE_TABS, DATE_RANGE_LABELS, isInDateRange, type DateRange,
+} from "@/lib/dateRange";
 
-type Filter = "ALL" | "PENDING" | "CONFIRMED" | "COMPLETED" | "CANCELLED";
-const FILTERS: readonly Filter[] = ["ALL", "PENDING", "CONFIRMED", "COMPLETED", "CANCELLED"] as const;
+// Traveler-facing lifecycle. Same stages as transporter EXCEPT no RECEIVED —
+// payouts are the transporter's concern, not the traveler's.
+type TravelerStage = Exclude<BookingStage, "RECEIVED">;
+type Filter = "ALL" | TravelerStage;
+const FILTERS: readonly Filter[] = [
+  "ALL", "PENDING", "CONFIRMED", "PAID", "IN_TRANSIT", "COMPLETED", "CANCELLED",
+] as const;
 
 export default function MyBookingsPage() {
   const router = useRouter();
@@ -27,6 +38,9 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("ALL");
+  // Default to "this week" so the page lands on the most relevant slice —
+  // upcoming + recent trips, not a flood of historical noise.
+  const [dateRange, setDateRange] = useState<DateRange>("WEEK");
   const [user, setUser] = useState<any>(null);
 
   const [chatBookingId, setChatBookingId] = useState<string | null>(null);
@@ -119,15 +133,29 @@ export default function MyBookingsPage() {
     }
   }
 
-  const filtered = filter === "ALL" ? bookings : bookings.filter((b) => b.status === filter);
+  // Stage drives both filter + pill. RECEIVED can't appear here because the
+  // traveler API never returns the payout relation, so deriveBookingStage
+  // never yields RECEIVED.
+  const stageOf = (b: any): TravelerStage => deriveBookingStage(b) as TravelerStage;
+  // Date range narrows first, then the stage tab. Stage counts are scoped to
+  // the date range too so they don't lie about how many trips a stage tab
+  // would actually show.
+  const inRange = bookings.filter((b) => isInDateRange(b.transport.departureDateTime, dateRange));
+  const filtered = filter === "ALL" ? inRange : inRange.filter((b) => stageOf(b) === filter);
 
-  const counts = {
-    ALL: bookings.length,
-    PENDING: bookings.filter((b) => b.status === "PENDING").length,
-    CONFIRMED: bookings.filter((b) => b.status === "CONFIRMED").length,
-    COMPLETED: bookings.filter((b) => b.status === "COMPLETED").length,
-    CANCELLED: bookings.filter((b) => b.status === "CANCELLED").length,
+  const counts: Record<Filter, number> = {
+    ALL: inRange.length,
+    PENDING: 0,
+    CONFIRMED: 0,
+    PAID: 0,
+    IN_TRANSIT: 0,
+    COMPLETED: 0,
+    CANCELLED: 0,
   };
+  for (const b of inRange) {
+    const s = stageOf(b);
+    if (s in counts) counts[s as Filter] += 1;
+  }
 
   return (
     <Page>
@@ -138,8 +166,20 @@ export default function MyBookingsPage() {
       />
 
       {!loading && bookings.length > 0 && (
-        <Reveal className="mb-6">
-          <TabFilter<Filter> tabs={FILTERS} value={filter} onChange={setFilter} counts={counts} />
+        <Reveal className="mb-6 space-y-3">
+          <TabFilter<DateRange>
+            tabs={DATE_RANGE_TABS}
+            value={dateRange}
+            onChange={setDateRange}
+            formatLabel={(t) => DATE_RANGE_LABELS[t]}
+          />
+          <TabFilter<Filter>
+            tabs={FILTERS}
+            value={filter}
+            onChange={setFilter}
+            counts={counts}
+            formatLabel={(t) => (t === "ALL" ? "ALL" : formatStageLabel(t as BookingStage))}
+          />
         </Reveal>
       )}
 
@@ -155,8 +195,12 @@ export default function MyBookingsPage() {
         />
       ) : filtered.length === 0 ? (
         <EmptyState
-          title={`No ${filter.toLowerCase()} bookings`}
-          description="Try a different filter to see other bookings."
+          title={
+            inRange.length === 0
+              ? `No bookings ${dateRange === "TODAY" ? "today" : dateRange === "WEEK" ? "this week" : "this month"}`
+              : `No ${filter.toLowerCase()} bookings ${dateRange === "TODAY" ? "today" : dateRange === "WEEK" ? "this week" : "this month"}`
+          }
+          description="Try a different date range or status filter to see other bookings."
         />
       ) : (
         <motion.div
@@ -210,13 +254,8 @@ function BookingCard({
 }) {
   const dep = new Date(booking.transport.departureDateTime);
   const vehicle = booking.transport.vehicle;
-  const tone =
-    booking.status === "CONFIRMED" ? "emerald" :
-    booking.status === "PENDING" ? "yellow" :
-    booking.status === "COMPLETED" ? "blue" : "red";
-  const paymentTone: "emerald" | "slate" | "red" =
-    booking.paymentStatus === "PAID" ? "emerald" :
-    booking.paymentStatus === "FAILED" ? "red" : "slate";
+  const stage = deriveBookingStage(booking);
+  const livePulse = stage === "PENDING" || stage === "CONFIRMED" || stage === "PAID" || stage === "IN_TRANSIT";
 
   return (
     <SurfaceCard>
@@ -234,12 +273,15 @@ function BookingCard({
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-              <StatusPill tone={tone} dot={booking.status === "CONFIRMED" || booking.status === "PENDING"}>
-                {booking.status}
+              <StatusPill tone={STAGE_TONE[stage]} dot={livePulse}>
+                {formatStageLabel(stage)}
               </StatusPill>
-              <StatusPill tone={paymentTone}>
-                {booking.paymentStatus === "PAID" ? "Paid" : booking.paymentStatus === "FAILED" ? "Payment failed" : "Unpaid"}
-              </StatusPill>
+              {/* Show payment-failed separately so the user knows to retry —
+                  the derived stage falls back to PENDING for a failed payment
+                  which alone wouldn't surface that nuance. */}
+              {booking.paymentStatus === "FAILED" && (
+                <StatusPill tone="red">Payment failed</StatusPill>
+              )}
               <span className="text-[10px] text-slate-400 font-mono">
                 #{booking.id.slice(0, 6).toUpperCase()}
               </span>
@@ -268,21 +310,53 @@ function BookingCard({
               ${Number(booking.totalPrice).toFixed(2)}
             </p>
             <div className="flex gap-1.5 flex-wrap justify-end">
-              {booking.status === "CONFIRMED" && (
+              {/* Both states route to the booking-detail hub — payment kickoff,
+                  ticket/QR, arrival confirmation, and review all live there.
+                  If the route is still filling, the CTA label downgrades from
+                  "Pay now" to a softer "Trip filling X/Y" so the traveler
+                  isn't promised a pay flow that won't actually open yet. */}
+              {booking.paymentStatus !== "PAID" && booking.status !== "CANCELLED" && booking.status !== "COMPLETED" && (() => {
+                const min = booking.transport?.minSeatsToConfirm as number | null | undefined;
+                const filled = (booking.transport?.filledSeats as number | undefined) ?? 0;
+                const filling = !!min && filled < min && booking.status === "PENDING";
+                if (filling) {
+                  return (
+                    <Link
+                      href={`/dashboard/traveler/booking/${booking.id}`}
+                      className="text-[11px] font-semibold bg-amber-50 text-amber-800 ring-1 ring-amber-200 px-3 py-1.5 rounded-lg hover:bg-amber-100 transition-all active:scale-[0.98]"
+                    >
+                      Trip filling {filled}/{min}
+                    </Link>
+                  );
+                }
+                return (
+                  <Link
+                    href={`/dashboard/traveler/booking/${booking.id}`}
+                    className="text-[11px] font-semibold bg-zinc-950 text-white px-3 py-1.5 rounded-lg hover:bg-zinc-800 transition-all active:scale-[0.98]"
+                  >
+                    {booking.paymentStatus === "FAILED" ? "Retry payment" : "Pay now"}
+                  </Link>
+                );
+              })()}
+              {booking.paymentStatus === "PAID" && booking.status !== "CANCELLED" && (
+                <Link
+                  href={`/dashboard/traveler/booking/${booking.id}`}
+                  className="text-[11px] font-semibold bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all active:scale-[0.98]"
+                >
+                  {booking.status === "COMPLETED" ? "View ticket" : "Show ticket"}
+                </Link>
+              )}
+              {/* Chat is gated server-side on paymentStatus = PAID. Hide the
+                  button pre-payment so it doesn't bounce off a 400 error. */}
+              {booking.paymentStatus === "PAID" && booking.status !== "CANCELLED" && (
                 <button
                   onClick={onChat}
-                  className="text-[11px] font-semibold bg-emerald-600 text-white px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition-all active:scale-[0.98]"
+                  className="text-[11px] font-semibold border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98]"
                 >
                   Chat
                 </button>
               )}
-              <Link
-                href={`/dashboard/traveler/booking/${booking.id}`}
-                className="text-[11px] font-semibold border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50 transition-all active:scale-[0.98]"
-              >
-                Details
-              </Link>
-              {booking.status !== "CANCELLED" && booking.status !== "COMPLETED" && (
+              {booking.status !== "CANCELLED" && booking.status !== "COMPLETED" && booking.status !== "IN_PROGRESS" && (
                 <button
                   onClick={onCancel}
                   disabled={cancelling}

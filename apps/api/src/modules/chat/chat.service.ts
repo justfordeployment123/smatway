@@ -1,4 +1,10 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { PaymentStatus } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 
 @Injectable()
@@ -15,6 +21,13 @@ export class ChatService {
     };
   }
 
+  /**
+   * Platform rule: traveler ↔ transporter contact (chat or phone) is only
+   * unlocked once the booking is paid. Money sits in the platform's Paystack
+   * balance until the trip completes; revealing the driver's contact before
+   * payment removes the platform's leverage on the trip and lets the parties
+   * settle off-platform.
+   */
   async getOrCreateChat(bookingId: string, userId: string) {
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
@@ -25,6 +38,12 @@ export class ChatService {
 
     const isParticipant = booking.travelerId === userId || booking.transport.transporterId === userId;
     if (!isParticipant) throw new ForbiddenException('Not part of this booking');
+
+    if (booking.paymentStatus !== PaymentStatus.PAID) {
+      throw new BadRequestException(
+        'Chat unlocks once the booking is paid. Complete payment to message your driver.',
+      );
+    }
 
     let chat = await this.prisma.chat.findUnique({
       where: { bookingId },
@@ -66,12 +85,21 @@ export class ChatService {
   async sendMessage(chatId: string, userId: string, content: string) {
     const chat = await this.prisma.chat.findUnique({
       where: { id: chatId },
+      include: { booking: { select: { paymentStatus: true } } },
     });
 
     if (!chat) throw new NotFoundException('Chat not found');
 
     const isParticipant = chat.travelerId === userId || chat.transporterId === userId;
     if (!isParticipant) throw new ForbiddenException('Not part of this chat');
+
+    // Defence-in-depth: even if a chat row was somehow created before payment
+    // (legacy data or a bug elsewhere), block messages until the booking is paid.
+    if (chat.booking?.paymentStatus !== PaymentStatus.PAID) {
+      throw new BadRequestException(
+        'Chat is locked until the booking is paid.',
+      );
+    }
 
     const message = await this.prisma.message.create({
       data: {

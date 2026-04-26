@@ -1,6 +1,7 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useId } from "react";
+import { motion } from "motion/react";
 
 // Visual primitives mirroring apps/web/app/dashboard/_Components/ui.tsx but
 // without the motion/react dependency — admin app stays lean. Plain Tailwind
@@ -70,6 +71,73 @@ export function StatusPill({ tone, children }: { tone: StatusTone; children: Rea
   );
 }
 
+// ─── Tab filter (animated pill) ──────────────────────────────────────────────
+// Mirrors the web app's TabFilter: a segmented pill row where the white active
+// background is a single motion element that slides between tabs via shared
+// layoutId. `useId()` makes the layoutId unique per instance so pages can
+// stack multiple TabFilters (e.g. status + payment filters) without them
+// fighting over the same animation.
+const tabSpring = { type: "spring" as const, stiffness: 380, damping: 32, mass: 0.6 };
+
+export function TabFilter<T extends string>({
+  tabs,
+  value,
+  onChange,
+  counts,
+  formatLabel,
+}: {
+  tabs: readonly T[];
+  value: T;
+  onChange: (v: T) => void;
+  counts?: Partial<Record<T, number>>;
+  /** Optional label transformer — keeps the tab value stable while letting callers prettify display (e.g. enum → human-readable). */
+  formatLabel?: (tab: T) => string;
+}) {
+  const layoutId = useId();
+  return (
+    // Wrapper allows horizontal scroll on overflow but hugs its content (no
+    // `min-w-full` on the inner pill row — admin pages drop the TabFilter
+    // straight into a wide Card, so stretching looks awkward).
+    <div className="relative overflow-x-auto no-scrollbar">
+      <div className="inline-flex items-center gap-0.5 p-1 bg-slate-100/80 rounded-xl w-max">
+        {tabs.map((tab) => {
+          const active = tab === value;
+          const count = counts?.[tab];
+          return (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => onChange(tab)}
+              aria-pressed={active}
+              className="relative shrink-0 whitespace-nowrap px-3 py-1.5 sm:px-3.5 text-xs font-semibold transition-colors"
+            >
+              {active && (
+                <motion.span
+                  layoutId={layoutId}
+                  className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                  transition={tabSpring}
+                />
+              )}
+              <span className={`relative flex items-center gap-1.5 ${active ? "text-zinc-900" : "text-slate-500 hover:text-slate-700"}`}>
+                {formatLabel ? formatLabel(tab) : tab}
+                {count !== undefined && (
+                  <span
+                    className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
+                      active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PrimaryButton({
   children,
   onClick,
@@ -121,8 +189,12 @@ export function SecondaryButton({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+  // p-4 on mobile, p-6 on sm+ — a 24px gutter on a 360px phone leaves the
+  // inner content squeezed (TabFilter rows getting clipped on the routes /
+  // bookings / audit filter cards). 16px keeps the breathing room without
+  // eating the content.
   return (
-    <div className={`rounded-2xl border border-slate-200/70 bg-white p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>
+    <div className={`rounded-2xl border border-slate-200/70 bg-white p-4 sm:p-6 shadow-[0_1px_2px_rgba(0,0,0,0.03)] ${className}`}>
       {children}
     </div>
   );

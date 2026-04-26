@@ -215,6 +215,166 @@ function NotifItem({ notif, index, isUnread, onClick }: {
     );
   }
 
+  // Transporter notification: traveler clicked "I have arrived" — trip is
+  // now COMPLETED and a payout row has been queued for them.
+  if (type === "booking_arrival_confirmed") {
+    const travelerName = notif.traveler?.name || "Your passenger";
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(index * 0.035, 0.2) }}
+        onClick={onClick} className={`${baseRow} ${isUnread ? "bg-emerald-50/30" : ""}`}
+      >
+        <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 flex items-center justify-center text-[14px]">
+          ✓
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <p className="text-[12px] font-semibold text-zinc-950 truncate">{travelerName}</p>
+            <span className="text-[10px] text-slate-400 shrink-0">{minsLeft}m left</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            Confirmed arrival{notif.route ? ` · ${notif.route}` : ""}. Trip closed, payout queued.
+          </p>
+          <span className="mt-1.5 inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60">Trip closed</span>
+        </div>
+        {isUnread && <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]" />}
+        <TtlBar receivedAt={receivedAt} />
+      </motion.div>
+    );
+  }
+
+  // Transporter notification: traveler completed payment for a booking
+  if (type === "booking_paid") {
+    const travelerName = notif.traveler?.name || "A traveler";
+    const amount = typeof notif.amount === "number"
+      ? new Intl.NumberFormat(undefined, { style: "currency", currency: notif.currency || "USD", maximumFractionDigits: 0 }).format(notif.amount)
+      : null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(index * 0.035, 0.2) }}
+        onClick={onClick} className={`${baseRow} ${isUnread ? "bg-emerald-50/30" : ""}`}
+      >
+        <div className="shrink-0 w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60 flex items-center justify-center text-[14px]">
+          ₦
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <p className="text-[12px] font-semibold text-zinc-950 truncate">{travelerName}</p>
+            <span className="text-[10px] text-slate-400 shrink-0">{minsLeft}m left</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            Paid {amount ?? "for the trip"}{notif.route ? ` · ${notif.route}` : ""}
+          </p>
+          <span className="mt-1.5 inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/60">Payment received</span>
+        </div>
+        {isUnread && <div className="shrink-0 w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]" />}
+        <TtlBar receivedAt={receivedAt} />
+      </motion.div>
+    );
+  }
+
+  // Traveler notification: transporter pre-flagged the trip as ended.
+  // Traveler still has to confirm before status flips to COMPLETED.
+  if (type === "booking_completion_requested") {
+    const transporterName = notif.transporter?.name || "Your driver";
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(index * 0.035, 0.2) }}
+        onClick={onClick} className={`${baseRow} ${isUnread ? "bg-amber-50/30" : ""}`}
+      >
+        <div className="shrink-0 w-9 h-9 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200/60 flex items-center justify-center text-[12px] font-semibold">
+          {transporterName.charAt(0).toUpperCase()}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <p className="text-[12px] font-semibold text-zinc-950 truncate">{transporterName}</p>
+            <span className="text-[10px] text-slate-400 shrink-0">{minsLeft}m left</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            Says you've arrived{notif.route ? ` · ${notif.route}` : ""}. Confirm to close the trip.
+          </p>
+          <span className="mt-1.5 inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 ring-1 ring-amber-200/60">Confirm arrival</span>
+        </div>
+        {isUnread && <div className="shrink-0 w-2 h-2 rounded-full bg-amber-500 mt-1.5 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]" />}
+        <TtlBar receivedAt={receivedAt} />
+      </motion.div>
+    );
+  }
+
+  // Transporter notification: pickup verified by traveler scanning their code
+  if (type === "booking_pickup_verified") {
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(index * 0.035, 0.2) }}
+        onClick={onClick} className={`${baseRow} ${isUnread ? "bg-orange-50/25" : ""}`}
+      >
+        <div className="shrink-0 w-9 h-9 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200/60 flex items-center justify-center text-[14px]">
+          ✓
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <p className="text-[12px] font-semibold text-zinc-950 truncate">Trip in progress</p>
+            <span className="text-[10px] text-slate-400 shrink-0">{minsLeft}m left</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            Pickup verified{notif.route ? ` · ${notif.route}` : ""}. Show ticket when you arrive.
+          </p>
+          <span className="mt-1.5 inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-orange-50 text-orange-700 ring-1 ring-orange-200/60">Onboarded</span>
+        </div>
+        {isUnread && <div className="shrink-0 w-2 h-2 rounded-full bg-orange-500 mt-1.5 shadow-[0_0_0_3px_rgba(249,115,22,0.15)]" />}
+        <TtlBar receivedAt={receivedAt} />
+      </motion.div>
+    );
+  }
+
+  // Transporter notification: SmatWay released their payout
+  if (type === "payout_released" || type === "payout_processing") {
+    const isReleased = type === "payout_released";
+    const net = typeof notif.netAmount === "number"
+      ? new Intl.NumberFormat(undefined, { style: "currency", currency: notif.currency || "NGN", maximumFractionDigits: 0 }).format(notif.netAmount)
+      : null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: Math.min(index * 0.035, 0.2) }}
+        onClick={onClick} className={`${baseRow} ${isUnread ? (isReleased ? "bg-emerald-50/30" : "bg-blue-50/20") : ""}`}
+      >
+        <div className={`shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-[14px] font-semibold ring-1 ${
+          isReleased ? "bg-emerald-50 text-emerald-700 ring-emerald-200/60"
+                     : "bg-blue-50 text-blue-700 ring-blue-200/60"
+        }`}>
+          $
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between gap-2 mb-0.5">
+            <p className="text-[12px] font-semibold text-zinc-950 truncate">SmatWay</p>
+            <span className="text-[10px] text-slate-400 shrink-0">{minsLeft}m left</span>
+          </div>
+          <p className="text-[11px] text-slate-500 truncate">
+            {isReleased
+              ? `Payout ${net ?? ""} sent to your bank`.trim()
+              : `Payout ${net ?? ""} processing — usually arrives within 1 business day`.trim()}
+          </p>
+          <span className={`mt-1.5 inline-block text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded-full ring-1 ${
+            isReleased ? "bg-emerald-50 text-emerald-700 ring-emerald-200/60"
+                       : "bg-blue-50 text-blue-700 ring-blue-200/60"
+          }`}>
+            {isReleased ? "Payout released" : "Payout processing"}
+          </span>
+        </div>
+        {isUnread && <div className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${
+          isReleased ? "bg-emerald-500 shadow-[0_0_0_3px_rgba(16,185,129,0.15)]"
+                     : "bg-blue-500 shadow-[0_0_0_3px_rgba(59,130,246,0.15)]"
+        }`} />}
+        <TtlBar receivedAt={receivedAt} />
+      </motion.div>
+    );
+  }
+
   // Chat message (default)
   const senderName = notif.message?.sender?.name || "Someone";
   const senderRole = notif.message?.sender?.role as "traveler" | "transporter" | undefined;
@@ -332,7 +492,7 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     setOpen(false);
 
     // Transporter receives these — go to their bookings list
-    if (type === "booking" || type === "booking_cancelled") {
+    if (type === "booking" || type === "booking_cancelled" || type === "booking_paid" || type === "booking_arrival_confirmed") {
       router.push("/dashboard/bookings");
       return;
     }
@@ -340,6 +500,34 @@ export function NotificationBell({ userId }: NotificationBellProps) {
     // Traveler receives these — go to their bookings list
     if (type === "booking_confirmed" || type === "booking_rejected" || type === "booking_completed") {
       router.push("/dashboard/my-bookings");
+      return;
+    }
+
+    // Traveler-side: pickup was just verified by the transporter — open the
+    // ticket page so they can see the "I have arrived" button.
+    if (type === "booking_pickup_verified") {
+      if (notif.bookingId) {
+        router.push(`/dashboard/traveler/booking/${notif.bookingId}`);
+      } else {
+        router.push("/dashboard/my-bookings");
+      }
+      return;
+    }
+
+    // Traveler-side: transporter pre-flagged completion. Open the booking
+    // detail page so the traveler can hit "I have arrived".
+    if (type === "booking_completion_requested") {
+      if (notif.bookingId) {
+        router.push(`/dashboard/traveler/booking/${notif.bookingId}`);
+      } else {
+        router.push("/dashboard/my-bookings");
+      }
+      return;
+    }
+
+    // Transporter-side: payout updates — take them to their earnings page.
+    if (type === "payout_released" || type === "payout_processing") {
+      router.push("/dashboard/my-payouts");
       return;
     }
 

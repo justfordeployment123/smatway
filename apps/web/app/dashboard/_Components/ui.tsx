@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "motion/react";
 import Link from "next/link";
-import { ReactNode } from "react";
+import { ReactNode, useId } from "react";
 import { ArrowLeftIcon, PlusIcon } from "./Icons";
 
 // ─── Motion variants ──────────────────────────────────────────────────────────
@@ -346,22 +346,31 @@ export function SurfaceCard({ children, className = "", onClick }: { children: R
   );
 }
 
-// ─── Tab filter (animated underline) ──────────────────────────────────────────
+// ─── Tab filter (animated pill) ──────────────────────────────────────────────
+// Each instance gets its own `layoutId` via useId() so multiple TabFilters
+// stacked on the same page (e.g. Date row + Status row on my-bookings) don't
+// fight over a single shared motion element. Without this, only one row at
+// a time renders the white pill and the others show an orphan active-count
+// badge with no pill underneath.
 export function TabFilter<T extends string>({
   tabs,
   value,
   onChange,
   counts,
+  formatLabel,
 }: {
   tabs: readonly T[];
   value: T;
   onChange: (v: T) => void;
   counts?: Partial<Record<T, number>>;
+  /** Optional label transformer — keeps the tab value stable while letting callers prettify display (e.g. enum → human-readable). */
+  formatLabel?: (tab: T) => string;
 }) {
+  const layoutId = useId();
   return (
     // Outer scroll container — horizontally scrollable on narrow screens without a visible scrollbar
-    <div className="relative -mx-1 overflow-x-auto no-scrollbar">
-      <div className="inline-flex min-w-full items-center gap-0.5 p-1 mx-1 bg-slate-100/80 rounded-xl w-max">
+    <div className="relative overflow-x-auto no-scrollbar">
+      <div className="inline-flex items-center gap-0.5 p-1 bg-slate-100/80 rounded-xl w-max">
         {tabs.map((tab) => {
           const active = tab === value;
           return (
@@ -372,13 +381,13 @@ export function TabFilter<T extends string>({
             >
               {active && (
                 <motion.span
-                  layoutId="tab-active"
+                  layoutId={layoutId}
                   className="absolute inset-0 bg-white rounded-lg shadow-sm"
                   transition={spring}
                 />
               )}
               <span className={`relative flex items-center gap-1.5 ${active ? "text-zinc-900" : "text-slate-500 hover:text-slate-700"}`}>
-                {tab}
+                {formatLabel ? formatLabel(tab) : tab}
                 {counts?.[tab] !== undefined && (
                   <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${active ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-500"}`}>
                     {counts[tab]}

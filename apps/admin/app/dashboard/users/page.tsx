@@ -2,9 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill, SecondaryButton } from "@/app/_Components/ui";
+import { Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill, SecondaryButton, TabFilter } from "@/app/_Components/ui";
 import { SearchIcon, UsersIcon } from "@/app/_Components/Icons";
 import { listAdminUsers, AdminUserRow } from "@/lib/api";
+
+const ACCOUNT_TABS = ["", "TRAVELER", "TRANSPORTER"] as const;
+type AccountTab = (typeof ACCOUNT_TABS)[number];
+const ACCOUNT_LABELS: Record<AccountTab, string> = {
+  "": "ALL",
+  TRAVELER: "TRAVELERS",
+  TRANSPORTER: "TRANSPORTERS",
+};
 
 export default function UsersPage() {
   const router = useRouter();
@@ -14,7 +22,7 @@ export default function UsersPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [accountType, setAccountType] = useState<"" | "TRAVELER" | "TRANSPORTER">("");
+  const [accountType, setAccountType] = useState<AccountTab>("");
 
   function load(reset = true) {
     if (reset) {
@@ -50,7 +58,8 @@ export default function UsersPage() {
     <Page className="space-y-6">
       <PageHeader kicker="People" title="Users" subtitle="All travelers and transporters on the platform." />
 
-      <Card>
+      <Card className="space-y-3">
+        <TabFilter<AccountTab> tabs={ACCOUNT_TABS} value={accountType} onChange={setAccountType} formatLabel={(t) => ACCOUNT_LABELS[t]} />
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
@@ -65,15 +74,6 @@ export default function UsersPage() {
               className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-10 pr-4 py-2.5 text-sm text-zinc-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
             />
           </div>
-          <select
-            value={accountType}
-            onChange={(e) => setAccountType(e.target.value as "" | "TRAVELER" | "TRANSPORTER")}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400"
-          >
-            <option value="">All accounts</option>
-            <option value="TRAVELER">Travelers</option>
-            <option value="TRANSPORTER">Transporters</option>
-          </select>
           <SecondaryButton onClick={() => load(true)}>Search</SecondaryButton>
         </div>
       </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill,
   PrimaryButton, SecondaryButton,
@@ -13,12 +13,16 @@ import {
 } from "@/lib/api";
 import { adminCan, getAdminProfile } from "@/lib/auth";
 import { ADMIN_PERMISSIONS } from "@/lib/permissions";
+import { LightboxImage } from "@/app/_Components/LightboxImage";
 
 const AUDIENCE_LABEL: Record<AnnouncementAudience, string> = {
   ALL: "Travelers + Transporters",
   TRAVELERS_ONLY: "Travelers only",
   TRANSPORTERS_ONLY: "Transporters only",
 };
+
+const MAX_IMAGES = 4;
+const DEFAULT_EXPIRES_IN_DAYS = 7;
 
 export default function AnnouncementsPage() {
   const profile = getAdminProfile();
@@ -35,7 +39,28 @@ export default function AnnouncementsPage() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [audience, setAudience] = useState<AnnouncementAudience>("ALL");
+  const [expiresInDays, setExpiresInDays] = useState<number>(DEFAULT_EXPIRES_IN_DAYS);
+  const [images, setImages] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Manage object-URL lifecycles for the image preview tiles.
+  useEffect(() => {
+    const urls = images.map((f) => URL.createObjectURL(f));
+    setPreviews(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [images]);
+
+  function handleFiles(picked: FileList | null) {
+    if (!picked) return;
+    const next = [...images, ...Array.from(picked)].slice(0, MAX_IMAGES);
+    setImages(next);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+  function removeImage(idx: number) {
+    setImages((arr) => arr.filter((_, i) => i !== idx));
+  }
 
   function load() {
     setLoading(true);
@@ -51,9 +76,20 @@ export default function AnnouncementsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const created = await createAdminAnnouncement({ title, body, audience, isPublished: true });
+      const created = await createAdminAnnouncement({
+        title,
+        body,
+        audience,
+        isPublished: true,
+        expiresInDays,
+        images,
+      });
       setItems((prev) => [created.announcement, ...prev]);
-      setTitle(""); setBody(""); setAudience("ALL"); setShowForm(false);
+      // Reset form
+      setTitle(""); setBody(""); setAudience("ALL");
+      setExpiresInDays(DEFAULT_EXPIRES_IN_DAYS);
+      setImages([]);
+      setShowForm(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create");
     } finally {
@@ -145,6 +181,69 @@ export default function AnnouncementsPage() {
                 ))}
               </div>
             </div>
+
+            {/* Auto-expiry */}
+            <div>
+              <label className="text-sm font-semibold text-zinc-900 block mb-1.5">
+                Auto-remove after <span className="font-normal text-slate-500">(default 7 days)</span>
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  max={365}
+                  value={expiresInDays}
+                  onChange={(e) => setExpiresInDays(Number(e.target.value))}
+                  className="w-24 rounded-xl border border-slate-200 bg-slate-50/60 px-3 py-2 text-sm focus:outline-none focus:border-emerald-400 focus:bg-white focus:ring-2 focus:ring-emerald-100"
+                />
+                <span className="text-sm text-slate-500">days</span>
+                <span className="text-[11px] text-slate-400 ml-3">
+                  {expiresInDays > 0
+                    ? `Disappears around ${new Date(Date.now() + expiresInDays * 86400000).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}`
+                    : "Set to 0 to keep this announcement until you delete it manually"}
+                </span>
+              </div>
+            </div>
+
+            {/* Image attachments */}
+            <div>
+              <label className="text-sm font-semibold text-zinc-900 block mb-1.5">
+                Images <span className="font-normal text-slate-500">(optional, up to {MAX_IMAGES})</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {previews.map((src, i) => (
+                  <div key={i} className="relative aspect-square rounded-xl overflow-hidden ring-1 ring-slate-200 bg-slate-50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={src} alt="Attachment preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-zinc-950/70 text-white hover:bg-zinc-950 transition-colors"
+                      aria-label="Remove attachment"
+                    >
+                      <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                ))}
+                {images.length < MAX_IMAGES && (
+                  <label className="aspect-square rounded-xl border-2 border-dashed border-slate-200 hover:border-emerald-300 hover:bg-emerald-50/40 transition-colors flex flex-col items-center justify-center text-slate-400 hover:text-emerald-600 cursor-pointer">
+                    <svg className="h-6 w-6 mb-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" />
+                    </svg>
+                    <span className="text-[11px] font-semibold">Add image</span>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={(e) => handleFiles(e.target.files)}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+
             <div className="flex items-center justify-end gap-2 pt-2">
               <SecondaryButton onClick={() => setShowForm(false)}>Cancel</SecondaryButton>
               <PrimaryButton type="submit" disabled={submitting}>
@@ -167,9 +266,22 @@ export default function AnnouncementsPage() {
         />
       ) : (
         <div className="space-y-3">
-          {items.map((a) => (
+          {items.map((a) => {
+            const visibleImages = (a.imageUrls ?? []).filter(Boolean) as string[];
+            const expiresAt = a.expiresAt ? new Date(a.expiresAt) : null;
+            const expiresIn = expiresAt ? Math.ceil((expiresAt.getTime() - Date.now()) / 86400000) : null;
+            const expiryTone =
+              expiresIn === null ? "slate" :
+              expiresIn <= 0 ? "red" :
+              expiresIn <= 2 ? "yellow" : "blue";
+            const expiryLabel =
+              expiresIn === null ? "No auto-expiry" :
+              expiresIn <= 0 ? "Expiring now" :
+              expiresIn === 1 ? "Expires in 1 day" :
+              `Expires in ${expiresIn} days`;
+            return (
             <Card key={a.id}>
-              <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
                 <div className="min-w-0">
                   <div className="text-base font-semibold text-zinc-950">{a.title}</div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
@@ -178,13 +290,26 @@ export default function AnnouncementsPage() {
                     {a.createdByAdmin ? ` · by ${a.createdByAdmin.username}` : ""}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                  <StatusPill tone={expiryTone}>{expiryLabel}</StatusPill>
                   <StatusPill tone={a.isPublished ? "emerald" : "slate"}>
                     {a.isPublished ? "Published" : "Hidden"}
                   </StatusPill>
                 </div>
               </div>
               <p className="text-sm text-zinc-700 whitespace-pre-wrap">{a.body}</p>
+              {visibleImages.length > 0 && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {visibleImages.map((url, i) => (
+                    <LightboxImage
+                      key={i}
+                      src={url}
+                      alt={`${a.title} attachment ${i + 1}`}
+                      className="block w-24 h-24 rounded-lg object-cover ring-1 ring-slate-200 bg-slate-50 hover:ring-emerald-300 transition-all"
+                    />
+                  ))}
+                </div>
+              )}
               <div className="flex items-center justify-end gap-3 mt-3 pt-3 border-t border-slate-100">
                 {canCreate && (
                   <button
@@ -206,7 +331,8 @@ export default function AnnouncementsPage() {
                 )}
               </div>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
     </Page>

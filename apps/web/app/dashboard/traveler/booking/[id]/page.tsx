@@ -3,21 +3,26 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
-import { getBooking, cancelBooking, updatePaymentMethod, createReview, initChat, getChatByBooking, getMessages, sendMessage, getTransporterProfile } from "@/lib/api";
+import {
+  getBooking, cancelBooking, updatePaymentMethod, createReview,
+  initChat, getMessages, sendMessage, getTransporterProfile,
+  initializePaystackPayment, initializeFlutterwavePayment, confirmBookingArrival,
+} from "@/lib/api";
 import { formatPrice } from "@/lib/currencies";
+import { formatBookingStatus } from "@/lib/bookingStatus";
 
 const paymentMethods = [
   {
     id: "PAYSTACK",
     name: "Paystack",
     description: "Pay with card, bank transfer, or USSD",
-    available: false,
+    available: true,
   },
   {
     id: "FLUTTERWAVE",
     name: "Flutterwave",
     description: "Pay with card, mobile money, or bank",
-    available: false,
+    available: true,
   },
   {
     id: "MPAISA",
@@ -30,6 +35,8 @@ const paymentMethods = [
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-50 text-yellow-700 border-yellow-200",
   CONFIRMED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  IN_PROGRESS: "bg-orange-50 text-orange-700 border-orange-200",
+  COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
   CANCELLED: "bg-red-50 text-red-600 border-red-200",
 };
 
@@ -59,6 +66,8 @@ export default function BookingDetailPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [portalReady, setPortalReady] = useState(false);
+  const [payStarting, setPayStarting] = useState(false);
+  const [arriving, setArriving] = useState(false);
 
   useEffect(() => { setPortalReady(true); }, []);
 
@@ -100,6 +109,46 @@ export default function BookingDetailPage() {
       // silent fail — selection saved locally
     } finally {
       setSavingMethod(false);
+    }
+  }
+
+  /**
+   * Dispatch to whichever provider the traveler selected. Falls back to the
+   * already-saved booking.paymentMethod (so refreshing keeps the choice), and
+   * to PAYSTACK as the safe default.
+   */
+  async function handlePay() {
+    setError("");
+    const method =
+      selectedMethod || booking?.paymentMethod || "PAYSTACK";
+    setPayStarting(true);
+    try {
+      const res =
+        method === "FLUTTERWAVE"
+          ? await initializeFlutterwavePayment(id)
+          : await initializePaystackPayment(id);
+      // Hosted checkout (Paystack or Flutterwave) opens in same tab. Both
+      // providers redirect back to /dashboard/pay/callback, where we sniff
+      // the URL params to figure out which one we're verifying.
+      window.location.href = res.authorizationUrl;
+    } catch (e: any) {
+      setError(e?.message || "Could not start payment");
+      setPayStarting(false);
+    }
+  }
+
+  async function handleConfirmArrival() {
+    if (!confirm("Mark this trip as completed? This releases payment to the transporter.")) return;
+    setError("");
+    setArriving(true);
+    try {
+      await confirmBookingArrival(id);
+      const fresh = await getBooking(id);
+      setBooking(fresh);
+    } catch (e: any) {
+      setError(e?.message || "Could not mark arrived");
+    } finally {
+      setArriving(false);
     }
   }
 
@@ -152,10 +201,15 @@ export default function BookingDetailPage() {
   }
 
   if (loading) return <div className="text-sm text-slate-400 py-10 text-center">Loading booking...</div>;
-  if (error || !booking) return <div className="text-sm text-red-500 py-10 text-center">{error || "Booking not found"}</div>;
+  if (!booking) return <div className="text-sm text-red-500 py-10 text-center">{error || "Booking not found"}</div>;
 
   const dep = new Date(booking.transport.departureDateTime);
   const isCancelled = booking.status === "CANCELLED";
+  const isPaid = booking.paymentStatus === "PAID";
+  const isInProgress = booking.status === "IN_PROGRESS";
+  const isCompleted = booking.status === "COMPLETED";
+  const code = booking.verificationCode as string | null | undefined;
+  const canChat = isPaid && (booking.status === "CONFIRMED" || isInProgress);
 
   return (
     <div className="max-w-2xl space-y-5">
@@ -167,7 +221,7 @@ export default function BookingDetailPage() {
       {/* Booking Summary */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <div className="flex items-center gap-2 mb-3">
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[booking.status]}`}>{booking.status}</span>
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${statusColors[booking.status]}`}>{formatBookingStatus(booking.status)}</span>
           <span className={`text-xs font-semibold px-2 py-0.5 rounded-full border ${paymentStatusColors[booking.paymentStatus]}`}>Payment: {booking.paymentStatus}</span>
         </div>
 
@@ -326,22 +380,85 @@ export default function BookingDetailPage() {
         document.body
       )}
 
-      {/* Payment Method */}
-      {!isCancelled && booking.paymentStatus !== "PAID" && (
+      {/* Pre-payment gates. Two cases:
+            (1) Group ride below threshold → "trip is filling" panel with
+                progress meter. Pay options stay locked even if the booking
+                is technically PENDING — payment won't open until the route
+                fills enough seats.
+            (2) Group ride at-or-above threshold but booking still PENDING,
+                or no group ride at all → standard "waiting for transporter
+                to confirm" panel.
+          A booking that's CONFIRMED falls through to the payment panel
+          below. */}
+      {(() => {
+        if (isCancelled || isPaid) return null;
+        if (booking.status !== "PENDING") return null;
+        const min = booking.transport?.minSeatsToConfirm as number | null | undefined;
+        const filled = (booking.transport?.filledSeats as number | undefined) ?? 0;
+        const filling = !!min && filled < min;
+        if (filling) {
+          const pct = Math.min(100, Math.round((filled / min!) * 100));
+          return (
+            <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
+              <h3 className="text-sm font-semibold text-amber-900 mb-1">
+                Waiting for the trip to fill
+              </h3>
+              <p className="text-xs text-amber-800 mb-3">
+                This route runs once {min} seats are booked. Payment opens for everyone the moment the trip fills — we'll notify you.
+              </p>
+              <div className="flex items-center justify-between text-[12px] font-medium text-amber-900 mb-1">
+                <span>{filled} of {min} booked</span>
+                <span className="tabular-nums">{min! - filled} more needed</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-amber-200/70 overflow-hidden">
+                <div
+                  className="h-full bg-amber-500 transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        }
+        return (
+          <div className="bg-amber-50 rounded-xl border border-amber-200 p-5">
+            <h3 className="text-sm font-semibold text-amber-900 mb-1">
+              Waiting for the transporter to confirm
+            </h3>
+            <p className="text-xs text-amber-800">
+              {min
+                ? "The trip is full — your driver just needs to confirm your booking. Payment unlocks the moment they do."
+                : "The driver hasn't accepted your booking yet. Once they do, the payment options unlock here. We'll send you a notification the moment it happens — usually within a few minutes."}
+            </p>
+          </div>
+        );
+      })()}
+
+      {/* Payment Method — only after the transporter has CONFIRMED */}
+      {!isCancelled && !isPaid && booking.status === "CONFIRMED" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-zinc-900 mb-1">Select Payment Method</h3>
-          <p className="text-xs text-slate-400 mb-4">Payment integration coming soon. Select your preferred method.</p>
+          <p className="text-xs text-slate-400 mb-4">
+            Your driver has accepted. Pay to unlock the pickup code, driver contact, and chat.
+          </p>
+
+          {error && (
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+              {error}
+            </div>
+          )}
 
           <div className="space-y-3">
             {paymentMethods.map(method => {
-              const isSelected = (selectedMethod || booking.paymentMethod) === method.id;
+              const isSelected = (selectedMethod || booking.paymentMethod || (method.available ? "PAYSTACK" : null)) === method.id;
               return (
                 <button
                   key={method.id}
-                  onClick={() => handleSelectPayment(method.id)}
-                  disabled={savingMethod}
+                  onClick={() => method.available && handleSelectPayment(method.id)}
+                  disabled={!method.available || savingMethod}
                   className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 text-left transition-all ${
-                    isSelected
+                    !method.available
+                      ? "border-slate-200 bg-slate-50 cursor-not-allowed opacity-70"
+                      : isSelected
                       ? "border-zinc-900 bg-zinc-50"
                       : "border-slate-200 hover:border-slate-300 bg-white"
                   }`}
@@ -354,11 +471,13 @@ export default function BookingDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-zinc-900">{method.name}</span>
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Coming Soon</span>
+                      {!method.available && (
+                        <span className="text-xs px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">Coming Soon</span>
+                      )}
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">{method.description}</p>
                   </div>
-                  {isSelected && (
+                  {isSelected && method.available && (
                     <svg className="w-5 h-5 text-zinc-900 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
@@ -368,21 +487,114 @@ export default function BookingDetailPage() {
             })}
           </div>
 
-          <button
-            disabled
-            className="mt-4 w-full bg-slate-100 text-slate-400 text-sm font-semibold py-3 rounded-xl cursor-not-allowed"
-          >
-            Proceed to Payment — Coming Soon
-          </button>
+          {(() => {
+            // Resolve the chosen method *once* so the button label, target,
+            // and the explanatory subline all stay in sync.
+            const method = selectedMethod || booking.paymentMethod || "PAYSTACK";
+            const providerName = method === "FLUTTERWAVE" ? "Flutterwave" : "Paystack";
+            return (
+              <>
+                <button
+                  onClick={handlePay}
+                  disabled={payStarting}
+                  className="mt-4 w-full bg-zinc-950 hover:bg-zinc-900 disabled:opacity-60 text-white text-sm font-semibold py-3 rounded-xl transition-colors inline-flex items-center justify-center gap-2"
+                >
+                  {payStarting ? (
+                    <>
+                      <svg className="h-3.5 w-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2.5" strokeOpacity="0.25" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                      Redirecting to {providerName}…
+                    </>
+                  ) : (
+                    <>
+                      Pay {formatPrice(booking.totalPrice, booking.transport?.currency)} with {providerName}
+                    </>
+                  )}
+                </button>
+                <p className="mt-2 text-[11px] text-slate-400 text-center">
+                  You'll be sent to {providerName}'s secure checkout, then brought back here.
+                </p>
+              </>
+            );
+          })()}
         </div>
       )}
 
-      {/* Cancel */}
-      {!isCancelled && booking.status !== "COMPLETED" && (
+      {/* Ticket — pickup code + QR — only after payment clears */}
+      {isPaid && !isCancelled && (
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="px-6 pt-6 pb-5 text-center">
+            <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700">
+              Pickup code
+            </div>
+            <div className="font-mono text-4xl font-bold tabular-nums tracking-[0.18em] text-zinc-950 sm:text-5xl">
+              {code ? code.match(/.{1,3}/g)?.join(" ") : "—"}
+            </div>
+            <p className="mt-2 text-xs text-slate-500">
+              Show this to your driver at pickup. Don't share it with anyone else.
+            </p>
+
+            {code && (
+              <div className="mt-5 flex justify-center">
+                <div className="rounded-2xl bg-white p-3 ring-1 ring-slate-200">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(code)}&size=200x200&margin=0`}
+                    alt={`QR encoding pickup code ${code}`}
+                    width={200}
+                    height={200}
+                    className="block"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-600">
+              <span className="relative flex h-1.5 w-1.5">
+                {!isCompleted && (
+                  <span className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-75 ${isInProgress ? "bg-orange-400" : "bg-emerald-400"}`} />
+                )}
+                <span className={`relative inline-flex h-1.5 w-1.5 rounded-full ${isCompleted ? "bg-slate-400" : isInProgress ? "bg-orange-500" : "bg-emerald-500"}`} />
+              </span>
+              {isCompleted ? "Trip completed" : isInProgress ? "Trip in progress" : "Awaiting pickup"}
+            </div>
+          </div>
+
+          {isInProgress && (
+            <div className={`border-t border-slate-100 px-6 py-4 ${
+              booking.completionRequestedAt ? "bg-amber-50/60" : "bg-emerald-50/40"
+            }`}>
+              {booking.completionRequestedAt ? (
+                <p className="text-xs text-amber-900 mb-2.5">
+                  <span className="font-semibold">Your driver says you've arrived.</span>{" "}
+                  Confirm to close out the trip and release payment. Don't tap if
+                  you haven't actually reached your destination.
+                </p>
+              ) : (
+                <p className="text-xs text-emerald-900 mb-2.5">
+                  Reached your destination? Tap below to release payment to your driver and complete the trip.
+                </p>
+              )}
+              <button
+                onClick={handleConfirmArrival}
+                disabled={arriving}
+                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+              >
+                {arriving ? "Confirming…" : "I have arrived"}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cancel — only valid before the trip starts */}
+      {!isCancelled && !isInProgress && !isCompleted && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-zinc-900 mb-1">Cancel Booking</h3>
           <p className="text-xs text-slate-400 mb-3">Cancelling will release your seats back to the pool.</p>
-          {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+          {error && isPaid && <p className="text-xs text-red-500 mb-3">{error}</p>}
           <button
             onClick={handleCancel}
             disabled={cancelling}
@@ -422,11 +634,11 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Chat Section */}
-      {booking.status === "CONFIRMED" && (
+      {/* Chat Section — gated server-side on paymentStatus = PAID. Hide pre-payment so we don't bounce off a 400. */}
+      {canChat && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-zinc-900 mb-1">Contact Transporter</h3>
-          <p className="text-xs text-slate-400 mb-4">Message and share contact info</p>
+          <p className="text-xs text-slate-400 mb-4">Message your driver — chat unlocks once payment clears.</p>
 
           {!chatId ? (
             <button

@@ -6,6 +6,7 @@ import { Page, PageHeader, Card, Skeleton, ErrorState, StatusPill } from "@/app/
 import { ArrowLeftIcon, UsersIcon, CarIcon, MapPinIcon, BookOpenIcon } from "@/app/_Components/Icons";
 import { getAdminUser, AdminUserDetail } from "@/lib/api";
 import { formatMoney } from "@/lib/format";
+import { formatBookingStatus } from "@/lib/bookingStatus";
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -345,8 +346,8 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                           ) : "—"}
                         </td>
                         <td className="px-5 py-3">
-                          <StatusPill tone={b.status === "COMPLETED" ? "emerald" : b.status === "CONFIRMED" ? "blue" : b.status === "CANCELLED" ? "red" : "yellow"}>
-                            {b.status}
+                          <StatusPill tone={b.status === "COMPLETED" ? "emerald" : b.status === "CONFIRMED" ? "blue" : b.status === "IN_PROGRESS" ? "orange" : b.status === "CANCELLED" ? "red" : "yellow"}>
+                            {formatBookingStatus(b.status)}
                           </StatusPill>
                         </td>
                         <td className="px-5 py-3">

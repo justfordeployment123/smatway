@@ -33,6 +33,7 @@ enum TransportStatus {
 enum BookingStatus {
   PENDING
   CONFIRMED
+  IN_PROGRESS
   CANCELLED
   COMPLETED
 }
@@ -64,6 +65,33 @@ enum AnnouncementAudience {
   TRANSPORTERS_ONLY
 }
 
+// Lifecycle of a transporter payout. Terminal states are RELEASED + FAILED.
+enum PayoutStatus {
+  PENDING     // arrival confirmed, awaiting release
+  PROCESSING  // Paystack transfer initiated, not yet final
+  RELEASED    // funds confirmed in transporter's bank
+  FAILED      // transfer failed; admin can retry
+}
+
+// Why the payout was actually triggered. Captured the first time
+// attemptRelease() runs against a payout — answers "did the platform
+// release this on its own, or did a human admin click the button?"
+enum PayoutTrigger {
+  AUTO    // PlatformSettings.autoPayoutEnabled fired this on arrival confirmation
+  MANUAL  // an admin hit /admin/payouts/:id/release
+}
+
+enum BugReportKind {
+  BUG          // user is reporting something broken
+  SUGGESTION   // user is suggesting an improvement
+}
+
+enum BugReportStatus {
+  OPEN         // submitted, no admin reply yet
+  REPLIED      // admin has responded (terminal for the simple flow)
+  CLOSED       // admin marked it done without replying
+}
+
 model User {
   id             String       @id @default(uuid())
   email          String       @unique
@@ -78,6 +106,28 @@ model User {
   emailVerified     Boolean   @default(false)
   emailVerifiedAt   DateTime?
   preferredCurrency String?   // ISO 4217 code (e.g. "NGN", "GHS", "USD")
+
+  // Transporter payout settings. The bank* + paystackRecipientCode columns
+  // are the Paystack-side account; the flw* columns are the Flutterwave-side
+  // account. A transporter can have either, both, or neither. The release
+  // pipeline picks the right column set based on which provider the booking
+  // was paid through (matches money-in to money-out so we don't accidentally
+  // pay from a balance that doesn't have the corresponding deposit).
+  //
+  // Paystack-side
+  bankCode             String?  // Paystack bank code (e.g. NIP code for Nigerian banks)
+  bankAccountNumber    String?
+  bankAccountName      String?
+  paystackRecipientCode String? @unique // returned by POST /transferrecipient
+  // Flutterwave-side. Flutterwave doesn't have a recipient concept — bank
+  // code + account number are passed directly on each transfer call.
+  flwBankCode          String?
+  flwBankAccountNumber String?
+  flwBankAccountName   String?
+  // "Preferred" provider when both are configured. Mostly informational now —
+  // actual release uses the same provider the booking was charged through.
+  payoutProvider       PaymentMethod?
+
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
@@ -95,6 +145,8 @@ model User {
   transporterChats Chat[]             @relation("TransporterChats")
   messages       Message[]
   siteFeedback   SiteFeedback[]
+  payouts        Payout[]             @relation("TransporterPayouts")
+  bugReports     BugReport[]          @relation("BugReportAuthor")
 }
 
 model AuthProvider {
@@ -215,6 +267,19 @@ model Transport {
   departureDateTime  DateTime
   maxReachDateTime   DateTime
 
+  // Group-ride threshold. Until `minSeatsToConfirm` worth of seats are
+  // booked across non-cancelled bookings, the trip is "filling" — pay is
+  // locked and travelers see a progress meter. Null on routes that don't
+  // care about a minimum (existing rows are backfilled to capacity at
+  // migration time, so they keep behaving like single-seat-per-confirm).
+  minSeatsToConfirm  Int?
+  // When true, every PENDING booking auto-flips to CONFIRMED the moment
+  // the threshold is reached — payment unlocks immediately for everyone.
+  // When false, the transporter still confirms each booking manually,
+  // but their Confirm button doesn't fire until the threshold is met
+  // (overridable; see BookingService for the manual-override path).
+  autoConfirmOnFill  Boolean         @default(false)
+
   status             TransportStatus @default(ACTIVE)
 
   createdAt          DateTime        @default(now())
@@ -236,6 +301,29 @@ model Booking {
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(PENDING)
   paymentMethod PaymentMethod?
+
+  // 10-digit code traveler shows the transporter at pickup. Encoded into the
+  // QR shown on the traveler's booking detail page. Generated on booking
+  // create (so the code exists even if the booking is unpaid for a while).
+  // Unique so the code alone is enough to identify a booking server-side.
+  verificationCode String?    @unique
+
+  // Stamped when the transporter scans/enters the code → trip is in progress.
+  pickupVerifiedAt DateTime?
+
+  // Stamped when the traveler clicks "I've arrived" → trip is COMPLETED and
+  // the payout from the platform's escrow to the transporter is queued.
+  arrivalConfirmedAt DateTime?
+
+  // Stamped when the TRANSPORTER pre-flags the trip as completed. Status
+  // stays IN_PROGRESS until the traveler confirms — prevents fraud where a
+  // transporter could fake-complete a trip to trigger their own payout
+  // without the traveler actually having arrived. The traveler's "I've
+  // arrived" action is what flips status to COMPLETED.
+  completionRequestedAt DateTime?
+
+  payments      Payment[]
+  payout        Payout?
 
   review        Review?
   chat          Chat?
@@ -283,6 +371,36 @@ model Review {
 // Site-wide feedback about SmatWay itself (distinct from per-booking Review).
 // Submitted from the dashboard /feedback page; surfaced on the marketing
 // homepage Testimonials rotator alongside trip reviews.
+// User-submitted bug reports & improvement suggestions. Travelers and
+// transporters share the same model — `kind` distinguishes them. Optional
+// image attachments are stored as S3 keys (resolve via storageService at
+// read time). Single admin reply for the simple flow; if a thread becomes
+// necessary later, promote `adminReply` to a child Reply[] relation.
+model BugReport {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation("BugReportAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+  kind           BugReportKind
+  subject        String
+  body           String           @db.Text
+  imageKeys      String[]         @default([])  // S3 object keys, resolve to presigned URLs on read
+
+  status         BugReportStatus  @default(OPEN)
+
+  // Single admin reply. Stays null until an admin responds.
+  adminReply     String?          @db.Text
+  repliedAt      DateTime?
+  repliedByAdminId String?
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+}
+
 model SiteFeedback {
   id        String   @id @default(uuid())
   userId    String
@@ -412,6 +530,99 @@ model AdminInviteToken {
   @@index([adminId])
 }
 
+// Payment attempt against a booking. One booking may have multiple Payment
+// rows (e.g. user retried after a failure). Reference is provider-side and
+// uniquely identifies the transaction in our DB. Raw response stores the full
+// provider payload for forensics / dispute resolution.
+model Payment {
+  id            String         @id @default(uuid())
+  bookingId     String
+  booking       Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  provider      PaymentMethod  // PAYSTACK / FLUTTERWAVE / MPAISA
+  reference     String         @unique  // provider-side transaction reference
+
+  amount        Decimal        @db.Decimal(10, 2)
+  currency      String
+
+  status        PaymentStatus  @default(PENDING)
+
+  // Provider-specific raw payload (init response + webhook + verify) — kept
+  // as one Json column for simplicity. Useful for audits & support tickets.
+  rawResponse   Json?
+
+  initializedAt DateTime       @default(now())
+  paidAt        DateTime?
+  failedAt      DateTime?
+
+  @@index([bookingId])
+  @@index([status])
+}
+
+// Payout from the platform's escrow account to the transporter, triggered
+// when the traveler confirms arrival. One payout per booking. Tracks the
+// commission split (platform takes commissionRate × gross) and the Paystack
+// Transfers API state (recipient_code → transfer_code → final settlement).
+model Payout {
+  id              String       @id @default(uuid())
+  bookingId       String       @unique
+  booking         Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  transporterId   String
+  transporter     User         @relation("TransporterPayouts", fields: [transporterId], references: [id], onDelete: Cascade)
+
+  grossAmount      Decimal     @db.Decimal(10, 2) // booking total
+  commissionRate   Decimal     @db.Decimal(5, 4)  // 0.1000 = 10% — captured at payout time
+  commissionAmount Decimal     @db.Decimal(10, 2)
+  netAmount        Decimal     @db.Decimal(10, 2) // gross - commission, what transporter receives
+  currency         String
+
+  status          PayoutStatus @default(PENDING)
+
+  // Which provider this payout was actually sent through (snapshot at
+  // attempt-release time). Lets us reconcile against the right API later
+  // even if the transporter changes their preferred provider afterwards.
+  provider        PaymentMethod?
+
+  // Paystack-specific identifiers (populated as the transfer progresses).
+  paystackRecipientCode     String?
+  paystackTransferCode      String?
+  paystackTransferReference String?  @unique  // our reference for idempotency
+
+  // Flutterwave-specific identifier (their /transfers returns a numeric id).
+  flwTransferId             Int?
+
+  // How this payout was triggered (set the first time attemptRelease runs).
+  // Nullable because pre-existing rows from before this column was added
+  // never recorded a trigger; PENDING rows are also null until they're
+  // attempted. Display layer treats null as "unknown / legacy".
+  releaseTrigger  PayoutTrigger?
+
+  rawResponse               Json?
+
+  createdAt   DateTime  @default(now())
+  releasedAt  DateTime?
+  failedAt    DateTime?
+  failureReason String?
+
+  @@index([transporterId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// Singleton table for platform-wide settings that admins can edit at runtime.
+// One row, id=1 (seeded by migration). Use commissionRate + autoPayoutEnabled
+// from this table — the matching env vars (PLATFORM_COMMISSION_RATE,
+// PAYSTACK_AUTO_PAYOUT) are kept only as fallbacks for the very first boot
+// before the row is read.
+model PlatformSettings {
+  id                  Int      @id @default(1)
+  commissionRate      Decimal  @db.Decimal(5, 4) @default(0.1000)  // 0.1 = 10%
+  autoPayoutEnabled   Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+  updatedByAdminId    String?  // who last touched it (audit linkage)
+}
+
 // Platform-wide announcements posted by admins. Surfaced in the user-side
 // /dashboard/announcements pages, filtered by audience.
 model Announcement {
@@ -421,6 +632,17 @@ model Announcement {
   audience        AnnouncementAudience  @default(ALL)
   isPublished     Boolean               @default(true)
 
+  // S3 keys for any images attached at create time. Resolve to presigned
+  // URLs on read via storageService.resolveImageUrl(). Empty array = no
+  // attachments — same shape as BugReport.imageKeys.
+  imageKeys       String[]              @default([])
+
+  // When this announcement should drop off the public feed automatically.
+  // Default 7 days from creation, set explicitly by the admin form. Null
+  // means "never expire" — kept open in case super-admins want to pin a
+  // permanent banner.
+  expiresAt       DateTime?
+
   createdByAdminId String?
   createdByAdmin   Admin?               @relation(fields: [createdByAdminId], references: [id], onDelete: SetNull)
 
@@ -429,4 +651,5 @@ model Announcement {
 
   @@index([audience])
   @@index([isPublished, createdAt])
+  @@index([expiresAt])
 }
