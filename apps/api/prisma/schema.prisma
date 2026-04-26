@@ -28,6 +28,10 @@ enum TransportStatus {
   ACTIVE
   INACTIVE
   FULL
+  // Admin force-blocked. Excluded from traveler search and rejects new
+  // bookings. Existing bookings continue through to completion. Only an
+  // admin can flip a BLOCKED route back to ACTIVE.
+  BLOCKED
 }
 
 enum BookingStatus {

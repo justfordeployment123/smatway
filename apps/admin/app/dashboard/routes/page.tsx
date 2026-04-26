@@ -7,7 +7,8 @@ import { Page, PageHeader, Card, Skeleton, ErrorState, EmptyState, StatusPill, S
 import { DateSelect } from "@/app/_Components/DateSelect";
 import { SearchIcon, MapPinIcon } from "@/app/_Components/Icons";
 import {
-  listAdminRoutes, deactivateAdminRoute, activateAdminRoute, AdminRouteRow,
+  listAdminRoutes, deactivateAdminRoute, activateAdminRoute,
+  blockAdminRoute, unblockAdminRoute, AdminRouteRow,
 } from "@/lib/api";
 import { adminCan, getAdminProfile } from "@/lib/auth";
 import { ADMIN_PERMISSIONS } from "@/lib/permissions";
@@ -171,6 +172,36 @@ export default function RoutesPage() {
     }
   }
 
+  async function toggleBlock(r: AdminRouteRow) {
+    if (r.status === "BLOCKED") {
+      // Unblock — straight flip back to ACTIVE.
+      setBusyId(r.id);
+      try {
+        await unblockAdminRoute(r.id);
+        setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, status: "ACTIVE" } : x));
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Couldn't unblock");
+      } finally {
+        setBusyId(null);
+      }
+      return;
+    }
+    // Block — prompt for an optional reason. Logged in the audit trail.
+    const reason = window.prompt(
+      "Block this route?\n\nIt will disappear from traveler search and stop accepting new bookings. Existing bookings continue. Reason (optional):",
+    );
+    if (reason === null) return; // cancelled
+    setBusyId(r.id);
+    try {
+      await blockAdminRoute(r.id, reason || undefined);
+      setRows((prev) => prev.map((x) => x.id === r.id ? { ...x, status: "BLOCKED" } : x));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't block");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   // Bucket filtering happens client-side over the loaded page since the
   // backend doesn't accept a date+booking-count predicate yet. Matches the
   // transporter-side bucket logic for consistency.
@@ -280,7 +311,14 @@ export default function RoutesPage() {
                       ) : null}
                     </td>
                     <td className="px-5 py-3">
-                      <StatusPill tone={r.status === "ACTIVE" ? "emerald" : r.status === "FULL" ? "yellow" : "slate"}>
+                      <StatusPill
+                        tone={
+                          r.status === "ACTIVE" ? "emerald"
+                          : r.status === "FULL" ? "yellow"
+                          : r.status === "BLOCKED" ? "red"
+                          : "slate"
+                        }
+                      >
                         {r.status}
                       </StatusPill>
                     </td>
@@ -291,14 +329,25 @@ export default function RoutesPage() {
                       {new Date(r.departureDateTime).toLocaleDateString(undefined, { day: "2-digit", month: "short" })}
                     </td>
                     {canEdit && (
-                      <td className="px-5 py-3 text-right">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); toggle(r); }}
-                          disabled={busyId === r.id}
-                          className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 disabled:opacity-60"
-                        >
-                          {busyId === r.id ? "…" : r.status === "ACTIVE" ? "Deactivate" : "Activate"}
-                        </button>
+                      <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="inline-flex items-center gap-3">
+                          {r.status !== "BLOCKED" && (
+                            <button
+                              onClick={() => toggle(r)}
+                              disabled={busyId === r.id}
+                              className="text-xs font-semibold text-emerald-700 hover:text-emerald-900 disabled:opacity-60"
+                            >
+                              {busyId === r.id ? "…" : r.status === "ACTIVE" ? "Deactivate" : "Activate"}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => toggleBlock(r)}
+                            disabled={busyId === r.id}
+                            className="text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-60"
+                          >
+                            {busyId === r.id ? "…" : r.status === "BLOCKED" ? "Unblock" : "Block"}
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>

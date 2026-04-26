@@ -192,7 +192,7 @@ export interface AdminUserDetail {
     departureCountry: string;
     destinationCity: string;
     destinationCountry: string;
-    status: 'ACTIVE' | 'INACTIVE' | 'FULL';
+    status: 'ACTIVE' | 'INACTIVE' | 'FULL' | 'BLOCKED';
     price: string | number;
     currency: string;
     availableSeats: number;
@@ -273,7 +273,7 @@ export interface AdminVehicleDetail extends AdminVehicleRow {
     id: string;
     departureCity: string;
     destinationCity: string;
-    status: 'ACTIVE' | 'INACTIVE' | 'FULL';
+    status: 'ACTIVE' | 'INACTIVE' | 'FULL' | 'BLOCKED';
     price: string | number;
     currency: string;
     availableSeats: number;
@@ -315,7 +315,7 @@ export interface AdminRouteRow {
   destinationCity: string;
   destinationCountry: string;
   transportType: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'FULL';
+  status: 'ACTIVE' | 'INACTIVE' | 'FULL' | 'BLOCKED';
   price: string | number;
   currency: string;
   availableSeats: number;
@@ -351,6 +351,19 @@ export async function deactivateAdminRoute(id: string) {
 
 export async function activateAdminRoute(id: string) {
   return patch(`/admin/routes/${id}/activate`);
+}
+
+/**
+ * Admin force-block a route. Excludes it from traveler search and stops
+ * new bookings; existing bookings continue. Distinct from deactivate
+ * (transporter soft-delete channel) — captured separately in the audit.
+ */
+export async function blockAdminRoute(id: string, reason?: string) {
+  return patch(`/admin/routes/${id}/block`, { reason });
+}
+
+export async function unblockAdminRoute(id: string) {
+  return patch(`/admin/routes/${id}/unblock`);
 }
 
 // ─── Bookings ────────────────────────────────────────────────────────────────

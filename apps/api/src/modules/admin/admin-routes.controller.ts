@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   NotFoundException,
@@ -178,6 +179,68 @@ export class AdminRoutesController {
       action: 'route.activate',
       targetType: 'Transport',
       targetId: id,
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
+    return { route: updated };
+  }
+
+  /**
+   * Admin force-block. Excludes the route from traveler search and
+   * rejects new bookings; existing bookings continue normally so the
+   * passengers already booked aren't stranded. Distinct from deactivate
+   * (which is the transporter's "soft-delete" channel) — the audit log
+   * captures intent + optional reason.
+   */
+  @Patch(':id/block')
+  @RequirePermissions(ADMIN_PERMISSIONS.ROUTES_EDIT)
+  async block(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+    @CurrentAdmin() principal: AdminPrincipal,
+    @Req() req: Request,
+  ) {
+    const existing = await this.prisma.transport.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException();
+    const updated = await this.prisma.transport.update({
+      where: { id },
+      data: { status: TransportStatus.BLOCKED },
+    });
+    await this.audit.write({
+      principal,
+      action: 'route.block',
+      targetType: 'Transport',
+      targetId: id,
+      metadata: {
+        previousStatus: existing.status,
+        reason: body?.reason?.trim() || null,
+      },
+      ipAddress: req.ip ?? null,
+      userAgent: req.headers['user-agent'] ?? null,
+    });
+    return { route: updated };
+  }
+
+  /** Lift an admin block — flips the route back to ACTIVE. */
+  @Patch(':id/unblock')
+  @RequirePermissions(ADMIN_PERMISSIONS.ROUTES_EDIT)
+  async unblock(
+    @Param('id') id: string,
+    @CurrentAdmin() principal: AdminPrincipal,
+    @Req() req: Request,
+  ) {
+    const existing = await this.prisma.transport.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundException();
+    const updated = await this.prisma.transport.update({
+      where: { id },
+      data: { status: TransportStatus.ACTIVE },
+    });
+    await this.audit.write({
+      principal,
+      action: 'route.unblock',
+      targetType: 'Transport',
+      targetId: id,
+      metadata: { previousStatus: existing.status },
       ipAddress: req.ip ?? null,
       userAgent: req.headers['user-agent'] ?? null,
     });

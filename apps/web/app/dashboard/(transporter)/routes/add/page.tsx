@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createTransport, getMyVehicles } from "@/lib/api";
+import Link from "next/link";
+import { createTransport, getMyVehicles, getMyRoutes } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { toLocalDateTimeInput, addDays } from "@/lib/dateInput";
 import { CarIcon, ChevronDownIcon } from "@/app/dashboard/_Components/Icons";
@@ -35,6 +36,11 @@ export default function AddRoutePage() {
   const [vehiclesLoading, setVehiclesLoading] = useState(true);
   const [error, setError] = useState("");
   const [vehicles, setVehicles] = useState<any[]>([]);
+  // Active-route pre-check. The backend enforces "one active route per
+  // transporter" but the UI surfaces it up-front so the transporter
+  // doesn't fill the whole form just to get rejected on submit.
+  const [activeRoute, setActiveRoute] = useState<any | null>(null);
+  const [activeRouteLoading, setActiveRouteLoading] = useState(true);
   const [form, setForm] = useState<RouteForm>({
     departureCountry: "",
     departureCity: "",
@@ -76,6 +82,29 @@ export default function AddRoutePage() {
         maxReachDateTime: toLocalDateTimeInput(tomorrow),
       }));
       getMyVehicles().then(setVehicles).catch(() => setError("Failed to load vehicles")).finally(() => setVehiclesLoading(false));
+      // Same active-route rule the backend enforces: status=ACTIVE,
+      // maxReach > now, and at least one non-finished booking (or no
+      // bookings at all = "still hoping for one"). If found, the form
+      // is replaced with a banner pointing at it.
+      getMyRoutes()
+        .then((routes) => {
+          const now = Date.now();
+          const stillActive = routes.find((r: any) => {
+            if (r.status !== "ACTIVE") return false;
+            if (new Date(r.maxReachDateTime).getTime() <= now) return false;
+            const bs = r.bookingStats ?? { pending: 0, confirmed: 0, inProgress: 0, completed: 0 };
+            const liveCount = bs.pending + bs.confirmed + bs.inProgress;
+            // Open route with no bookings is still "active" — they're
+            // hoping for one. Only call it inactive once every booking
+            // has finished.
+            const hasAnyBooking = liveCount + bs.completed > 0;
+            if (!hasAnyBooking) return true;
+            return liveCount > 0;
+          });
+          setActiveRoute(stillActive ?? null);
+        })
+        .catch(() => { /* silent — backend still enforces */ })
+        .finally(() => setActiveRouteLoading(false));
     })();
   }, []);
 
@@ -140,13 +169,52 @@ export default function AddRoutePage() {
     }
   }
 
-  if (vehiclesLoading) {
+  if (vehiclesLoading || activeRouteLoading) {
     return (
       <div className="max-w-2xl">
         <div className="mb-6">
           <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Add New Route</h1>
         </div>
-        <div className="text-sm text-slate-400 py-10 text-center">Loading vehicles...</div>
+        <div className="text-sm text-slate-400 py-10 text-center">Loading…</div>
+      </div>
+    );
+  }
+
+  // One-active-route lock: when the transporter already has a route in
+  // flight, replace the whole form with a banner pointing at it. Saves
+  // them filling out a form just to be rejected on submit, and matches
+  // the backend's enforcement.
+  if (activeRoute) {
+    const when = new Date(activeRoute.maxReachDateTime).toLocaleString();
+    return (
+      <div className="max-w-2xl">
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold tracking-tight text-zinc-900">Add New Route</h1>
+        </div>
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6">
+          <p className="text-sm font-semibold text-amber-900">
+            You already have an active route
+          </p>
+          <p className="text-[13px] text-amber-800 mt-1.5 leading-relaxed">
+            <span className="font-semibold">{activeRoute.departureCity} → {activeRoute.destinationCity}</span>
+            {" — runs until "}{when}.{" "}
+            Wait for it to finish or delete it before creating another.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/routes"
+              className="text-[12px] font-semibold bg-amber-900 text-white px-4 py-2 rounded-xl hover:bg-amber-950 active:scale-[0.98] transition-all"
+            >
+              View my routes →
+            </Link>
+            <Link
+              href={`/dashboard/routes/${activeRoute.id}/bookings`}
+              className="text-[12px] font-semibold border border-amber-300 text-amber-900 px-4 py-2 rounded-xl hover:bg-amber-100 active:scale-[0.98] transition-all"
+            >
+              See bookings on this route
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

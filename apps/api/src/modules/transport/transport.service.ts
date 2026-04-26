@@ -57,6 +57,45 @@ export class TransportService {
   }
 
   async create(transporterId: string, dto: CreateTransportDto) {
+    // One-active-route-per-transporter limit. A route counts as active
+    // while it's status=ACTIVE AND the trip window hasn't closed yet
+    // (maxReachDateTime > now) AND it's not in a "ran early" state
+    // (which is: had bookings, all of them are now COMPLETED or
+    // CANCELLED — the route effectively ran already).
+    //
+    // We check before the vehicle lookup so the error explains the right
+    // reason (route limit, not vehicle issue) when both would fail.
+    const candidates = await this.prisma.transport.findMany({
+      where: {
+        transporterId,
+        status: TransportStatus.ACTIVE,
+        maxReachDateTime: { gt: new Date() },
+      },
+      select: {
+        id: true,
+        departureCity: true,
+        destinationCity: true,
+        maxReachDateTime: true,
+        bookings: { select: { status: true } },
+      },
+    });
+    // A candidate counts as "still active" if it has zero bookings (open
+    // for new ones) OR at least one booking still in flight. If every
+    // booking is COMPLETED/CANCELLED we treat the route as effectively
+    // done even though its time window is still open.
+    const stillActive = candidates.find((t) => {
+      if (t.bookings.length === 0) return true;
+      return t.bookings.some(
+        (b) => b.status !== 'COMPLETED' && b.status !== 'CANCELLED',
+      );
+    });
+    if (stillActive) {
+      const when = stillActive.maxReachDateTime.toLocaleString();
+      throw new BadRequestException(
+        `You already have an active route (${stillActive.departureCity} → ${stillActive.destinationCity}, ends ${when}). Wait for it to end or delete it before creating another.`,
+      );
+    }
+
     const vehicle = await this.prisma.vehicle.findUnique({ where: { id: dto.vehicleId } });
     if (!vehicle) throw new NotFoundException('Vehicle not found');
     if (vehicle.transporterId !== transporterId) throw new ForbiddenException('Vehicle does not belong to you');

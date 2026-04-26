@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { searchTransports, createBooking, getTransporterProfile } from "@/lib/api";
+import { searchTransports, createBooking, getTransporterProfile, getMyBookings } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatPrice } from "@/lib/currencies";
@@ -32,6 +32,11 @@ export default function SearchRidesPage() {
   const [results, setResults] = useState<any[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // The traveler's currently in-flight booking, if any. Drives the
+  // platform-wide "one active booking" lock — we disable booking on
+  // every route card when this is set, and surface a banner pointing
+  // back to it so they understand why.
+  const [activeBooking, setActiveBooking] = useState<any | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -45,6 +50,18 @@ export default function SearchRidesPage() {
         // wrong day for users in any non-UTC timezone.
         setDate(toLocalDateInput());
       } catch {}
+    })();
+    // Fetch active booking once on mount so we can lock the search
+    // page early — backend enforces the same rule but the UI nudge
+    // saves a wasted click.
+    (async () => {
+      try {
+        const bookings = await getMyBookings();
+        const active = bookings.find((b: any) =>
+          b.status === "PENDING" || b.status === "CONFIRMED" || b.status === "IN_PROGRESS"
+        );
+        setActiveBooking(active ?? null);
+      } catch { /* silent — backend will still enforce */ }
     })();
   }, []);
 
@@ -186,6 +203,34 @@ export default function SearchRidesPage() {
         </div>
       </Reveal>
 
+      {/* Active-booking lock banner. Until the active booking finishes
+          or is cancelled, every Book button on the route cards below is
+          disabled. The banner gives travelers a clear path back to the
+          booking they already have going. */}
+      {activeBooking && (
+        <Reveal className="mb-6">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-start sm:items-center gap-3 flex-col sm:flex-row">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-900">
+                You already have an active booking
+              </p>
+              <p className="text-[12px] text-amber-800 mt-0.5">
+                {activeBooking.transport?.departureCity} → {activeBooking.transport?.destinationCity}
+                {" · "}
+                <span className="font-mono uppercase">{activeBooking.status?.replace("_", " ")}</span>
+                . Finish or cancel it before booking another route.
+              </p>
+            </div>
+            <Link
+              href={`/dashboard/traveler/booking/${activeBooking.id}`}
+              className="text-[12px] font-semibold bg-amber-900 text-white px-4 py-2 rounded-xl hover:bg-amber-950 active:scale-[0.98] transition-all"
+            >
+              View booking →
+            </Link>
+          </div>
+        </Reveal>
+      )}
+
       {/* Results */}
       {loading ? (
         <SkeletonList count={3} />
@@ -223,6 +268,7 @@ export default function SearchRidesPage() {
               <TransportCard
                 key={transport.id}
                 transport={transport}
+                lockReason={activeBooking ? "You have an active booking — finish or cancel it before booking another." : null}
                 onBooked={(seats) => {
                   // Patch the result row in place so the "seats left" and
                   // group-ride filling meter reflect the new booking
@@ -294,7 +340,16 @@ function Field({ label, icon, children }: { label: string; icon?: React.ReactNod
 }
 
 // ─── Transport card ───────────────────────────────────────────────────────────
-function TransportCard({ transport, onBooked }: { transport: any; onBooked?: (seats: number) => void }) {
+function TransportCard({
+  transport,
+  onBooked,
+  lockReason,
+}: {
+  transport: any;
+  onBooked?: (seats: number) => void;
+  /** When set, the Book button is disabled and the message is shown as a tooltip / footnote. */
+  lockReason?: string | null;
+}) {
   const [booking, setBooking] = useState(false);
   const [seats, setSeats] = useState(1);
   const [booked, setBooked] = useState<any>(null);
@@ -464,12 +519,14 @@ function TransportCard({ transport, onBooked }: { transport: any; onBooked?: (se
                   max={transport.availableSeats}
                   value={seats}
                   onChange={(e) => setSeats(Number(e.target.value))}
-                  className="w-10 sm:w-12 text-center rounded-lg border border-slate-200 px-1 py-1.5 text-sm font-semibold tabular-nums"
+                  disabled={!!lockReason}
+                  className="w-10 sm:w-12 text-center rounded-lg border border-slate-200 px-1 py-1.5 text-sm font-semibold tabular-nums disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <button
                   onClick={handleBook}
-                  disabled={booking || transport.availableSeats === 0}
-                  className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 text-white text-[12px] font-semibold px-3 sm:px-3.5 py-2 rounded-lg transition-all active:scale-[0.98]"
+                  disabled={booking || transport.availableSeats === 0 || !!lockReason}
+                  title={lockReason ?? undefined}
+                  className="bg-zinc-950 hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed text-white text-[12px] font-semibold px-3 sm:px-3.5 py-2 rounded-lg transition-all active:scale-[0.98]"
                 >
                   {booking ? "..." : "Book"}
                 </button>

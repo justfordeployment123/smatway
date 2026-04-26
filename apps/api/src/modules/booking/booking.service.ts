@@ -85,8 +85,36 @@ export class BookingService {
   async create(travelerId: string, dto: CreateBookingDto) {
     const transport = await this.prisma.transport.findUnique({ where: { id: dto.transportId } });
     if (!transport) throw new NotFoundException('Transport not found');
+    // BLOCKED routes are admin-disabled — they shouldn't appear in search
+    // anymore but block here defensively in case the traveler had the
+    // booking page already open before the admin acted.
+    if (transport.status === 'BLOCKED') {
+      throw new BadRequestException('This route is unavailable.');
+    }
     if (transport.availableSeats < dto.seatsBooked)
       throw new BadRequestException('Not enough seats available');
+
+    // One-active-booking-per-traveler limit. A traveler is "locked" while
+    // any of their bookings is still in flight (PENDING / CONFIRMED /
+    // IN_PROGRESS). The lock releases the moment that booking flips to
+    // COMPLETED or CANCELLED — so the traveler can finish or cancel the
+    // current trip and then book another. The check covers the case
+    // where the UI was bypassed (cached page, direct API call).
+    const existingActive = await this.prisma.booking.findFirst({
+      where: {
+        travelerId,
+        status: { in: [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS] },
+      },
+      include: {
+        transport: { select: { departureCity: true, destinationCity: true } },
+      },
+    });
+    if (existingActive) {
+      const route = `${existingActive.transport.departureCity} → ${existingActive.transport.destinationCity}`;
+      throw new BadRequestException(
+        `You already have an active booking on ${route}. Finish or cancel it before booking another.`,
+      );
+    }
 
     const totalPrice = Number(transport.price) * dto.seatsBooked;
     const verificationCode = await this.generateVerificationCode();
