@@ -7,16 +7,28 @@ import type Multer from 'multer';
 @Injectable()
 export class StorageService {
   private s3Client: S3Client;
+  private publicClient: S3Client;
   private bucketName = process.env.GARAGE_BUCKET || 'smatway';
 
   constructor() {
+    const credentials = {
+      accessKeyId: process.env.GARAGE_ACCESS_KEY || 'minioadmin',
+      secretAccessKey: process.env.GARAGE_SECRET_KEY || 'minioadmin',
+    };
+
     this.s3Client = new S3Client({
       region: 'us-east-1',
       endpoint: process.env.GARAGE_ENDPOINT || 'http://localhost:9000',
-      credentials: {
-        accessKeyId: process.env.GARAGE_ACCESS_KEY || 'minioadmin',
-        secretAccessKey: process.env.GARAGE_SECRET_KEY || 'minioadmin',
-      },
+      credentials,
+      forcePathStyle: true,
+    });
+
+    // Separate client for presigned URLs so browsers hit the public endpoint,
+    // not the internal Docker network address.
+    this.publicClient = new S3Client({
+      region: 'us-east-1',
+      endpoint: process.env.GARAGE_PUBLIC_URL || process.env.GARAGE_ENDPOINT || 'http://localhost:9000',
+      credentials,
       forcePathStyle: true,
     });
   }
@@ -60,21 +72,7 @@ export class StorageService {
       key = url.pathname.replace(`/${this.bucketName}/`, '');
     }
 
-    // Use GARAGE_PUBLIC_URL for the presigned URL endpoint so browsers can reach it.
-    const publicEndpoint = process.env.GARAGE_PUBLIC_URL;
-    const client = publicEndpoint
-      ? new S3Client({
-          region: 'us-east-1',
-          endpoint: publicEndpoint,
-          credentials: {
-            accessKeyId: process.env.GARAGE_ACCESS_KEY || 'minioadmin',
-            secretAccessKey: process.env.GARAGE_SECRET_KEY || 'minioadmin',
-          },
-          forcePathStyle: true,
-        })
-      : this.s3Client;
-
-    return getSignedUrl(client, new GetObjectCommand({ Bucket: this.bucketName, Key: key }), {
+    return getSignedUrl(this.publicClient, new GetObjectCommand({ Bucket: this.bucketName, Key: key }), {
       expiresIn: 7 * 24 * 60 * 60,
     });
   }
