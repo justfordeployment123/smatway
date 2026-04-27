@@ -27,6 +27,9 @@ export const ADMIN_PERMISSIONS = {
   FEEDBACK_READ: 'feedback:read',
   FEEDBACK_DELETE: 'feedback:delete',
 
+  BUG_REPORTS_READ: 'bug-reports:read',
+  BUG_REPORTS_DELETE: 'bug-reports:delete',
+
   REVIEWS_READ: 'reviews:read',
   REVIEWS_DELETE: 'reviews:delete',
 
@@ -96,6 +99,8 @@ export const ADMIN_PERMISSION_GROUPS: Array<{
     permissions: [
       { value: ADMIN_PERMISSIONS.FEEDBACK_READ, label: 'View site feedback', description: 'See feedback submitted from the dashboard.' },
       { value: ADMIN_PERMISSIONS.FEEDBACK_DELETE, label: 'Delete site feedback', description: 'Remove inappropriate feedback.' },
+      { value: ADMIN_PERMISSIONS.BUG_REPORTS_READ, label: 'View bug reports', description: 'See bug reports submitted by users.' },
+      { value: ADMIN_PERMISSIONS.BUG_REPORTS_DELETE, label: 'Delete bug reports', description: 'Remove resolved or invalid bug reports.' },
       { value: ADMIN_PERMISSIONS.REVIEWS_READ, label: 'View trip reviews', description: 'See per-booking transporter reviews.' },
       { value: ADMIN_PERMISSIONS.REVIEWS_DELETE, label: 'Delete trip reviews', description: 'Remove inappropriate trip reviews.' },
     ],
