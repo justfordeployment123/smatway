@@ -25,12 +25,6 @@ const paymentMethods = [
     description: "Pay with card, mobile money, or bank",
     available: true,
   },
-  {
-    id: "MPAISA",
-    name: "MPaisa",
-    description: "Pay with mobile wallet",
-    available: false,
-  },
 ];
 
 const statusColors: Record<string, string> = {
