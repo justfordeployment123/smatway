@@ -4,20 +4,19 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import io from "socket.io-client";
 import {
   getTransportBookings, confirmBooking, rejectBooking,
-  initChat, getMessages,
 } from "@/lib/api";
+import { ChatModal } from "@/app/dashboard/_Components/ChatModal";
 import { getCurrentUser } from "@/lib/auth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   BookOpenIcon, ClockIcon, CheckCircleIcon, MailIcon,
-  SendIcon, XIcon, ArrowRightIcon, CalendarIcon, UsersIcon,
+  ArrowRightIcon, CalendarIcon, UsersIcon,
 } from "@/app/dashboard/_Components/Icons";
 import {
   Page, Reveal, PageHeader, EmptyState, SkeletonList, StatusPill,
-  TabFilter, SurfaceCard, spring,
+  TabFilter, SurfaceCard,
 } from "@/app/dashboard/_Components/ui";
 import {
   deriveBookingStage, BookingStage, STAGE_TONE, formatStageLabel,
@@ -45,31 +44,8 @@ export default function TransporterBookingsPage() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const [chatBookingId, setChatBookingId] = useState<string | null>(null);
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [chatMessages, setChatMessages] = useState<any[]>([]);
-  const [messageText, setMessageText] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const socketRef = useRef<any>(null);
   const autoOpenedRef = useRef(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (chatId && currentUser?.id) {
-      if (!socketRef.current) {
-        socketRef.current = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3002", {
-          query: { userId: currentUser.id },
-          reconnection: true,
-        });
-      }
-      const socket = socketRef.current;
-      setTimeout(() => socket.emit("join-chat", { chatId }), 100);
-      const handleMessage = (message: any) => setChatMessages((prev) => [...prev, message]);
-      socket.on("message", handleMessage);
-      return () => socket.off("message", handleMessage);
-    }
-  }, [chatId, currentUser?.id]);
 
   useEffect(() => {
     loadBookings();
@@ -99,14 +75,11 @@ export default function TransporterBookingsPage() {
   }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages]);
-
-  useEffect(() => {
     const bookingIdFromQuery = searchParams.get("openChatBooking");
     if (!bookingIdFromQuery || autoOpenedRef.current || loading) return;
     autoOpenedRef.current = true;
-    openChat(bookingIdFromQuery).finally(() => router.replace("/dashboard/bookings"));
+    setChatBookingId(bookingIdFromQuery);
+    router.replace("/dashboard/bookings");
   }, [searchParams, loading]);
 
   async function loadBookings() {
@@ -117,39 +90,6 @@ export default function TransporterBookingsPage() {
       console.error("Failed to load bookings:", error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function openChat(bookingId: string) {
-    setChatBookingId(bookingId);
-    setChatLoading(true);
-    try {
-      const chat = await initChat(bookingId);
-      setChatId(chat.id);
-      const msgs = await getMessages(chat.id);
-      setChatMessages(msgs);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  function closeChat() {
-    if (chatId && socketRef.current) socketRef.current.emit("leave-chat", { chatId });
-    setChatBookingId(null);
-    setChatId(null);
-    setMessageText("");
-  }
-
-  async function handleSendMessage() {
-    if (!messageText.trim() || !chatId || !currentUser?.id) return;
-    setSendingMessage(true);
-    try {
-      socketRef.current?.emit("message", { chatId, content: messageText, userId: currentUser.id });
-      setMessageText("");
-    } finally {
-      setSendingMessage(false);
     }
   }
 
@@ -265,29 +205,22 @@ export default function TransporterBookingsPage() {
                 actionLoading={actionLoading === booking.id}
                 onConfirm={() => handleConfirm(booking.id)}
                 onReject={() => handleReject(booking.id)}
-                onChat={() => openChat(booking.id)}
+                onChat={() => setChatBookingId(booking.id)}
               />
             ))}
           </AnimatePresence>
         </motion.div>
       )}
 
-      {/* Chat modal */}
-      <AnimatePresence>
-        {chatBookingId && (
-          <ChatModal
-            loading={chatLoading}
-            messages={chatMessages}
-            currentUserId={currentUser?.id}
-            messageText={messageText}
-            sendingMessage={sendingMessage}
-            onChangeText={setMessageText}
-            onSend={handleSendMessage}
-            onClose={closeChat}
-            messagesEndRef={messagesEndRef}
-          />
-        )}
-      </AnimatePresence>
+      {chatBookingId && currentUser?.id && (
+        <ChatModal
+          bookingId={chatBookingId}
+          currentUserId={currentUser.id}
+          title="Message traveler"
+          subtitle="Coordinate pickup and trip details"
+          onClose={() => setChatBookingId(null)}
+        />
+      )}
     </Page>
   );
 }
@@ -427,99 +360,3 @@ function BookingRow({
   );
 }
 
-// ─── Chat modal ───────────────────────────────────────────────────────────────
-function ChatModal({
-  loading, messages, currentUserId, messageText, sendingMessage,
-  onChangeText, onSend, onClose, messagesEndRef,
-}: {
-  loading: boolean;
-  messages: any[];
-  currentUserId?: string;
-  messageText: string;
-  sendingMessage: boolean;
-  onChangeText: (v: string) => void;
-  onSend: () => void;
-  onClose: () => void;
-  messagesEndRef: React.RefObject<HTMLDivElement | null>;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      onClick={onClose}
-      className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 12, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: 8, scale: 0.98 }}
-        transition={spring}
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-2xl max-w-md w-full max-h-[85vh] overflow-hidden flex flex-col shadow-2xl"
-      >
-        <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-          <div>
-            <h3 className="text-[14px] font-semibold text-zinc-950">Message traveler</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">Coordinate pickup and trip details</p>
-          </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-zinc-900 p-1 -m-1">
-            <XIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="p-10 text-center text-sm text-slate-400">Loading...</div>
-        ) : (
-          <>
-            <div className="flex-1 overflow-y-auto p-4 space-y-2 bg-slate-50/60">
-              {messages.length === 0 ? (
-                <div className="text-center text-[13px] text-slate-400 mt-16">
-                  No messages yet. Say hello.
-                </div>
-              ) : (
-                messages.map((msg: any, i: number) => {
-                  const mine = msg.senderId === currentUserId;
-                  return (
-                    <motion.div
-                      key={msg.id ?? i}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ ...spring, stiffness: 300 }}
-                      className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-[13px] ${mine ? "bg-zinc-950 text-white rounded-br-md" : "bg-white border border-slate-200 text-zinc-900 rounded-bl-md"}`}>
-                        <p>{msg.content}</p>
-                        <p className={`text-[10px] mt-1 ${mine ? "text-white/50" : "text-slate-400"}`}>
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-            <div className="p-3 border-t border-slate-100 flex gap-2">
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => onChangeText(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && onSend()}
-                placeholder="Type a message..."
-                className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-              />
-              <button
-                onClick={onSend}
-                disabled={sendingMessage || !messageText.trim()}
-                className="bg-zinc-950 text-white px-3.5 rounded-xl hover:bg-zinc-800 disabled:opacity-40 transition-all active:scale-[0.97] flex items-center justify-center"
-              >
-                <SendIcon className="w-4 h-4" />
-              </button>
-            </div>
-          </>
-        )}
-      </motion.div>
-    </motion.div>
-  );
-}

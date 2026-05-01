@@ -39,6 +39,8 @@ export default function PayoutSettingsPage() {
     ? (countryEntry.providers as readonly PayoutProvider[]).slice() as PayoutProvider[]
     : ["PAYSTACK", "FLUTTERWAVE"];
   const [banks, setBanks] = useState<Bank[]>([]);
+  const [banksLoading, setBanksLoading] = useState(false);
+  const [banksError, setBanksError] = useState(false);
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [resolvedName, setResolvedName] = useState<string | null>(null);
@@ -143,9 +145,12 @@ export default function PayoutSettingsPage() {
   // currency which drives the bank list lookup (Paystack queries by
   // currency; Flutterwave by country, but the API translates).
   useEffect(() => {
+    setBanksLoading(true);
+    setBanksError(false);
     listBanks(currency, provider)
       .then((r) => setBanks(r.banks))
-      .catch(() => setBanks([]));
+      .catch(() => { setBanks([]); setBanksError(true); })
+      .finally(() => setBanksLoading(false));
     setBankCode("");
     setResolvedName(null);
   }, [currency, provider]);
@@ -366,7 +371,7 @@ export default function PayoutSettingsPage() {
                 <select
                   value={bankCode}
                   onChange={(e) => setBankCode(e.target.value)}
-                  disabled={banks.length === 0}
+                  disabled={banksLoading || banks.length === 0}
                   className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:bg-white disabled:opacity-60"
                 >
                   <option value="">Select your bank…</option>
@@ -374,10 +379,11 @@ export default function PayoutSettingsPage() {
                     <option key={`${b.code}-${b.longcode || i}`} value={b.code}>{b.name}</option>
                   ))}
                 </select>
-                {banks.length === 0 && (
-                  <p className="text-[11px] text-slate-400 mt-1">
-                    Loading bank list…
-                  </p>
+                {banksLoading && (
+                  <p className="text-[11px] text-slate-400 mt-1">Loading bank list…</p>
+                )}
+                {!banksLoading && banksError && (
+                  <p className="text-[11px] text-red-600 mt-1">Failed to load banks. Check your connection or try again.</p>
                 )}
               </div>
 

@@ -5,9 +5,10 @@ import { createPortal } from "react-dom";
 import { useParams } from "next/navigation";
 import {
   getBooking, cancelBooking, updatePaymentMethod, createReview,
-  initChat, getMessages, sendMessage, getTransporterProfile,
-  initializePaystackPayment, initializeFlutterwavePayment, confirmBookingArrival,
+  getTransporterProfile, initializePaystackPayment, initializeFlutterwavePayment,
+  confirmBookingArrival,
 } from "@/lib/api";
+import { ChatModal } from "@/app/dashboard/_Components/ChatModal";
 import { formatPrice } from "@/lib/currencies";
 import { formatBookingStatus } from "@/lib/bookingStatus";
 
@@ -58,10 +59,7 @@ export default function BookingDetailPage() {
   const [feedback, setFeedback] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [messageText, setMessageText] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [transporterProfile, setTransporterProfile] = useState<any>(null);
   const [showProfile, setShowProfile] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -172,31 +170,6 @@ export default function BookingDetailPage() {
       setError(msg);
     } finally {
       setSubmittingReview(false);
-    }
-  }
-
-  async function initializeChat() {
-    try {
-      const chat = await initChat(id);
-      setChatId(chat.id);
-      const msgs = await getMessages(chat.id);
-      setMessages(msgs);
-    } catch (e: any) {
-      setError(e?.message || "Failed to initialize chat");
-    }
-  }
-
-  async function handleSendMessage() {
-    if (!messageText.trim() || !chatId) return;
-    setSendingMessage(true);
-    try {
-      const newMsg = await sendMessage(chatId, messageText);
-      setMessages([...messages, newMsg]);
-      setMessageText("");
-    } catch (e: any) {
-      setError(e?.message || "Failed to send message");
-    } finally {
-      setSendingMessage(false);
     }
   }
 
@@ -634,65 +607,27 @@ export default function BookingDetailPage() {
         </div>
       )}
 
-      {/* Chat Section — gated server-side on paymentStatus = PAID. Hide pre-payment so we don't bounce off a 400. */}
+      {/* Chat — gated on paymentStatus = PAID */}
       {canChat && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
           <h3 className="text-sm font-semibold text-zinc-900 mb-1">Contact Transporter</h3>
-          <p className="text-xs text-slate-400 mb-4">Message your driver — chat unlocks once payment clears.</p>
-
-          {!chatId ? (
-            <button
-              onClick={initializeChat}
-              className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800 transition-colors"
-            >
-              Start Chat
-            </button>
-          ) : (
-            <div className="space-y-3">
-              {/* Contact Info */}
-              <div className="bg-slate-50 rounded-lg p-3 mb-3">
-                <p className="text-xs text-slate-600 mb-2">Transporter Contact</p>
-                <p className="text-sm font-medium text-zinc-900">{booking.transport.transporter?.name}</p>
-                <p className="text-sm text-emerald-600 font-semibold">{booking.transport.transporter?.phoneNumber}</p>
-              </div>
-
-              {/* Messages */}
-              <div className="bg-slate-50 rounded-lg p-3 h-64 overflow-y-auto space-y-2 mb-3">
-                {messages.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-8">No messages yet</p>
-                ) : (
-                  messages.map(msg => (
-                    <div key={msg.id} className={`text-xs ${msg.senderId === booking.travelerId ? 'text-right' : ''}`}>
-                      <p className="text-slate-500 mb-0.5">{msg.sender?.name}</p>
-                      <div className={`inline-block max-w-xs px-3 py-1.5 rounded ${msg.senderId === booking.travelerId ? 'bg-zinc-900 text-white' : 'bg-white border border-slate-200'}`}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Message Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type message..."
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={sendingMessage || !messageText.trim()}
-                  className="bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-zinc-800 disabled:opacity-50"
-                >
-                  {sendingMessage ? "..." : "Send"}
-                </button>
-              </div>
-            </div>
-          )}
+          <p className="text-xs text-slate-400 mb-4">Message your driver directly.</p>
+          <button
+            onClick={() => setShowChat(true)}
+            className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800 transition-colors"
+          >
+            Open Chat
+          </button>
         </div>
+      )}
+      {showChat && booking.travelerId && (
+        <ChatModal
+          bookingId={id}
+          currentUserId={booking.travelerId}
+          title="Message transporter"
+          subtitle="Confirm pickup or ask any questions"
+          onClose={() => setShowChat(false)}
+        />
       )}
     </div>
   );

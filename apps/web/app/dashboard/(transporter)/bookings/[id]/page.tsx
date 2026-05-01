@@ -1,22 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { motion } from "motion/react";
-import io from "socket.io-client";
 import {
   getBooking, confirmBooking, rejectBooking, requestBookingCompletion,
-  initChat, getMessages,
 } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import {
-  CarIcon, CalendarIcon, UsersIcon, ArrowRightIcon, SendIcon,
+  CarIcon, CalendarIcon, UsersIcon, ArrowRightIcon,
   CreditCardIcon, PhoneIcon, MailIcon,
 } from "@/app/dashboard/_Components/Icons";
 import {
-  Page, Reveal, PageHeader, StatusPill, SkeletonCard, spring,
+  Page, Reveal, PageHeader, StatusPill, SkeletonCard,
 } from "@/app/dashboard/_Components/ui";
 import { formatBookingStatus } from "@/lib/bookingStatus";
+import { ChatModal } from "@/app/dashboard/_Components/ChatModal";
 
 export default function BookingDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,13 +25,7 @@ export default function BookingDetailPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [messageText, setMessageText] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const [chatLoading, setChatLoading] = useState(false);
-  const socketRef = useRef<any>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showChat, setShowChat] = useState(false);
 
   useEffect(() => {
     Promise.all([getBooking(id), getCurrentUser()])
@@ -44,53 +36,6 @@ export default function BookingDetailPage() {
       .catch(() => setError("Booking not found"))
       .finally(() => setLoading(false));
   }, [id]);
-
-  useEffect(() => {
-    if (booking?.status === "CONFIRMED") initializeChat();
-  }, [booking?.status]);
-
-  useEffect(() => {
-    if (!chatId || !currentUser?.id) return;
-    const socket = io(process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3002", {
-      query: { userId: currentUser.id },
-      reconnection: true,
-    });
-    socketRef.current = socket;
-    socket.emit("join-chat", { chatId });
-    socket.on("message", (msg: any) => setMessages((prev) => [...prev, msg]));
-    return () => {
-      socket.off("message");
-      socket.disconnect();
-    };
-  }, [chatId, currentUser?.id]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  async function initializeChat() {
-    setChatLoading(true);
-    try {
-      const chat = await initChat(id);
-      setChatId(chat.id);
-      const msgs = await getMessages(chat.id);
-      setMessages(msgs);
-    } catch {
-    } finally {
-      setChatLoading(false);
-    }
-  }
-
-  async function handleSendMessage() {
-    if (!messageText.trim() || !chatId || !currentUser?.id) return;
-    setSendingMessage(true);
-    try {
-      socketRef.current?.emit("message", { chatId, content: messageText, userId: currentUser.id });
-      setMessageText("");
-    } finally {
-      setSendingMessage(false);
-    }
-  }
 
   async function handleConfirm() {
     setActionLoading(true);
@@ -290,66 +235,42 @@ export default function BookingDetailPage() {
                 <p className="text-[11px] text-slate-500 mt-0.5">Coordinate pickup and trip details</p>
               </div>
 
-              {chatLoading ? (
-                <div className="p-10 text-center text-sm text-slate-400">Loading chat...</div>
-              ) : chatId ? (
-                <>
-                  <div className="bg-slate-50/60 h-72 overflow-y-auto p-4 space-y-2">
-                    {messages.length === 0 ? (
-                      <p className="text-[13px] text-slate-400 text-center mt-20">
-                        No messages yet. Say hello.
-                      </p>
-                    ) : (
-                      messages.map((msg, i) => {
-                        const mine = msg.senderId === currentUser?.id;
-                        return (
-                          <motion.div
-                            key={msg.id ?? i}
-                            initial={{ opacity: 0, y: 4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                          >
-                            <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-[13px] ${mine ? "bg-zinc-950 text-white rounded-br-md" : "bg-white border border-slate-200 text-zinc-900 rounded-bl-md"}`}>
-                              <p>{msg.content}</p>
-                              <p className={`text-[10px] mt-1 ${mine ? "text-white/50" : "text-slate-400"}`}>
-                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                              </p>
-                            </div>
-                          </motion.div>
-                        );
-                      })
-                    )}
-                    <div ref={messagesEndRef} />
+              {booking.paymentStatus !== "PAID" ? (
+                <div className="p-8 flex flex-col items-center text-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
                   </div>
-                  <div className="p-3 border-t border-slate-100 flex gap-2">
-                    <input
-                      type="text"
-                      value={messageText}
-                      onChange={(e) => setMessageText(e.target.value)}
-                      onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                      placeholder="Type a message..."
-                      className="flex-1 border border-slate-200 rounded-xl px-3.5 py-2.5 text-[13px] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={sendingMessage || !messageText.trim()}
-                      className="bg-zinc-950 text-white px-3.5 rounded-xl hover:bg-zinc-800 disabled:opacity-40 active:scale-[0.97] flex items-center"
-                    >
-                      <SendIcon className="w-4 h-4" />
-                    </button>
+                  <div>
+                    <p className="text-[13px] font-semibold text-zinc-800">Awaiting traveler payment</p>
+                    <p className="text-[11px] text-slate-400 mt-1 max-w-[200px]">Chat opens automatically once the traveler completes payment.</p>
                   </div>
-                </>
+                  <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-200 px-2.5 py-1.5 rounded-lg">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
+                    Waiting for payment
+                  </span>
+                </div>
               ) : (
                 <div className="p-5">
                   <button
-                    onClick={initializeChat}
+                    onClick={() => setShowChat(true)}
                     className="w-full bg-zinc-950 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-zinc-800 active:scale-[0.98] transition-all"
                   >
-                    Start conversation
+                    Open chat
                   </button>
                 </div>
               )}
             </div>
+          )}
+          {showChat && currentUser?.id && (
+            <ChatModal
+              bookingId={id}
+              currentUserId={currentUser.id}
+              title="Chat with traveler"
+              subtitle="Coordinate pickup and trip details"
+              onClose={() => setShowChat(false)}
+            />
           )}
         </Reveal>
 

@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getBooking, initChat, getMessages, sendMessage, requestBookingCompletion } from "@/lib/api";
+import { getBooking, requestBookingCompletion } from "@/lib/api";
+import { getCurrentUser } from "@/lib/auth";
 import Link from "next/link";
 import { formatBookingStatus } from "@/lib/bookingStatus";
+import { ChatModal } from "@/app/dashboard/_Components/ChatModal";
 
 export default function TransporterBookingDetailPage() {
   const params = useParams<{ id: string; bookingId: string }>();
@@ -13,64 +15,16 @@ export default function TransporterBookingDetailPage() {
   const [booking, setBooking] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [chatId, setChatId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [messageText, setMessageText] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
+  const [showChat, setShowChat] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [completingBooking, setCompletingBooking] = useState(false);
 
   useEffect(() => {
-    getBooking(bookingId)
-      .then(setBooking)
+    Promise.all([getBooking(bookingId), getCurrentUser()])
+      .then(([b, u]) => { setBooking(b); setCurrentUser(u); })
       .catch(() => setError("Booking not found"))
       .finally(() => setLoading(false));
   }, [bookingId]);
-
-  useEffect(() => {
-    if (booking?.status === "CONFIRMED" && !chatId) {
-      initializeChat();
-    }
-  }, [booking?.status]);
-
-  useEffect(() => {
-    if (!chatId) return;
-    const interval = setInterval(loadMessages, 2000);
-    return () => clearInterval(interval);
-  }, [chatId]);
-
-  async function initializeChat() {
-    try {
-      const chat = await initChat(bookingId);
-      setChatId(chat.id);
-      await loadMessages();
-    } catch (e: any) {
-      setError(e?.message || "Failed to initialize chat");
-    }
-  }
-
-  async function loadMessages() {
-    if (!chatId) return;
-    try {
-      const msgs = await getMessages(chatId);
-      setMessages(msgs);
-    } catch (e: any) {
-      console.error("Failed to load messages");
-    }
-  }
-
-  async function handleSendMessage() {
-    if (!messageText.trim() || !chatId) return;
-    setSendingMessage(true);
-    try {
-      const newMsg = await sendMessage(chatId, messageText);
-      setMessages([...messages, newMsg]);
-      setMessageText("");
-    } catch (e: any) {
-      setError(e?.message || "Failed to send message");
-    } finally {
-      setSendingMessage(false);
-    }
-  }
 
   async function handleRequestCompletion() {
     // Two-party closeout: this only flags the trip as "ride ended". The
@@ -172,59 +126,26 @@ export default function TransporterBookingDetailPage() {
       )}
 
       {/* Chat */}
-      {booking.status === "CONFIRMED" && (
+      {(booking.status === "CONFIRMED" || booking.status === "IN_PROGRESS") && booking.paymentStatus === "PAID" && (
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-zinc-900 mb-1">Chat with Traveler</h3>
-          <p className="text-xs text-slate-400 mb-4">Share details and confirm trip</p>
-
-          {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
-
-          {chatId ? (
-            <div className="space-y-3">
-              {/* Messages */}
-              <div className="bg-slate-50 rounded-lg p-3 h-64 overflow-y-auto space-y-2 mb-3">
-                {messages.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-8">No messages yet. Start the conversation!</p>
-                ) : (
-                  messages.map(msg => (
-                    <div key={msg.id} className={`text-xs ${msg.senderId !== booking.travelerId ? 'text-right' : ''}`}>
-                      <p className="text-slate-500 mb-0.5">{msg.sender?.name}</p>
-                      <div className={`inline-block max-w-xs px-3 py-1.5 rounded ${msg.senderId !== booking.travelerId ? 'bg-zinc-900 text-white' : 'bg-white border border-slate-200'}`}>
-                        {msg.content}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Input */}
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                  placeholder="Type message..."
-                  className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-zinc-900"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  disabled={sendingMessage || !messageText.trim()}
-                  className="bg-zinc-900 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-zinc-800 disabled:opacity-50"
-                >
-                  {sendingMessage ? "..." : "Send"}
-                </button>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={initializeChat}
-              className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800"
-            >
-              Start Chat
-            </button>
-          )}
+          <h3 className="text-sm font-semibold text-zinc-900 mb-1">Chat with traveler</h3>
+          <p className="text-xs text-slate-400 mb-4">Coordinate pickup and trip details</p>
+          <button
+            onClick={() => setShowChat(true)}
+            className="w-full bg-zinc-900 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-zinc-800 transition-colors"
+          >
+            Open chat
+          </button>
         </div>
+      )}
+      {showChat && currentUser?.id && (
+        <ChatModal
+          bookingId={bookingId}
+          currentUserId={currentUser.id}
+          title="Chat with traveler"
+          subtitle="Coordinate pickup and trip details"
+          onClose={() => setShowChat(false)}
+        />
       )}
     </div>
   );

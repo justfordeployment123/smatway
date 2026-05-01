@@ -75,10 +75,11 @@ export default function AddRoutePage() {
       // UTC time, which displays as the wrong wall-clock day for any user
       // east or west of UTC.
       const now = new Date();
+      const thirtyMinsLater = new Date(now.getTime() + 30 * 60 * 1000);
       const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
       setForm(f => ({
         ...f,
-        departureDateTime: toLocalDateTimeInput(now),
+        departureDateTime: toLocalDateTimeInput(thirtyMinsLater),
         maxReachDateTime: toLocalDateTimeInput(tomorrow),
       }));
       getMyVehicles().then(setVehicles).catch(() => setError("Failed to load vehicles")).finally(() => setVehiclesLoading(false));

@@ -30,7 +30,9 @@ function minutesLeft(receivedAt: number): number {
 
 /** Stable ID that doesn't depend on array index. */
 function notifId(notif: any): string {
-  return notif.message?.id ?? notif.bookingId ?? `${notif.type}-${notif._receivedAt ?? 0}`;
+  if (notif.message?.id) return notif.message.id;
+  if (notif.bookingId) return `${notif.type}-${notif.bookingId}`;
+  return `${notif.type}-${notif._receivedAt ?? 0}`;
 }
 
 function loadReadIds(): Set<string> {

@@ -481,6 +481,15 @@ export class PayoutsService {
     currencyOrCountry: string = 'NGN',
     provider: PaymentMethod = PaymentMethod.PAYSTACK,
   ) {
+    if (process.env.PAYSTACK_DEV_BYPASS_BANK_VERIFICATION === 'true') {
+      return {
+        banks: [
+          { name: 'Dev Bank Alpha', code: 'DEV001', longcode: 'DEV000001' },
+          { name: 'Dev Bank Beta',  code: 'DEV002', longcode: 'DEV000002' },
+          { name: 'Dev Bank Gamma', code: 'DEV003', longcode: 'DEV000003' },
+        ],
+      };
+    }
     if (provider === PaymentMethod.FLUTTERWAVE) {
       const country = currencyToCountryCode(currencyOrCountry);
       const banks = await this.flutterwave.listBanks(country);
