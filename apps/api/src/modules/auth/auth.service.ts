@@ -40,7 +40,9 @@ export class AuthService {
     return valid ? user : null;
   }
 
-  async register(dto: RegisterDto): Promise<{ email: string; pendingVerification: true }> {
+  async register(dto: RegisterDto): Promise<{ email: string; pendingVerification: boolean }> {
+    const otpEnabled = /^(true|1)$/i.test(process.env.OTP_SEND_EMAIL ?? '');
+
     const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
     if (existing) {
       // Allow re-registering an unverified account (overwrite profile data, resend OTP)
@@ -55,6 +57,7 @@ export class AuthService {
             preferredCurrency: dto.preferredCurrency ?? existing.preferredCurrency,
             passwordHash,
             accountType: this.normalizeAccountType(dto.accountType) ?? existing.accountType,
+            ...(otpEnabled ? {} : { emailVerified: true, emailVerifiedAt: new Date() }),
           },
         });
         // Ensure the UserProfile row exists — older accounts may not have one.
@@ -63,8 +66,11 @@ export class AuthService {
           update: {},
           create: { userId: existing.id },
         });
-        await this.issueVerificationOtp(updated);
-        return { email: updated.email, pendingVerification: true };
+        if (otpEnabled) {
+          await this.issueVerificationOtp(updated);
+          return { email: updated.email, pendingVerification: true };
+        }
+        return { email: updated.email, pendingVerification: false };
       }
       throw new ConflictException('Email already registered');
     }
@@ -81,11 +87,15 @@ export class AuthService {
         accountType: this.normalizeAccountType(dto.accountType),
         // Auto-create an empty profile so Settings pages work immediately after signup.
         profile: { create: {} },
+        ...(otpEnabled ? {} : { emailVerified: true, emailVerifiedAt: new Date() }),
       },
     });
 
-    await this.issueVerificationOtp(user);
-    return { email: user.email, pendingVerification: true };
+    if (otpEnabled) {
+      await this.issueVerificationOtp(user);
+      return { email: user.email, pendingVerification: true };
+    }
+    return { email: user.email, pendingVerification: false };
   }
 
   async verifyEmail(dto: VerifyEmailDto, res: Response): Promise<{ user: Omit<User, 'passwordHash'>; accessToken: string }> {

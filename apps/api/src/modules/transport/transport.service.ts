@@ -157,6 +157,7 @@ export class TransportService {
     const where: any = {
       status: TransportStatus.ACTIVE,
       departureDateTime: { gte: now },
+      maxReachDateTime: { gte: now },
     };
 
     if (dto.departureCity) where.departureCity = { contains: dto.departureCity, mode: 'insensitive' };
