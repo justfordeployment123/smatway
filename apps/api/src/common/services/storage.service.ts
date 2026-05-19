@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import type Multer from 'multer';
 
 @Injectable()
@@ -37,7 +37,7 @@ export class StorageService {
     file: any,
     folder: string,
   ): Promise<{ filePath: string; presignedUrl: string }> {
-    const filename = `${folder}/${uuidv4()}-${file.originalname}`;
+    const filename = `${folder}/${randomUUID()}-${file.originalname}`;
     const putCommand = new PutObjectCommand({
       Bucket: this.bucketName,
       Key: filename,
