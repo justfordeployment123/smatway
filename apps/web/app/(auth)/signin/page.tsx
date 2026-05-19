@@ -75,13 +75,12 @@ export default function SignInPage() {
     return <div className="w-full min-h-[60vh]" aria-hidden="true" />;
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doLogin(loginEmail: string, loginPassword: string) {
     setError("");
     setLoading(true);
     try {
       clearAuthData();
-      const result = await api.post<LoginResponse>("/auth/login", { email, password });
+      const result = await api.post<LoginResponse>("/auth/login", { email: loginEmail, password: loginPassword });
       if (result?.accessToken) {
         setAuthToken(result.accessToken, 15 * 60);
       }
@@ -92,6 +91,11 @@ export default function SignInPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await doLogin(email, password);
   }
 
   return (
@@ -134,7 +138,7 @@ export default function SignInPage() {
             <button
               key={acc.label}
               type="button"
-              onClick={() => { setEmail(acc.email); setPassword(acc.password); }}
+              onClick={() => { setEmail(acc.email); setPassword(acc.password); doLogin(acc.email, acc.password); }}
               className="flex flex-1 items-center justify-between rounded-xl border border-amber-200 bg-white px-3 py-2 text-left transition-colors hover:bg-amber-50 active:scale-[0.98]"
             >
               <div>
